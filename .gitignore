@@ -42,6 +42,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Python files
+__pycache__/
+
 # My data
 examples/
 tasks/
