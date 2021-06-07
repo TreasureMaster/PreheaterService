@@ -96,13 +96,24 @@ class ConnectionFrame(Frame):
         com_label = Label(self.serialframe, text='COM-порт:')
         com_label.pack(side=LEFT, padx=5)
 
-        self.combo = Combobox(self.serialframe, values=self.comports)
+        self.combo_port = Combobox(self.serialframe, values=self.comports)
         # Текущее значение - первая таблица
-        self.combo.current(0)
-        self.combo.pack(side=LEFT, padx=5)
+        self.combo_port.current(0)
+        self.combo_port.pack(side=LEFT, padx=5)
         # Сразу же вывод первой таблицы при первом запуске программы
         # self.setComPort(0)
-        self.combo.bind("<<ComboboxSelected>>", self.setComPort)
+        self.combo_port.bind("<<ComboboxSelected>>", self.setComPort)
+
+        baud_label = Label(self.serialframe, text='скорость:')
+        baud_label.pack(side=LEFT, padx=5)
+
+        self.combo_baud = Combobox(self.serialframe, values=(['----'] + BAUDRATES))
+        # Текущее значение - первая таблица
+        self.combo_baud.current(0)
+        self.combo_baud.pack(side=LEFT, padx=5)
+        # Сразу же вывод первой таблицы при первом запуске программы
+        # self.setComPort(0)
+        self.combo_baud.bind("<<ComboboxSelected>>", self.setBaudRate)
 
         # метка соединения
         indicator = IndicatorImage(self.serialframe, image='yes2')
@@ -127,8 +138,12 @@ class ConnectionFrame(Frame):
         numberlabel.pack(side=RIGHT, padx=5)
 
     def setComPort(self, event):
-        comport = self.combo.get()
+        comport = self.combo_port.get()
         print(comport)
+
+    def setBaudRate(self, event):
+        baudrate = self.combo_baud.get()
+        print(baudrate)
 
     def initComPortList(self, comport_number=None):
         if not comport_number:
