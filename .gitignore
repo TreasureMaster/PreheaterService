@@ -5,7 +5,7 @@
 
 ### VisualStudioCode ###
 .vscode/*
-!.vscode/settings.json
+# !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
@@ -47,7 +47,9 @@ __pycache__/
 
 # My data
 examples/
-tasks/
+tasks/*
+!tasks/yes2.png
+!tasks/no2.png
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudiocode
 
