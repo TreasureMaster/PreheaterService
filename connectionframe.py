@@ -31,7 +31,7 @@ comport_settings = collections.OrderedDict([
     ('Flow control', ['None', 'Hardware', 'Software', 'Custom'])
 ])
 
-class ComportSettings(Toplevel):
+class ComportWindow(Toplevel):
 
     def __init__(self, *args, comports=None):
         Toplevel.__init__(self, *args)
@@ -87,12 +87,12 @@ class ConnectionFrame(Frame):
         self.serialframe = Frame(master)
         self.serialframe.pack(expand=YES, fill=X, pady=5)
         self._make_widgets()
+        # Информационная панель (нужна ли ?)
+        self.infopanel = Frame(master)
+        self.infopanel.pack(fill=X, padx=5, pady=5)
+        Label(self.infopanel, text='Здесь можно выводить информацию о состоянии подключения', justify=LEFT).pack(fill=X)
 
     def _make_widgets(self):
-
-        # serialframe = Frame(self.mainframe)
-        # serialframe.pack(fill=X)
-
         com_label = Label(self.serialframe, text='COM-порт:')
         com_label.pack(side=LEFT, padx=5)
 
@@ -120,7 +120,7 @@ class ConnectionFrame(Frame):
         indicator.pack(side=LEFT, padx=5)
 
         # Кнопка настройки соединения
-        combtn = Button(self.serialframe, text='Настройки', command=lambda: ComportSettings(comports=self.comports))
+        combtn = Button(self.serialframe, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
         combtn.pack(side=LEFT, padx=5)
 
         # Кнопка открытия/закрытия соединения

@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter.ttk import *
 
 from connectionframe import ConnectionFrame
+from moduleframe import ControlPanelFrame, LogPanelFrame
 
 
 root = Tk()
@@ -12,6 +13,8 @@ mainframe = Frame(root)
 mainframe.pack(expand=YES, fill=BOTH)
 
 connectionframe = ConnectionFrame(mainframe)
+controlpanel = ControlPanelFrame(mainframe)
+logpanel = LogPanelFrame(mainframe)
 
 
 
