@@ -1,3 +1,4 @@
+import os
 from threading import Lock
 from abc import ABC, abstractmethod
 from accessify import protected, private
@@ -21,7 +22,11 @@ class Registry(ABC):
 class AppRegistry(Registry):
     """Реестр приложения."""
     # статические приватные свойства
-    __values = {}
+    __values = {
+        'value': None,
+        'list_modules': None,
+        'run_path': None
+    }
     __instance = None
     __lock = Lock()
 
@@ -35,9 +40,10 @@ class AppRegistry(Registry):
     def instance():
         with AppRegistry.__lock:
             if not AppRegistry.__instance:
-                import time
-                time.sleep(1)
+                # import time
+                # time.sleep(1)
                 AppRegistry.__instance = AppRegistry()
+                # AppRegistry.__instance.__setRunPath()
         return AppRegistry.__instance
 
     # нельзя напрямую изменять свойства
@@ -49,12 +55,30 @@ class AppRegistry(Registry):
     def set(self, key, value):
         self.__values[key] = value
 
-    # доступ к свойствам только именованный и контролируемый
+    # СВОЙСТВО: тестовое, можно удалить
     def getValue(self):
-        return self.get('value')
+        return self.instance().get('value')
 
     def setValue(self, value):
-        self.__values['value'] = value
+        self.instance().set('value', value)
+
+    # СВОЙСТВО: список модулей
+    def getListModules(self):
+        return self.instance().get('list_modules')
+
+    def setListModules(self, value):
+        self.instance().set('list_modules', value)
+
+    # СВОЙСТВО: путь запуска программы
+    def getRunPath(self):
+        if self.instance().get('run_path') is None:
+            self.instance().setRunPath()
+        return self.instance().get('run_path')
+
+    def setRunPath(self):
+        path = os.getcwd()
+        # Для exe-файла path = sys.executable
+        self.instance().set('run_path', path)
 
     # def getTest(self):
     #     return self.test
