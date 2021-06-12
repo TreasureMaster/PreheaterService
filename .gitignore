@@ -49,11 +49,12 @@ __pycache__/
 examples/
 tasks/*
 modules/
+data/
 !tasks/yes2.png
 !tasks/no2.png
 
 # Temp data
-controller.py
+# controller.py
 listmodules.py
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudiocode

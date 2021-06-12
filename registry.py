@@ -24,7 +24,7 @@ class AppRegistry(Registry):
     # статические приватные свойства
     __values = {
         'value': None,
-        'list_modules': None,
+        'modules': {},
         'run_path': None
     }
     __instance = None
@@ -62,12 +62,23 @@ class AppRegistry(Registry):
     def setValue(self, value):
         self.instance().set('value', value)
 
-    # СВОЙСТВО: список модулей
-    def getListModules(self):
-        return self.instance().get('list_modules')
+    # СВОЙСТВО: модули
+    def getModule(self, name):
+        return self.instance().get('modules').get(name)
 
-    def setListModules(self, value):
-        self.instance().set('list_modules', value)
+    def addModule(self, name, value):
+        # TODO: что делать, если ключ есть?
+        self.instance().get('modules').update({name: value})
+
+    def clearAllModules(self):
+        self.instance().get('modules').clear()
+
+    def deleteModule(self, name):
+        self.instance().get('modules').pop(name, None)
+
+    # TODO Так проверить наличие модулей ?
+    def is_emptyModules(self):
+        pass
 
     # СВОЙСТВО: путь запуска программы
     def getRunPath(self):
