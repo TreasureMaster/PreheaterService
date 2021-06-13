@@ -18,9 +18,7 @@ class ModuleHelper:
     __instance = None
     # __registry = None
     __lock = Lock()
-    __REQUIRED_FILES = [
-        'config.xml'
-    ]
+    __REQUIRED_CONFIG = 'data/config.xml'
 
     # создать объект напрямую невозможно
     @private
@@ -121,7 +119,7 @@ class ModuleHelper:
         # fnmfile.close()
         try:
             with zipfile.ZipFile(fnm) as myzip:
-                with myzip.open('data/config.xml') as myfile:
+                with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
                     xml = myfile.read()
         except Exception as msg:
             self.errorlist.append(msg)

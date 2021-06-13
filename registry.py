@@ -62,7 +62,7 @@ class AppRegistry(Registry):
     def setValue(self, value):
         self.instance().set('value', value)
 
-    # СВОЙСТВО: модули
+    # СВОЙСТВО: конкретный модуль (получение, добавление, удаление)
     def getModule(self, name):
         return self.instance().get('modules').get(name)
 
@@ -70,11 +70,15 @@ class AppRegistry(Registry):
         # TODO: что делать, если ключ есть?
         self.instance().get('modules').update({name: value})
 
-    def clearAllModules(self):
-        self.instance().get('modules').clear()
-
     def deleteModule(self, name):
         self.instance().get('modules').pop(name, None)
+
+    # СВОЙСТВО: работа со словарем модулей
+    def getAllModules(self):
+        return self.instance().get('modules')
+
+    def clearAllModules(self):
+        self.instance().get('modules').clear()
 
     # TODO Так проверить наличие модулей ?
     def is_emptyModules(self):

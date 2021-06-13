@@ -3,6 +3,8 @@ from accessify import private
 from registry import AppRegistry
 from modulehelper import ModuleHelper
 
+from views.mainwindow import MainWindow
+
 
 class Controller:
 
@@ -18,14 +20,17 @@ class Controller:
         print(AppRegistry.instance().getRunPath())
         Controller.__instance = Controller()
         Controller.__instance.init()
+        Controller.__instance.handleView()
 
     def init(self):
         self.__moduleHelper = ModuleHelper.instance()
         self.__moduleHelper.init()
         # На данном этапе должен быть загружен список модулей либо ошибка
-        # TODO должны быть извлечены имена модулей, т.е. должны быть раскрыты архивы всех модулей и извлечены конфигурации
-        # Это должно быть сделано в ModuleHelper.init()
+        # TODO [x] должны быть извлечены имена модулей, т.е. должны быть раскрыты архивы всех модулей и извлечены конфигурации
 
+    def handleView(self):
+        # Вывод на экран
+        MainWindow.instance().startWindow()
 
 if __name__ == '__main__':
     Controller.run()
