@@ -1,4 +1,5 @@
 import os
+import collections
 from threading import Lock
 from abc import ABC, abstractmethod
 from accessify import protected, private
@@ -27,6 +28,7 @@ class AppRegistry(Registry):
         'modules': {},
         'run_path': None
     }
+    # __modules = collections.OrderedDict()
     __instance = None
     __lock = Lock()
 

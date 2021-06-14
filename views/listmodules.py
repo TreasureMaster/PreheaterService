@@ -7,6 +7,7 @@ from tkinter.filedialog import *
 
 from .connectimages import IndicatorImage
 from registry import AppRegistry
+from commands.mainpanel import ViewModule
 
 COMPORTS = 7
 BAUDRATES = [
@@ -69,8 +70,9 @@ class ListModulesFrame(Frame):
         self.listbox.config(yscrollcommand=sbar.set)
         sbar.pack(side=RIGHT, fill=Y)
         self.listbox.pack(side=LEFT, expand=YES, fill=BOTH)
-
+        # TODO как добавить название блока (ключ модуля) к информации Listbox ???
         self.update_listbox()
+        self.listbox.bind('<<ListboxSelect>>', ViewModule())
 
         Button(self.listframe, text='Открыть', command=lambda: None).pack()
         Button(self.listframe, text='Копировать', command=lambda: None).pack()

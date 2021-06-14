@@ -1,7 +1,7 @@
 # import typing
 from abc import ABC, abstractmethod
 
-from ..registry import AppRegistry
+from registry import AppRegistry
 
 
 # NOTE В данной структуре получателем будет являться реестр AppRegistry
@@ -33,16 +33,31 @@ class Command(ABC):
 
 
 # NOTE нужна реализация 4 команд для главной панели управления:
+# 0) Просмотр модуля (загрузить иинформацию из модуля для просмотра)
 # 1) Открыть модуль
 # 2) Копировать модуль
 # 3) Удалить модуль
 # 4) Загрузить модуль с указанием пути (загрузка отдельного модуля, отсутствующего в данной папке)
 # -5) Сохранить и Сохранить как нужны ???
 
+class ViewModule(Command):
+    def __call__(self, event):
+        self.execute(event)
+
+    def execute(self, event):
+        print('execute ViewModel')
+        widget = event.widget
+        selection = widget.curselection()
+        picked = widget.get(selection)
+        print(picked)
+
+
 class OpenModule(Command):
     pass
     # Необходимо получить информацию о выбранном модуле
     # Варианты: клик в ListBox, выбран загрузкой как отдельный модуль (выделить в ListBox)
+    def execute(self):
+        pass
 
 # ---------------------------------------------------------------------------- #
 

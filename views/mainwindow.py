@@ -8,7 +8,6 @@ from tkinter.ttk import *
 # from moduleframe import ControlPanelFrame, LogPanelFrame
 from .listmodules import ListModulesFrame
 
-
 class MainWindow():
     __APPTITLE = 'FN-Service'
     __instance = None
