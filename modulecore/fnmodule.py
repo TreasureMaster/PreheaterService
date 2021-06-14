@@ -1,4 +1,5 @@
 """Содержит класс для реализации объекта модуля."""
+import os, shutil, zipfile
 
 from .moduleconfig import ModuleConfig
 
@@ -18,3 +19,20 @@ class FNModule:
 
     def getTitle(self):
         return self.config.getProperty('title')
+
+    # Распаковать файлы в папку
+    def unpackData(self):
+        # TODO распаковать в память
+        try:
+            fnmfile = zipfile.ZipFile(self.link, 'r')
+        except Exception as msg:
+            # TODO должна быть реализация ошибки извлечения файла
+            # self.errorlist.append(msg)
+            return
+        fnlist = fnmfile.namelist()
+        print('data:', fnlist)
+
+        if os.path.exists('data'):
+            shutil.rmtree('data')
+        fnmfile.extractall()
+        fnmfile.close()

@@ -1,8 +1,9 @@
 import os
-import collections
 from threading import Lock
 from abc import ABC, abstractmethod
 from accessify import protected, private
+
+from modulemapper import ModuleMapper
 
 
 class Registry(ABC):
@@ -25,7 +26,7 @@ class AppRegistry(Registry):
     # статические приватные свойства
     __values = {
         'value': None,
-        'modules': {},
+        'modules': ModuleMapper(),
         'run_path': None
     }
     # __modules = collections.OrderedDict()
@@ -68,6 +69,9 @@ class AppRegistry(Registry):
     def getModule(self, name):
         return self.instance().get('modules').get(name)
 
+    def ilocModule(self, name):
+        return self.instance().get('modules').iloc(name)
+
     def addModule(self, name, value):
         # TODO: что делать, если ключ есть?
         self.instance().get('modules').update({name: value})
@@ -77,6 +81,7 @@ class AppRegistry(Registry):
 
     # СВОЙСТВО: работа со словарем модулей
     def getAllModules(self):
+        # TODO сделать как итератор, не возвращая сам словарь (иначе можно повредить)
         return self.instance().get('modules')
 
     def clearAllModules(self):

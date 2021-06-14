@@ -46,10 +46,11 @@ class ViewModule(Command):
 
     def execute(self, event):
         print('execute ViewModel')
-        widget = event.widget
-        selection = widget.curselection()
-        picked = widget.get(selection)
-        print(picked)
+        # Текущий модуль
+        current_module = AppRegistry.instance().ilocModule(event.widget.curselection()[0])
+        print(current_module)
+        # Распаковка данных в каталог DATA
+        current_module.unpackData()
 
 
 class OpenModule(Command):
