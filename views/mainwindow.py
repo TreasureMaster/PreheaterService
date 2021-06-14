@@ -1,4 +1,5 @@
 from threading import Lock
+from views.infomodule import InfoModuleFrame
 from accessify import private
 
 from tkinter import *
@@ -7,6 +8,7 @@ from tkinter.ttk import *
 # from connectionframe import ConnectionFrame
 # from moduleframe import ControlPanelFrame, LogPanelFrame
 from .listmodules import ListModulesFrame
+from .infomodule import InfoModuleFrame
 
 class MainWindow():
     __APPTITLE = 'FN-Service'
@@ -44,7 +46,8 @@ class MainWindow():
     def _make_widgets(self):
         Label(self.mainframe, text='Здесь будет меню первого окна').pack()
 
-        ListModulesFrame(self.mainframe).pack()
+        ListModulesFrame(self.mainframe).pack(side=LEFT)
+        # InfoModuleFrame(self.mainframe).pack(side=LEFT)
 
 
 

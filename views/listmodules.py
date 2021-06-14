@@ -70,7 +70,7 @@ class ListModulesFrame(Frame):
         self.listbox.config(yscrollcommand=sbar.set)
         sbar.pack(side=RIGHT, fill=Y)
         self.listbox.pack(side=LEFT, expand=YES, fill=BOTH)
-        # TODO как добавить название блока (ключ модуля) к информации Listbox ???
+        # TODO изменить на listvariables
         self.update_listbox()
         self.listbox.bind('<<ListboxSelect>>', ViewModule())
 
