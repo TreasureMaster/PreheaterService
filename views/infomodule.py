@@ -1,9 +1,11 @@
 import collections
 import glob, os
 from tkinter import *
+from tkinter import font
 from tkinter.ttk import *
 from tkinter.messagebox import *
 from tkinter.filedialog import *
+from tkinter.font import Font
 
 from registry import AppRegistry
 from commands.mainpanel import ViewModule
@@ -13,24 +15,52 @@ class InfoModuleFrame(Frame):
     # Левая панель выбора модулей из списка
     def __init__(self, master, *args):
         Frame.__init__(self, master, *args)
-        self.infoframe = Frame(master)
-        self.infoframe.pack(expand=YES, fill=X, pady=5)
-        self._make_widgets()
+        # Сохранить фрейм в реестре
+        AppRegistry.instance().setInfoFrame(self)
+        # Переменные окон Message
+        self.__description = StringVar(value=self.__getText('description'))
+        self.__options = StringVar(value=self.__getText('options'))
+        self.__make_widgets()
 
-    def _make_widgets(self):
-        modules_label = Label(self.infoframe, text='Список модулей')
-        modules_label.pack(padx=5)
+    def __make_widgets(self):
+        titlefont = Font(family="Arial", size=10, weight="bold", slant="italic", underline=True)
+        Label(self, text='Информация о модуле').pack(padx=5)
+        # TODO здесь необходимо вставить картинку модуля
+        Label(self,
+              text='Описание модуля:',
+              justify=LEFT,
+              font=titlefont
+            #   font=('Arial', 10, 'italic'),
+            #   underline=True
+        ).pack(padx=5, fill=X)
 
+        # TODO вероятно придется сменить Label на Text, чтобы включить полосу прокрутки
+        desc = Label(self, text='', textvariable=self.__description)
+        # wraplength - размер в пикселях
+        desc.config(justify=LEFT, wraplength=750)
+        desc.config(relief=RIDGE)
+        desc.pack(padx=5, pady=5, fill=X)
+
+        Label(self,
+              text='Параметры модуля:',
+              justify=LEFT,
+              font=titlefont
+        ).pack(padx=5, fill=X)
+
+        opts = Label(self, text='', textvariable=self.__options)
+        opts.config(justify=LEFT, wraplength=750)
+        opts.config(relief=RIDGE)
+        opts.pack(padx=5, pady=5, fill=X)
         # TODO Сейчас нужно, чтобы Combobox получил названия модулей из архивов
         # 1) т.е. нужен хелпер извлечения отдельного модуля (в том числе проверка на корректность модуля)
         # 2) ??? команда извлечения имени (может извлечь из модуля)
         # 3) сам класс модуля
-        self.modules_list = Combobox(self.infoframe, values=[mod.getTitle() for mod in AppRegistry.instance().getAllModules().values()])
+        # self.modules_list = Combobox(self, values=[mod.getTitle() for mod in AppRegistry.instance().getAllModules().values()])
         # Текущее значение - первая таблица
-        self.modules_list.current(0)
-        self.modules_list.pack(side=LEFT, padx=5)
+        # self.modules_list.current(0)
+        # self.modules_list.pack(side=LEFT, padx=5)
         # Сразу же вывод первой таблицы при первом запуске программы
-        self.modules_list.bind("<<ComboboxSelected>>", self.setComPort)
+        # self.modules_list.bind("<<ComboboxSelected>>", self.setComPort)
 
         # К правому окну прикрепляем виджет вывода значений таблиц БД
         # textbar = Frame(self.infoframe)
@@ -46,11 +76,27 @@ class InfoModuleFrame(Frame):
         # self.update_listbox()
         # self.listbox.bind('<<ListboxSelect>>', ViewModule())
 
-        Button(self.infoframe, text='Открыть', command=lambda: None).pack()
-        Button(self.infoframe, text='Копировать', command=lambda: None).pack()
-        Button(self.infoframe, text='Удалить', command=lambda: None).pack()
-        Button(self.infoframe, text='Загрузить из...', command=lambda: None).pack()
+        # Button(self, text='Открыть', command=lambda: None).pack()
+        # Button(self, text='Копировать', command=lambda: None).pack()
+        # Button(self, text='Удалить', command=lambda: None).pack()
+        # Button(self, text='Загрузить из...', command=lambda: None).pack()
 
+    def __getText(self, field):
+        cur_mod = AppRegistry.instance().getCurrentModule()
+        # print('info panel get text:', cur_mod)
+        return cur_mod.getDescription(field) if cur_mod else ' Сообщение: модуль не выбран.'
+
+    def updateText(self):
+        # TODO как обновлять? Опять нужно StringVar отправить в реестр? Или лучше весь фрейм?
+        # print(self.__getText('description'))
+        self.__description.set(self.__getText('description'))
+        self.__options.set(self.__getText('options'))
+        # cur_mod = AppRegistry.instance().getCurrentModule()
+        # return cur_mod.getDescription(field) if cur_mod else ' Сообщение: модуль не выбран.'
+
+    # def getOptionsText(self):
+    #     cur_mod = AppRegistry.instance().getCurrentModule()
+    #     return cur_mod.getOptions() if cur_mod else ' Сообщение: модуль не выбран.'
 
     def setComPort(self, event):
         comport = self.modules_list.get()

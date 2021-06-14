@@ -13,7 +13,8 @@ class ModuleConfig:
     def __init__(self, xml=None):
         # if xml:
         #     self.parseXML(xml)
-        self.root = objectify.XML(xml)
+        if xml:
+            self.root = objectify.XML(xml)
 
     # def parseXML(self, xml=None):
     #     """парсинг XML файла."""
@@ -22,12 +23,13 @@ class ModuleConfig:
         # with open(self.xml_file, encoding='utf-8') as f:
         # self.root = objectify.XML(xml)
 
-    # def parseXML(self, filename=None):
-    #     """парсинг XML файла."""
-    #     self.xml_file = filename
-    #     # TODO указать ошибку при отсутствии файла
-    #     with open(self.xml_file, encoding='utf-8') as f:
-    #         self.root = objectify.XML(f.read())
+    def getFromXML(self, filename=None):
+        """Получить объект конфигурации из XML файла."""
+        # self.xml_file = filename
+        # TODO указать ошибку при отсутствии файла
+        with open(filename, encoding='utf-8') as f:
+            self.root = objectify.XML(f.read())
+        return self
 
     def getProperty(self, key):
         if key in ModuleConfig.__HEADER | ModuleConfig.__OPTIONS:

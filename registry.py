@@ -24,10 +24,16 @@ class Registry(ABC):
 class AppRegistry(Registry):
     """Реестр приложения."""
     # статические приватные свойства
+    # 1) modules - словарь предварительно загруженных из папки модулей
+    # 2) run_path - путь запуска программы (будет важно для exe-файла)
+    # 3) current_module - текущий, выбранный для работы модуль
+    # 4) info_frame - фрейм первого окна с информациоей о модуле
     __values = {
         'value': None,
         'modules': ModuleMapper(),
-        'run_path': None
+        'run_path': None,
+        'current_module': None,
+        'info_frame': None
     }
     # __modules = collections.OrderedDict()
     __instance = None
@@ -101,6 +107,20 @@ class AppRegistry(Registry):
         path = os.getcwd()
         # Для exe-файла path = sys.executable
         self.instance().set('run_path', path)
+
+    # СВОЙСТВО: объект текущего модуля, с которым производится работа
+    def getCurrentModule(self):
+        return self.instance().get('current_module')
+
+    def setCurrentModule(self, value):
+        self.instance().set('current_module', value)
+
+    # СВОЙСТВО: фрейм информации о модуле (первое окно)
+    def getInfoFrame(self):
+        return self.instance().get('info_frame')
+
+    def setInfoFrame(self, frame):
+        self.instance().set('info_frame', frame)
 
     # def getTest(self):
     #     return self.test

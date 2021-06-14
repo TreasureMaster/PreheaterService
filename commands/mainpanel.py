@@ -45,12 +45,15 @@ class ViewModule(Command):
         self.execute(event)
 
     def execute(self, event):
-        print('execute ViewModel')
+        # print('execute ViewModel')
         # Текущий модуль
         current_module = AppRegistry.instance().ilocModule(event.widget.curselection()[0])
-        print(current_module)
+        # print('select module form listbox:', current_module)
+        AppRegistry.instance().setCurrentModule(current_module)
+        # print(AppRegistry.instance().getCurrentModule())
         # Распаковка данных в каталог DATA
         current_module.unpackData()
+        AppRegistry.instance().getInfoFrame().updateText()
 
 
 class OpenModule(Command):

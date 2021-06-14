@@ -104,26 +104,13 @@ class ModuleHelper:
             self.errorlist.append('Файл не существует')
             return
         # 3) проверить является ли файл архивом zip
-        # TODO распаковать в память
         # try:
-        #     fnmfile = zipfile.ZipFile(fnm, 'r')
+        #     with zipfile.ZipFile(fnm) as myzip:
+        #         with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
+        #             xml = myfile.read()
         # except Exception as msg:
         #     self.errorlist.append(msg)
         #     return
-        # fnlist = fnmfile.namelist()
-        # print('data:', fnlist)
-
-        # if os.path.exists('data'):
-        #     shutil.rmtree('data')
-        # fnmfile.extractall()
-        # fnmfile.close()
-        try:
-            with zipfile.ZipFile(fnm) as myzip:
-                with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
-                    xml = myfile.read()
-        except Exception as msg:
-            self.errorlist.append(msg)
-            return
         # 4) проверить все ли обязательные файлы в архиве
         # if 'config.xml' not in [os.path.basename(f) for f in fnlist]:
         #     self.errorlist.append('Конфигурационный файл отсуствует. Невозможно загрузить модуль.')
@@ -133,6 +120,16 @@ class ModuleHelper:
         # тогда нужно изменить ModuleConfig для получения файла ???
         # return True
         # Пробуем возвратить текст из xml
+        return self.getXMLfromZip(fnm)
+
+    def getXMLfromZip(self, fnm):
+        try:
+            with zipfile.ZipFile(fnm) as myzip:
+                with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
+                    xml = myfile.read()
+        except Exception as msg:
+            self.errorlist.append(msg)
+            return
         return xml
 
 if __name__ == '__main__':

@@ -46,8 +46,8 @@ class MainWindow():
     def _make_widgets(self):
         Label(self.mainframe, text='Здесь будет меню первого окна').pack()
 
-        ListModulesFrame(self.mainframe).pack(side=LEFT)
-        # InfoModuleFrame(self.mainframe).pack(side=LEFT)
+        ListModulesFrame(self.mainframe).pack(side=LEFT, padx=10, fill=Y)
+        InfoModuleFrame(self.mainframe).pack(side=LEFT, expand=YES, fill=BOTH, pady=5)
 
 
 

@@ -41,13 +41,12 @@ class ListModulesFrame(Frame):
     # Левая панель выбора модулей из списка
     def __init__(self, master, *args):
         Frame.__init__(self, master, *args)
-        self.listframe = Frame(master)
-        self.listframe.pack(expand=YES, fill=X, pady=5)
+        # self.listframe = Frame(master)
+        # self.listframe.pack(expand=YES, fill=X, pady=5)
         self._make_widgets()
 
     def _make_widgets(self):
-        modules_label = Label(self.listframe, text='Список модулей')
-        modules_label.pack(padx=5)
+        Label(self, text='Список модулей').pack(padx=5)
 
         # TODO Сейчас нужно, чтобы Combobox получил названия модулей из архивов
         # 1) т.е. нужен хелпер извлечения отдельного модуля (в том числе проверка на корректность модуля)
@@ -61,7 +60,7 @@ class ListModulesFrame(Frame):
         # self.modules_list.bind("<<ComboboxSelected>>", self.setComPort)
 
         # К правому окну прикрепляем виджет вывода значений таблиц БД
-        textbar = Frame(self.listframe)
+        textbar = Frame(self)
         textbar.pack(pady=10)
         # Для прокрутки окна со значениями вводим Scrollbar (если значений больше, чем размер таблицы)
         sbar = Scrollbar(textbar)
@@ -74,10 +73,10 @@ class ListModulesFrame(Frame):
         self.update_listbox()
         self.listbox.bind('<<ListboxSelect>>', ViewModule())
 
-        Button(self.listframe, text='Открыть', command=lambda: None).pack()
-        Button(self.listframe, text='Копировать', command=lambda: None).pack()
-        Button(self.listframe, text='Удалить', command=lambda: None).pack()
-        Button(self.listframe, text='Загрузить из...', command=lambda: None).pack()
+        Button(self, text='Открыть', command=lambda: None).pack()
+        Button(self, text='Копировать', command=lambda: None).pack()
+        Button(self, text='Удалить', command=lambda: None).pack()
+        Button(self, text='Загрузить из...', command=lambda: None).pack()
 
 
     # def setComPort(self, event):

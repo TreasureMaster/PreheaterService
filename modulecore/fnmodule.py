@@ -4,6 +4,9 @@ import os, shutil, zipfile
 from .moduleconfig import ModuleConfig
 
 class FNModule:
+    __REQUIRED_PATH = 'data'
+    __REQUIRED_DESCRIPTION = '{}/{}.txt'
+    __REQUIRED_CONFIG = '{}/config.xml'
 
     # TODO содержит поля:
     # 1) ссылки в папке data на картинку модуля, файл readme и т.п. (может просто ссылку на папку data ?)
@@ -32,7 +35,27 @@ class FNModule:
         fnlist = fnmfile.namelist()
         print('data:', fnlist)
 
-        if os.path.exists('data'):
-            shutil.rmtree('data')
+        if os.path.exists(FNModule.__REQUIRED_PATH):
+            shutil.rmtree(FNModule.__REQUIRED_PATH)
         fnmfile.extractall()
         fnmfile.close()
+
+    def checkCurrentData(self):
+        """Проверяет соответствие файла конфигурации в папке DATA
+        и в случае несоответствия распаковывает данные текущего модуля."""
+        path = FNModule.__REQUIRED_CONFIG.format(FNModule.__REQUIRED_PATH)
+        # print('path from checkCurrentData:', path)
+        if self.getName() != ModuleConfig().getFromXML(path).getProperty('name'):
+            self.unpackData()
+
+    def getDescription(self, field):
+        # проверка соответствия модуля тому, что есть в папке data
+        self.checkCurrentData()
+        path = FNModule.__REQUIRED_DESCRIPTION.format(FNModule.__REQUIRED_PATH, field)
+        # Реализация с выислением пути может пригодиться, если будут использоваться разные папки (для чтения и редактирования копии)
+        with open(
+            path,
+            encoding='utf-8'
+        ) as fd:
+            desc = fd.read()
+        return desc
