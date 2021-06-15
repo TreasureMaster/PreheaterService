@@ -7,7 +7,7 @@ from tkinter.filedialog import *
 
 from .connectimages import IndicatorImage
 from registry import AppRegistry
-from commands.mainpanel import ViewModule, ClearModuleWindow, DeleteModule
+from commands.mainpanel import ViewModule, ClearModuleWindow, DeleteModule, OpenModuleFile
 
 COMPORTS = 7
 BAUDRATES = [
@@ -78,11 +78,12 @@ class ListModulesFrame(Frame):
 
         btn_frame = Frame(self)
         btn_frame.pack(fill=X, padx=20)
-        Button(btn_frame, text='Открыть', command=lambda: None).grid(sticky=W+E+S+N)
-        Button(btn_frame, text='Копировать', command=lambda: None).grid(sticky=W+E+S+N)
-        Button(btn_frame, text='Удалить', command=DeleteModule()).grid(sticky=W+E+S+N)
-        Button(btn_frame, text='Очистить', command=ClearModuleWindow()).grid(sticky=W+E+S+N)
-        Button(btn_frame, text='Загрузить из...', command=lambda: None).grid(sticky=W+E+S+N)
+        Button(btn_frame, text='Открыть', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Копировать', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Удалить', command=DeleteModule()).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Очистить', command=ClearModuleWindow()).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Загрузить модуль', command=OpenModuleFile()).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Открыть папку с модулями', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
 
 
     # def setComPort(self, event):

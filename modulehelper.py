@@ -36,13 +36,10 @@ class ModuleHelper:
 
     # инициализация (поиск и загрузка модуля)
     def init(self):
-        # if AppRegistry.instance().getListModules() is None:
         # TODO в любом случае сканируем ?
         self.__getListModules()
         # print(AppRegistry.instance().getListModules())
-        # FAKE проверка работы с модулем
-        # self.checkFNMFile(AppRegistry.instance().getListModules()[0])
-        mod = (AppRegistry.instance().getModule('binar5s'))
+        # mod = (AppRegistry.instance().getModule('binar5s'))
         # print(mod.getTitle())
         print('errors:', self.errorlist)
 
@@ -62,18 +59,7 @@ class ModuleHelper:
             else:
                 # Если папку не выбирают, предлагаем выбрать отдельный модуль
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
-                if askokcancel('Выбор модуля', 'Выбрать отдельный модуль?'):
-                    # fnm = self.askModulePath()
-                    fnm = askopenfilenames(initialdir=os.getcwd(), filetypes=(('fnm files', '*.fnm'),))
-                    if fnm:
-                        for link in fnm:
-                            # ERROR: нужно извлечь из zip файлы. Где это делать?
-                            mod = FNModule(link, self.getConfigFNMFile(link))
-                            AppRegistry.instance().addModule(mod.getName(), mod)
-                    else:
-                        showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
-                else:
-                    showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+                self.getSingleModule()
                 # Выходим, когда выбран отдельный модуль
                 if fakeroot is not None:
                     fakeroot.deiconify()
@@ -99,9 +85,18 @@ class ModuleHelper:
             fakeroot.deiconify()
             fakeroot.destroy()
 
-
-    # def askModulePath(self):
-    #     return askopenfilenames(initialdir=os.getcwd(), filetypes=(('fnm files', '*.fnm'),))
+    def getSingleModule(self):
+        if askokcancel('Выбор модуля', 'Выбрать отдельный модуль?'):
+            # fnm = self.askModulePath()
+            fnm = askopenfilenames(initialdir=os.getcwd(), filetypes=(('fnm files', '*.fnm'),))
+            if fnm:
+                for link in fnm:
+                    mod = FNModule(link, self.getConfigFNMFile(link))
+                    AppRegistry.instance().addModule(mod.getName(), mod)
+            else:
+                showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+        else:
+            showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
     def getConfigFNMFile(self, fnm):
         # 1) проверить расширение файла

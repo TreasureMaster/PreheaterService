@@ -2,6 +2,7 @@ import os, shutil
 from abc import ABC, abstractmethod
 
 from registry import AppRegistry
+from modulehelper import ModuleHelper
 
 
 # NOTE В данной структуре получателем будет являться реестр AppRegistry
@@ -18,6 +19,16 @@ from registry import AppRegistry
 
 #     def do_something_else(self, b: str) -> None:
 #         print(f"\nReceiver: Also working on ({b}.)", end="")
+
+class CommandMixin:
+
+    def clearModuleInfo(self):
+        AppRegistry.instance().getInfoFrame().updateText()
+        AppRegistry.instance().getInfoFrame().clearImage()
+        AppRegistry.instance().updateListVar()
+        # TODO заменить на путь из Registry
+        if os.path.exists('data'):
+            shutil.rmtree('data')
 
 
 class Command(ABC):
@@ -60,31 +71,31 @@ class ViewModule(Command):
         # print(current_module.getImageLink())
 
 
-class ClearModuleWindow(Command):
+class ClearModuleWindow(Command, CommandMixin):
 
     def execute(self):
         AppRegistry.instance().clearModulesWindow()
-        AppRegistry.instance().getInfoFrame().updateText()
-        AppRegistry.instance().getInfoFrame().clearImage()
-        AppRegistry.instance().updateListVar()
-        # TODO заменить на путь из Registry
-        if os.path.exists('data'):
-            shutil.rmtree('data')
+        self.clearModuleInfo()
 
 
-class DeleteModule(Command):
+
+class DeleteModule(Command, CommandMixin):
     def execute(self):
         cur_mod = AppRegistry.instance().getCurrentModule()
         if cur_mod is not None and os.path.exists(cur_mod.link):
             os.remove(cur_mod.link)
+        else:
+            # error log
+            return
         AppRegistry.instance().deleteModule(cur_mod.getName())
         AppRegistry.instance().deleteCurrentModule()
-        AppRegistry.instance().getInfoFrame().updateText()
-        AppRegistry.instance().getInfoFrame().clearImage()
-        AppRegistry.instance().updateListVar()
-        # TODO заменить на путь из Registry
-        if os.path.exists('data'):
-            shutil.rmtree('data')
+        self.clearModuleInfo()
+
+
+class OpenModuleFile(Command, CommandMixin):
+    def execute(self):
+        ModuleHelper.instance().getSingleModule()
+        self.clearModuleInfo()
 
 
 class OpenModule(Command):
