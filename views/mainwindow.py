@@ -10,15 +10,13 @@ from tkinter.ttk import *
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame
 
-class MainWindow():
+class MainWindow:
     __APPTITLE = 'FN-Service'
     __instance = None
     __lock = Lock()
 
     @private
     def __init__(self):
-        # self.width = width
-        # self.height = height
         self.window = Tk()
         self.window.title(MainWindow.__APPTITLE)
         # все окно
@@ -34,10 +32,13 @@ class MainWindow():
                 MainWindow.__instance = MainWindow()
         return MainWindow.__instance
 
+    @staticmethod
+    def exists():
+        return MainWindow.__instance is not None
+
     def startWindow(self):
         self._make_widgets()
-        #Тут хочу вызывать методы для создания кнопок, меток и т.д.
-        self.window.mainloop()#И потом рисовать
+        self.window.mainloop()
  
     def press(self):
         # self.c.move(self.img, 20, 0)

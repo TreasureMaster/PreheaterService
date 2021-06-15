@@ -14,7 +14,7 @@ from modulecore.fnmodule import FNModule
 class ModuleHelper:
     """Загружает модуль."""
     # статические приватные свойства
-    __path = 'modules'
+    __path = 'modules1'
     __instance = None
     # __registry = None
     __lock = Lock()
@@ -49,6 +49,10 @@ class ModuleHelper:
     # получаем список модулей
     def __getListModules(self):
         # Загрузка модулей
+        fakeroot = None
+        if not AppRegistry.instance().existsMainWindow():
+            fakeroot = Tk()
+            fakeroot.withdraw()
         # Все должно быть исправлено при использовании exe-файла на соответствующие пути
         directory = ModuleHelper.__path
         if not os.path.isdir(directory):
@@ -71,6 +75,9 @@ class ModuleHelper:
                 else:
                     showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
                 # Выходим, когда выбран отдельный модуль
+                if fakeroot is not None:
+                    fakeroot.deiconify()
+                    fakeroot.destroy()
                 return
         # На данный момент у нас есть директория с модулями (если не вышли при выборе отдельного модуля)
         if not directory:
@@ -88,6 +95,9 @@ class ModuleHelper:
                     AppRegistry.instance().addModule(mod.getName(), mod)
             else:
                 showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
+        if fakeroot is not None:
+            fakeroot.deiconify()
+            fakeroot.destroy()
 
 
     # def askModulePath(self):

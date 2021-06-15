@@ -33,7 +33,8 @@ class AppRegistry(Registry):
         'modules': ModuleMapper(),
         'run_path': None,
         'current_module': None,
-        'info_frame': None
+        'info_frame': None,
+        'main_window': None
     }
     # __modules = collections.OrderedDict()
     __instance = None
@@ -121,6 +122,18 @@ class AppRegistry(Registry):
 
     def setInfoFrame(self, frame):
         self.instance().set('info_frame', frame)
+
+    # СВОЙСТВО: существование главного окна
+    def getInfoFrame(self):
+        return self.instance().get('main_window')
+
+    def setInfoFrame(self, frame):
+        self.instance().set('main_window', frame)
+
+    def existsMainWindow(self):
+        if self.instance().get('main_window') is None:
+            return False
+        return self.instance().get('main_window').exists()
 
     # def getTest(self):
     #     return self.test
