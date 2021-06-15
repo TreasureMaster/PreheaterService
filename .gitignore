@@ -49,6 +49,7 @@ __pycache__/
 examples/
 tasks/*
 modules/
+module/
 data/
 save/
 !tasks/yes2.png

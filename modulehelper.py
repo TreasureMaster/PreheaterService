@@ -70,17 +70,18 @@ class ModuleHelper:
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
             # обработка стандартной папки
-            print('все нормально')
+            # print('все нормально')
             # FAKE нужно сохранять список модулей из папки
             # self.__registry.setListModules(directory)
             # TODO нужно просканировать имеющуюся папку
-            modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
-            if modules:
-                for link in modules:
-                    mod = FNModule(link, self.getConfigFNMFile(link))
-                    AppRegistry.instance().addModule(mod.getName(), mod)
-            else:
-                showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
+            # modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
+            # if modules:
+            #     for link in modules:
+            #         mod = FNModule(link, self.getConfigFNMFile(link))
+            #         AppRegistry.instance().addModule(mod.getName(), mod)
+            # else:
+            #     showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
+            self.getModuleDirectory(directory)
         if fakeroot is not None:
             fakeroot.deiconify()
             fakeroot.destroy()
@@ -97,6 +98,15 @@ class ModuleHelper:
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+
+    def getModuleDirectory(self, directory):
+        modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
+        if modules:
+            for link in modules:
+                mod = FNModule(link, self.getConfigFNMFile(link))
+                AppRegistry.instance().addModule(mod.getName(), mod)
+        else:
+            showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
 
     def getConfigFNMFile(self, fnm):
         # 1) проверить расширение файла

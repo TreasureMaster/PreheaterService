@@ -1,6 +1,9 @@
 import os, shutil
 from abc import ABC, abstractmethod
 
+from tkinter.messagebox import *
+from tkinter.filedialog import *
+
 from registry import AppRegistry
 from modulehelper import ModuleHelper
 
@@ -82,20 +85,37 @@ class ClearModuleWindow(Command, CommandMixin):
 class DeleteModule(Command, CommandMixin):
     def execute(self):
         cur_mod = AppRegistry.instance().getCurrentModule()
-        if cur_mod is not None and os.path.exists(cur_mod.link):
-            os.remove(cur_mod.link)
-        else:
-            # error log
-            return
-        AppRegistry.instance().deleteModule(cur_mod.getName())
-        AppRegistry.instance().deleteCurrentModule()
-        self.clearModuleInfo()
+        if askokcancel('Удаление модуля', 'Удалить модуль?\nМодуль {} будет удален из текущей папки.'.format(cur_mod.getTitle())):
+            if cur_mod is not None and os.path.exists(cur_mod.link):
+                os.remove(cur_mod.link)
+            else:
+                # error log
+                return
+            AppRegistry.instance().deleteModule(cur_mod.getName())
+            AppRegistry.instance().deleteCurrentModule()
+            self.clearModuleInfo()
 
 
-class OpenModuleFile(Command, CommandMixin):
+class LoadModuleFile(Command, CommandMixin):
     def execute(self):
         ModuleHelper.instance().getSingleModule()
         self.clearModuleInfo()
+
+
+class LoadModuleDirectory(Command, CommandMixin):
+    def execute(self):
+        directory = None
+        if askyesno('Поиск модулей', 'Стандартная папка с модулями не найдена.\nХотите указать, где она находиться?'):
+            directory = askdirectory(initialdir=os.getcwd())
+        else:
+            # Если папку не выбирают, предлагаем выбрать отдельный модуль
+            showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+            return
+        if directory:
+            ModuleHelper.instance().getModuleDirectory(directory)
+            self.clearModuleInfo()
+        else:
+            showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
 
 class OpenModule(Command):

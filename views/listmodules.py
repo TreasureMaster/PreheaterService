@@ -7,34 +7,7 @@ from tkinter.filedialog import *
 
 from .connectimages import IndicatorImage
 from registry import AppRegistry
-from commands.mainpanel import ViewModule, ClearModuleWindow, DeleteModule, OpenModuleFile
-
-COMPORTS = 7
-BAUDRATES = [
-    'Custom',
-    '110',
-    '300',
-    '600',
-    '1200',
-    '2400',
-    '4800',
-    '9600',
-    '14400',
-    '19200',
-    '38400',
-    '56000',
-    '57600',
-    '115200',
-    '128000',
-    '256000'
-]
-comport_settings = collections.OrderedDict([
-    ('Baud rate', BAUDRATES),
-    ('Data bits', ['5', '6', '7', '8']),
-    ('Stop bits', ['1', '1.5', '2']),
-    ('Parity', ['None', 'Odd', 'Even', 'Mark', 'Space']),
-    ('Flow control', ['None', 'Hardware', 'Software', 'Custom'])
-])
+from commands.mainpanel import ViewModule, ClearModuleWindow, DeleteModule, LoadModuleFile, LoadModuleDirectory
 
 
 class ListModulesFrame(Frame):
@@ -82,8 +55,8 @@ class ListModulesFrame(Frame):
         Button(btn_frame, text='Копировать', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Удалить', command=DeleteModule()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Очистить', command=ClearModuleWindow()).grid(sticky=W+E+S+N, pady=2)
-        Button(btn_frame, text='Загрузить модуль', command=OpenModuleFile()).grid(sticky=W+E+S+N, pady=2)
-        Button(btn_frame, text='Открыть папку с модулями', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Загрузить модуль', command=LoadModuleFile()).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Открыть папку с модулями', command=LoadModuleDirectory()).grid(sticky=W+E+S+N, pady=2)
 
 
     # def setComPort(self, event):
@@ -101,10 +74,10 @@ class ListModulesFrame(Frame):
     #     ports[0] = '----'
     #     return ports
 
-    def update_listbox(self):
-        self.listbox.delete(0, END)
-        for mod in AppRegistry.instance().getAllModules().values():
-            self.listbox.insert(END, mod.getTitle())
+    # def update_listbox(self):
+    #     self.listbox.delete(0, END)
+    #     for mod in AppRegistry.instance().getAllModules().values():
+    #         self.listbox.insert(END, mod.getTitle())
 
 
 if __name__ == '__main__':
