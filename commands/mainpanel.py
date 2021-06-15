@@ -1,4 +1,4 @@
-# import typing
+import os, shutil
 from abc import ABC, abstractmethod
 
 from registry import AppRegistry
@@ -58,6 +58,33 @@ class ViewModule(Command):
         AppRegistry.instance().getInfoFrame().updateText()
         AppRegistry.instance().getInfoFrame().updateImage()
         # print(current_module.getImageLink())
+
+
+class ClearModuleWindow(Command):
+
+    def execute(self):
+        AppRegistry.instance().clearModulesWindow()
+        AppRegistry.instance().getInfoFrame().updateText()
+        AppRegistry.instance().getInfoFrame().clearImage()
+        AppRegistry.instance().updateListVar()
+        # TODO заменить на путь из Registry
+        if os.path.exists('data'):
+            shutil.rmtree('data')
+
+
+class DeleteModule(Command):
+    def execute(self):
+        cur_mod = AppRegistry.instance().getCurrentModule()
+        if cur_mod is not None and os.path.exists(cur_mod.link):
+            os.remove(cur_mod.link)
+        AppRegistry.instance().deleteModule(cur_mod.getName())
+        AppRegistry.instance().deleteCurrentModule()
+        AppRegistry.instance().getInfoFrame().updateText()
+        AppRegistry.instance().getInfoFrame().clearImage()
+        AppRegistry.instance().updateListVar()
+        # TODO заменить на путь из Registry
+        if os.path.exists('data'):
+            shutil.rmtree('data')
 
 
 class OpenModule(Command):

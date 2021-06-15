@@ -34,7 +34,8 @@ class AppRegistry(Registry):
         'run_path': None,
         'current_module': None,
         'info_frame': None,
-        'main_window': None
+        'main_window': None,
+        'list_modules': None
     }
     # __modules = collections.OrderedDict()
     __instance = None
@@ -91,6 +92,10 @@ class AppRegistry(Registry):
         # TODO сделать как итератор, не возвращая сам словарь (иначе можно повредить)
         return self.instance().get('modules')
 
+    def getListModules(self):
+        # извлечь как список для Listbox
+        return list(map(lambda t: t.getTitle(), self.instance().get('modules').values())) if len(self.instance().get('modules')) > 0 else []
+
     def clearAllModules(self):
         self.instance().get('modules').clear()
 
@@ -116,6 +121,9 @@ class AppRegistry(Registry):
     def setCurrentModule(self, value):
         self.instance().set('current_module', value)
 
+    def deleteCurrentModule(self):
+        self.instance().set('current_module', None)
+
     # СВОЙСТВО: фрейм информации о модуле (первое окно)
     def getInfoFrame(self):
         return self.instance().get('info_frame')
@@ -124,10 +132,10 @@ class AppRegistry(Registry):
         self.instance().set('info_frame', frame)
 
     # СВОЙСТВО: существование главного окна
-    def getInfoFrame(self):
+    def getMainWindow(self):
         return self.instance().get('main_window')
 
-    def setInfoFrame(self, frame):
+    def setMainWindow(self, frame):
         self.instance().set('main_window', frame)
 
     def existsMainWindow(self):
@@ -135,8 +143,21 @@ class AppRegistry(Registry):
             return False
         return self.instance().get('main_window').exists()
 
-    # def getTest(self):
-    #     return self.test
+    def clearModulesWindow(self):
+        # AppRegistry.__values = {key: (value if key in {'modules', 'run_path'} else None) for key, value in AppRegistry.__values.items()}
+        AppRegistry.__values['current_module'] = None
+        AppRegistry.__values['modules'] = ModuleMapper()
+
+    # СВОЙСТВО: переменная списка модулей (в Listbox)
+    def getListVar(self):
+        # TODO метод не нужен ???
+        return self.instance().get('list_modules')
+
+    def setListVar(self, var):
+        self.instance().set('list_modules', var)
+
+    def updateListVar(self):
+        self.instance().get('list_modules').set(self.instance().getListModules())
 
 
 if __name__ == '__main__':

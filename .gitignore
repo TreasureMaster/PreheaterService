@@ -50,6 +50,7 @@ examples/
 tasks/*
 modules/
 data/
+save/
 !tasks/yes2.png
 !tasks/no2.png
 

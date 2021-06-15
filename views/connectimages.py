@@ -78,6 +78,11 @@ class ModuleImage(Frame):
         if self.image:
             self._make_image()
 
+    def clearImage(self):
+        if self.background:
+            self.background.destroy()
+        # self.update()
+
     def _make_image(self):
         """Создание картинки."""
         self.img_copy= self.image.copy()

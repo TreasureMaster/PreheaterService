@@ -14,7 +14,7 @@ from modulecore.fnmodule import FNModule
 class ModuleHelper:
     """Загружает модуль."""
     # статические приватные свойства
-    __path = 'modules1'
+    __path = 'modules'
     __instance = None
     # __registry = None
     __lock = Lock()
@@ -43,7 +43,7 @@ class ModuleHelper:
         # FAKE проверка работы с модулем
         # self.checkFNMFile(AppRegistry.instance().getListModules()[0])
         mod = (AppRegistry.instance().getModule('binar5s'))
-        print(mod.getTitle())
+        # print(mod.getTitle())
         print('errors:', self.errorlist)
 
     # получаем список модулей

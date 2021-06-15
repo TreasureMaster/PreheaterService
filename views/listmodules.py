@@ -7,7 +7,7 @@ from tkinter.filedialog import *
 
 from .connectimages import IndicatorImage
 from registry import AppRegistry
-from commands.mainpanel import ViewModule
+from commands.mainpanel import ViewModule, ClearModuleWindow, DeleteModule
 
 COMPORTS = 7
 BAUDRATES = [
@@ -70,13 +70,19 @@ class ListModulesFrame(Frame):
         sbar.pack(side=RIGHT, fill=Y)
         self.listbox.pack(side=LEFT, expand=YES, fill=BOTH)
         # TODO изменить на listvariables
-        self.update_listbox()
+        # self.update_listbox()
+        self.listmodules = StringVar(value=AppRegistry.instance().getListModules())
+        self.listbox.config(listvariable=self.listmodules)
+        AppRegistry.instance().setListVar(self.listmodules)
         self.listbox.bind('<<ListboxSelect>>', ViewModule())
 
-        Button(self, text='Открыть', command=lambda: None).pack()
-        Button(self, text='Копировать', command=lambda: None).pack()
-        Button(self, text='Удалить', command=lambda: None).pack()
-        Button(self, text='Загрузить из...', command=lambda: None).pack()
+        btn_frame = Frame(self)
+        btn_frame.pack(fill=X, padx=20)
+        Button(btn_frame, text='Открыть', command=lambda: None).grid(sticky=W+E+S+N)
+        Button(btn_frame, text='Копировать', command=lambda: None).grid(sticky=W+E+S+N)
+        Button(btn_frame, text='Удалить', command=DeleteModule()).grid(sticky=W+E+S+N)
+        Button(btn_frame, text='Очистить', command=ClearModuleWindow()).grid(sticky=W+E+S+N)
+        Button(btn_frame, text='Загрузить из...', command=lambda: None).grid(sticky=W+E+S+N)
 
 
     # def setComPort(self, event):

@@ -58,6 +58,9 @@ class InfoModuleFrame(Frame):
         cur_mod = AppRegistry.instance().getCurrentModule()
         self.__modulemage.updateImage(image=(cur_mod.getImageLink() if cur_mod else None))
 
+    def clearImage(self):
+        self.__modulemage.clearImage()
+
 
 if __name__ == '__main__':
     root = Tk()
