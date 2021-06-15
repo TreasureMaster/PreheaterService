@@ -35,6 +35,10 @@ class InfoModuleFrame(Frame):
         self.__options = ReadonlyScrolledText(self, width=75, height=10, wrap=WORD)
         self.__options.pack(padx=5, pady=5, fill=X)
 
+        InfoTitleLabel(self, text='Конфигурация модуля:').pack(padx=5, fill=X)
+        self.__config = ReadonlyScrolledText(self, width=75, height=5, wrap=WORD)
+        self.__config.pack(padx=5, pady=5, fill=X)
+
     def __getText(self, field):
         cur_mod = AppRegistry.instance().getCurrentModule()
         # print('info panel get text:', cur_mod)
@@ -47,6 +51,8 @@ class InfoModuleFrame(Frame):
         self.__description.insert('1.0', self.__getText('description'))
         self.__options.delete('1.0', END)
         self.__options.insert('1.0', self.__getText('options'))
+        self.__config.delete('1.0', END)
+        self.__config.insert('1.0', self.__getText('config'))
 
     def updateImage(self):
         cur_mod = AppRegistry.instance().getCurrentModule()

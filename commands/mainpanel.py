@@ -46,6 +46,8 @@ class ViewModule(Command):
 
     def execute(self, event):
         # print('execute ViewModel')
+        if not event.widget.curselection():
+            return
         # Текущий модуль
         current_module = AppRegistry.instance().ilocModule(event.widget.curselection()[0])
         # print('select module form listbox:', current_module)
@@ -55,7 +57,7 @@ class ViewModule(Command):
         current_module.unpackData()
         AppRegistry.instance().getInfoFrame().updateText()
         AppRegistry.instance().getInfoFrame().updateImage()
-        print(current_module.getImageLink())
+        # print(current_module.getImageLink())
 
 
 class OpenModule(Command):

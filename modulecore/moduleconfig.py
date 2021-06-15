@@ -3,7 +3,7 @@ from lxml import objectify
 
 class ModuleConfig:
 
-    __HEADER = {'name', 'title'}
+    __HEADER = {'name', 'title', 'revision', 'manufacturer', 'releasedate', 'lastupdated', 'editor'}
     __OPTIONS = {'voltage', 'remote', 'fuel', 'extra'}
 
     # def __init__(self, filename=None):

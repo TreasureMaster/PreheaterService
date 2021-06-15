@@ -1,5 +1,6 @@
 """Содержит класс для реализации объекта модуля."""
 import os, shutil, zipfile, glob
+import datetime, time
 
 from .moduleconfig import ModuleConfig
 
@@ -21,7 +22,19 @@ class FNModule:
         return self.config.getProperty('name')
 
     def getTitle(self):
-        return self.config.getProperty('title')
+        return '{}  (rev. {})'.format(
+            self.config.getProperty('title'),
+            self.config.getProperty('revision'),
+        )
+
+    def getRevision(self):
+        return self.config.getProperty('revision')
+
+    def getManufacturer(self):
+        return self.config.getProperty('manufacturer')
+
+    def getReleaseDate(self):
+        return time.strftime('%d %b %Y', time.localtime(self.config.getProperty('releasedate')))
 
     # Распаковать файлы в папку
     def unpackData(self):
@@ -51,14 +64,22 @@ class FNModule:
     def getDescription(self, field):
         # проверка соответствия модуля тому, что есть в папке data
         self.checkCurrentData()
+        if field == 'config':
+            return self.getConfiguration()
         path = FNModule.__REQUIRED_DESCRIPTION.format(FNModule.__REQUIRED_PATH, field)
         # Реализация с выислением пути может пригодиться, если будут использоваться разные папки (для чтения и редактирования копии)
-        with open(
-            path,
-            encoding='utf-8'
-        ) as fd:
+        with open(path, encoding='utf-8') as fd:
             desc = fd.read()
         return desc
+
+    def getConfiguration(self):
+        text = 'Базовый блок: {}\nВерсия: {}\nПроизводитель: {}\nДата выпуска: {}'.format(
+            self.getName(),
+            self.getRevision(),
+            self.getManufacturer(),
+            self.getReleaseDate()
+        )
+        return text
 
     def getImageLink(self):
         """Возвращает ссылку на файл изображения подогревателя."""
