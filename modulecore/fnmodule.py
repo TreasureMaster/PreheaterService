@@ -1,5 +1,5 @@
 """Содержит класс для реализации объекта модуля."""
-import os, shutil, zipfile
+import os, shutil, zipfile, glob
 
 from .moduleconfig import ModuleConfig
 
@@ -59,3 +59,11 @@ class FNModule:
         ) as fd:
             desc = fd.read()
         return desc
+
+    def getImageLink(self):
+        """Возвращает ссылку на файл изображения подогревателя."""
+        link = None
+        path = f'{FNModule.__REQUIRED_PATH}/*.%s'
+        for link in (filter(lambda x: bool(x), [glob.glob(path % ext) for ext in ('jpg', 'png')])):
+            pass
+        return os.path.normpath(link[0]) if link else link

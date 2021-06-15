@@ -54,6 +54,8 @@ class ViewModule(Command):
         # Распаковка данных в каталог DATA
         current_module.unpackData()
         AppRegistry.instance().getInfoFrame().updateText()
+        AppRegistry.instance().getInfoFrame().updateImage()
+        print(current_module.getImageLink())
 
 
 class OpenModule(Command):
