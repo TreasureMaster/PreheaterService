@@ -4,7 +4,6 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 
 from registry import AppRegistry
-from commands.mainpanel import ViewModule
 from views.connectimages import ModuleImage
 from widgets.readonlytext import ReadonlyScrolledText
 from widgets.infolabels import InfoTitleLabel
@@ -22,7 +21,7 @@ class InfoModuleFrame(Frame):
 
     def __make_widgets(self):
         Label(self, text='Информация о модуле').pack(padx=5)
-        # TODO здесь необходимо вставить картинку модуля
+
         cur_mod = AppRegistry.instance().getCurrentModule()
         self.__modulemage = ModuleImage(self, image=(cur_mod.getImageLink() if cur_mod else None))
         self.__modulemage.pack()
@@ -45,8 +44,6 @@ class InfoModuleFrame(Frame):
         return cur_mod.getDescription(field) if cur_mod else 'Сообщение: модуль не выбран.'
 
     def updateText(self):
-        # TODO как обновлять? Опять нужно StringVar отправить в реестр? Или лучше весь фрейм?
-        # print(self.__getText('description'))
         self.__description.delete('1.0', END)
         self.__description.insert('1.0', self.__getText('description'))
         self.__options.delete('1.0', END)

@@ -71,7 +71,6 @@ class ViewModule(Command):
         current_module.unpackData()
         AppRegistry.instance().getInfoFrame().updateText()
         AppRegistry.instance().getInfoFrame().updateImage()
-        # print(current_module.getImageLink())
 
 
 class ClearModuleWindow(Command, CommandMixin):
