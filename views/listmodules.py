@@ -3,7 +3,7 @@ from tkinter.ttk import *
 from tkinter.messagebox import *
 from tkinter.filedialog import *
 
-from registry import AppRegistry
+from registry import ModListRegistry, WidgetsRegistry
 from commands.maincommands import ViewModule, ClearModuleWindow, DeleteModule, LoadModuleFile, LoadModuleDirectory
 
 
@@ -26,9 +26,9 @@ class ListModulesFrame(Frame):
         self.listbox.config(yscrollcommand=sbar.set)
         sbar.pack(side=RIGHT, fill=Y)
         self.listbox.pack(side=LEFT, expand=YES, fill=BOTH)
-        self.listmodules = StringVar(value=AppRegistry.instance().getListModules())
+        self.listmodules = StringVar(value=ModListRegistry.instance().getListModules())
         self.listbox.config(listvariable=self.listmodules)
-        AppRegistry.instance().setListVar(self.listmodules)
+        WidgetsRegistry.instance().setListVar(self.listmodules)
         self.listbox.bind('<<ListboxSelect>>', ViewModule())
 
         btn_frame = Frame(self)

@@ -3,7 +3,7 @@ from tkinter.ttk import *
 from tkinter.messagebox import *
 from tkinter.filedialog import *
 
-from registry import AppRegistry
+from registry import AppRegistry, WidgetsRegistry
 from views.connectimages import ModuleImage
 from widgets.readonlytext import ReadonlyScrolledText
 from widgets.infolabels import InfoTitleLabel
@@ -14,7 +14,7 @@ class InfoModuleFrame(Frame):
     def __init__(self, master, *args):
         Frame.__init__(self, master, *args)
         # Сохранить фрейм в реестре
-        AppRegistry.instance().setInfoFrame(self)
+        WidgetsRegistry.instance().setInfoFrame(self)
         # Переменные окон Message
         self.__make_widgets()
         self.updateText()

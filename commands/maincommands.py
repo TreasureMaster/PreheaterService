@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter.messagebox import *
 from tkinter.filedialog import *
 
-from registry import AppRegistry
+from registry import AppRegistry, WidgetsRegistry, ModListRegistry
 from modulehelper import ModuleHelper
 
 
@@ -26,9 +26,9 @@ from modulehelper import ModuleHelper
 class CommandMixin:
 
     def clearModuleInfo(self):
-        AppRegistry.instance().getInfoFrame().updateText()
-        AppRegistry.instance().getInfoFrame().clearImage()
-        AppRegistry.instance().updateListVar()
+        WidgetsRegistry.instance().getInfoFrame().updateText()
+        WidgetsRegistry.instance().getInfoFrame().clearImage()
+        WidgetsRegistry.instance().updateListVar()
         # TODO заменить на путь из Registry
         if os.path.exists('data'):
             shutil.rmtree('data')
@@ -63,14 +63,14 @@ class ViewModule(Command):
         if not event.widget.curselection():
             return
         # Текущий модуль
-        current_module = AppRegistry.instance().ilocModule(event.widget.curselection()[0])
+        current_module = ModListRegistry.instance().ilocModule(event.widget.curselection()[0])
         # print('select module form listbox:', current_module)
         AppRegistry.instance().setCurrentModule(current_module)
         # print(AppRegistry.instance().getCurrentModule())
         # Распаковка данных в каталог DATA
         current_module.unpackData()
-        AppRegistry.instance().getInfoFrame().updateText()
-        AppRegistry.instance().getInfoFrame().updateImage()
+        WidgetsRegistry.instance().getInfoFrame().updateText()
+        WidgetsRegistry.instance().getInfoFrame().updateImage()
 
 
 class ClearModuleWindow(Command, CommandMixin):
@@ -90,7 +90,7 @@ class DeleteModule(Command, CommandMixin):
             else:
                 # error log
                 return
-            AppRegistry.instance().deleteModule(cur_mod.getName())
+            ModListRegistry.instance().deleteModule(cur_mod.getName())
             AppRegistry.instance().deleteCurrentModule()
             self.clearModuleInfo()
 

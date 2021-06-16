@@ -7,7 +7,7 @@ from tkinter import *
 from tkinter.messagebox import *
 from tkinter.filedialog import *
 
-from registry import AppRegistry
+from registry import AppRegistry, WidgetsRegistry, ModListRegistry
 from modulecore.fnmodule import FNModule
 
 
@@ -47,7 +47,7 @@ class ModuleHelper:
     def __getListModules(self):
         # Загрузка модулей
         fakeroot = None
-        if not AppRegistry.instance().existsMainWindow():
+        if not WidgetsRegistry.instance().existsMainWindow():
             fakeroot = Tk()
             fakeroot.withdraw()
         # Все должно быть исправлено при использовании exe-файла на соответствующие пути
@@ -71,16 +71,6 @@ class ModuleHelper:
         else:
             # обработка стандартной папки
             # print('все нормально')
-            # FAKE нужно сохранять список модулей из папки
-            # self.__registry.setListModules(directory)
-            # TODO нужно просканировать имеющуюся папку
-            # modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
-            # if modules:
-            #     for link in modules:
-            #         mod = FNModule(link, self.getConfigFNMFile(link))
-            #         AppRegistry.instance().addModule(mod.getName(), mod)
-            # else:
-            #     showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
             self.getModuleDirectory(directory)
         if fakeroot is not None:
             fakeroot.deiconify()
@@ -88,12 +78,11 @@ class ModuleHelper:
 
     def getSingleModule(self):
         if askokcancel('Выбор модуля', 'Выбрать отдельный модуль?'):
-            # fnm = self.askModulePath()
             fnm = askopenfilenames(initialdir=os.getcwd(), filetypes=(('fnm files', '*.fnm'),))
             if fnm:
                 for link in fnm:
                     mod = FNModule(link, self.getConfigFNMFile(link))
-                    AppRegistry.instance().addModule(mod.getName(), mod)
+                    ModListRegistry.instance().addModule(mod.getName(), mod)
             else:
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
@@ -104,7 +93,7 @@ class ModuleHelper:
         if modules:
             for link in modules:
                 mod = FNModule(link, self.getConfigFNMFile(link))
-                AppRegistry.instance().addModule(mod.getName(), mod)
+                ModListRegistry.instance().addModule(mod.getName(), mod)
         else:
             showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
 
@@ -118,26 +107,13 @@ class ModuleHelper:
         if not os.path.exists(fnm):
             self.errorlist.append('Файл не существует')
             return
-        # 3) проверить является ли файл архивом zip
-        # try:
-        #     with zipfile.ZipFile(fnm) as myzip:
-        #         with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
-        #             xml = myfile.read()
-        # except Exception as msg:
-        #     self.errorlist.append(msg)
-        #     return
-        # 4) проверить все ли обязательные файлы в архиве
-        # if 'config.xml' not in [os.path.basename(f) for f in fnlist]:
-        #     self.errorlist.append('Конфигурационный файл отсуствует. Невозможно загрузить модуль.')
-        #     return
-        # 5) если все нормально, считать требуемые файлы
-        # TODO может быть получить объект ModuleConfig или файлоподобный объект config.xml 
-        # тогда нужно изменить ModuleConfig для получения файла ???
-        # return True
         # Пробуем возвратить текст из xml
         return self.getXMLfromZip(fnm)
 
     def getXMLfromZip(self, fnm):
+        # 3) проверить является ли файл архивом zip
+        # 4) проверить все ли обязательные файлы в архиве
+        # 5) если все нормально, считать требуемые файлы
         try:
             with zipfile.ZipFile(fnm) as myzip:
                 with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:

@@ -17,7 +17,7 @@ class Controller:
 
     @staticmethod
     def run():
-        print(AppRegistry.instance().getRunPath())
+        # print(AppRegistry.instance().getRunPath())
         Controller.__instance = Controller()
         Controller.__instance.init()
         Controller.__instance.handleView()

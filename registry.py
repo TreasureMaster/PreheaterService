@@ -24,20 +24,13 @@ class Registry(ABC):
 class AppRegistry(Registry):
     """Реестр приложения."""
     # статические приватные свойства
-    # 1) modules - словарь предварительно загруженных из папки модулей
-    # 2) run_path - путь запуска программы (будет важно для exe-файла)
-    # 3) current_module - текущий, выбранный для работы модуль
-    # 4) info_frame - фрейм первого окна с информациоей о модуле
+    # 1) run_path - путь запуска программы (будет важно для exe-файла)
+    # 2) current_module - текущий, выбранный для работы модуль
     __values = {
         'value': None,
-        'modules': ModuleMapper(),
         'run_path': None,
-        'current_module': None,
-        'info_frame': None,
-        'main_window': None,
-        'list_modules': None
+        'current_module': None
     }
-    # __modules = collections.OrderedDict()
     __instance = None
     __lock = Lock()
 
@@ -51,10 +44,7 @@ class AppRegistry(Registry):
     def instance():
         with AppRegistry.__lock:
             if not AppRegistry.__instance:
-                # import time
-                # time.sleep(1)
                 AppRegistry.__instance = AppRegistry()
-                # AppRegistry.__instance.__setRunPath()
         return AppRegistry.__instance
 
     # нельзя напрямую изменять свойства
@@ -68,96 +58,174 @@ class AppRegistry(Registry):
 
     # СВОЙСТВО: тестовое, можно удалить
     def getValue(self):
-        return self.instance().get('value')
+        return self.get('value')
 
     def setValue(self, value):
-        self.instance().set('value', value)
-
-    # СВОЙСТВО: конкретный модуль (получение, добавление, удаление)
-    def getModule(self, name):
-        return self.instance().get('modules').get(name)
-
-    def ilocModule(self, name):
-        return self.instance().get('modules').iloc(name)
-
-    def addModule(self, name, value):
-        # TODO: что делать, если ключ есть?
-        self.instance().get('modules').update({name: value})
-
-    def deleteModule(self, name):
-        self.instance().get('modules').pop(name, None)
-
-    # СВОЙСТВО: работа со словарем модулей
-    def getAllModules(self):
-        # TODO сделать как итератор, не возвращая сам словарь (иначе можно повредить)
-        return self.instance().get('modules')
-
-    def getListModules(self):
-        # извлечь как список для Listbox
-        return list(map(lambda t: t.getTitle(), self.instance().get('modules').values())) if len(self.instance().get('modules')) > 0 else []
-
-    def clearAllModules(self):
-        self.instance().get('modules').clear()
-
-    # TODO Так проверить наличие модулей ?
-    def is_emptyModules(self):
-        pass
+        self.set('value', value)
 
     # СВОЙСТВО: путь запуска программы
     def getRunPath(self):
-        if self.instance().get('run_path') is None:
-            self.instance().setRunPath()
-        return self.instance().get('run_path')
+        if self.get('run_path') is None:
+            self.setRunPath()
+        return self.get('run_path')
 
     def setRunPath(self):
         path = os.getcwd()
         # Для exe-файла path = sys.executable
-        self.instance().set('run_path', path)
+        self.set('run_path', path)
 
     # СВОЙСТВО: объект текущего модуля, с которым производится работа
     def getCurrentModule(self):
-        return self.instance().get('current_module')
+        return self.get('current_module')
 
     def setCurrentModule(self, value):
-        self.instance().set('current_module', value)
+        self.set('current_module', value)
 
     def deleteCurrentModule(self):
-        self.instance().set('current_module', None)
-
-    # СВОЙСТВО: фрейм информации о модуле (первое окно)
-    def getInfoFrame(self):
-        return self.instance().get('info_frame')
-
-    def setInfoFrame(self, frame):
-        self.instance().set('info_frame', frame)
-
-    # СВОЙСТВО: существование главного окна
-    def getMainWindow(self):
-        return self.instance().get('main_window')
-
-    def setMainWindow(self, frame):
-        self.instance().set('main_window', frame)
-
-    def existsMainWindow(self):
-        if self.instance().get('main_window') is None:
-            return False
-        return self.instance().get('main_window').exists()
+        self.set('current_module', None)
 
     def clearModulesWindow(self):
         # AppRegistry.__values = {key: (value if key in {'modules', 'run_path'} else None) for key, value in AppRegistry.__values.items()}
-        AppRegistry.__values['current_module'] = None
-        AppRegistry.__values['modules'] = ModuleMapper()
+        self.deleteCurrentModule()
+        ModListRegistry.instance().clearAllModules()
+
+
+class ModListRegistry(Registry):
+    """Реестр списка модулей. Это класс-оболочка для словаря сканированых модулей."""
+    # статические приватные свойства
+    # 1) modules - словарь предварительно загруженных из папки модулей
+    __modules = ModuleMapper()
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with ModListRegistry.__lock:
+            if not ModListRegistry.__instance:
+                ModListRegistry.__instance = ModListRegistry()
+        return ModListRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__modules[key]
+
+    @protected
+    def set(self, key, value):
+        self.__modules[key] = value
+
+    # СВОЙСТВО: конкретный модуль (получение, добавление, удаление)
+    def getModule(self, name):
+        return self.get(name)
+
+    def ilocModule(self, index):
+        return self.__modules.iloc(index)
+
+    def addModule(self, name, value):
+        # TODO: что делать, если ключ уже есть, обновить?
+        self.__modules.update({name: value})
+
+    def deleteModule(self, name):
+        self.__modules.pop(name, None)
+
+    # WARNING никакой защиты нет (надо продумать, может возвращать копию?)
+    # Вроде получение всех модулей нигде не используется...
+    # СВОЙСТВО: работа со словарем модулей
+    # def getAllModules(self):
+    #     # TODO сделать как итератор, не возвращая сам словарь (иначе можно повредить)
+    #     return self.instance().get('modules')
+
+    def getListModules(self):
+        # извлечь как список названий-ключей для Listbox
+        return list(map(lambda t: t.getTitle(), self.__modules.values())) if len(self.__modules) > 0 else []
+
+    def clearAllModules(self):
+        """Очистить список модулей."""
+        self.__modules.clear()
+
+    def is_modules(self):
+        """Есть ли модули в списке?"""
+        return len(self.__modules) > 0
+
+
+class WidgetsRegistry(Registry):
+    """Реестр виджетов приложения.
+    Используется как канал передачи информации между самими виджетами
+    и между виджетами и другими объектами."""
+    # статические приватные свойства
+    # 1) info_frame - информационный фрейм первого окна с параметрами модуля (правый)
+    # 2) main_window - главное окно менеджера (первое окно)
+    # 3) list_modules - переменная StringVar списка модулей (левое окно)
+    __values = {
+        'info_frame': None,
+        'main_window': None,
+        'list_modules': None
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with WidgetsRegistry.__lock:
+            if not WidgetsRegistry.__instance:
+                WidgetsRegistry.__instance = WidgetsRegistry()
+        return WidgetsRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: правый фрейм информации о модуле (первое окно)
+    def getInfoFrame(self):
+        return self.get('info_frame')
+
+    def setInfoFrame(self, frame):
+        self.set('info_frame', frame)
+
+    # СВОЙСТВО: существование главного окна
+    # def getMainWindow(self):
+    #     return self.get('main_window')
+
+    def setMainWindow(self, frame):
+        self.set('main_window', frame)
+
+    def existsMainWindow(self):
+        if self.get('main_window') is None:
+            return False
+        return self.get('main_window').exists()
+
+    # Модули не очищаются
+    # def clearModulesWindow(self):
+    #     AppRegistry.__values['current_module'] = None
+    #     AppRegistry.__values['modules'] = ModuleMapper()
 
     # СВОЙСТВО: переменная списка модулей (в Listbox)
-    def getListVar(self):
-        # TODO метод не нужен ???
-        return self.instance().get('list_modules')
+    # def getListVar(self):
+    #     # TODO метод не нужен ???
+    #     return self.instance().get('list_modules')
 
     def setListVar(self, var):
-        self.instance().set('list_modules', var)
+        self.set('list_modules', var)
 
     def updateListVar(self):
-        self.instance().get('list_modules').set(self.instance().getListModules())
+        self.get('list_modules').set(ModListRegistry.instance().getListModules())
 
 
 if __name__ == '__main__':
