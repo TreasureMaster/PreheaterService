@@ -9,6 +9,7 @@ from tkinter.ttk import *
 # from moduleframe import ControlPanelFrame, LogPanelFrame
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame
+from widgets.readonlytext import ReadonlyScrolledText
 
 class MainWindow:
     __APPTITLE = 'FN-Service'
@@ -45,10 +46,12 @@ class MainWindow:
         pass
  
     def _make_widgets(self):
-        Label(self.mainframe, text='Здесь будет меню первого окна').pack()
+        Label(self.mainframe, text='Здесь будет меню первого окна').grid(row=0, columnspan=2)
 
-        ListModulesFrame(self.mainframe).pack(side=LEFT, padx=10, fill=Y)
-        InfoModuleFrame(self.mainframe).pack(side=LEFT, expand=YES, fill=BOTH, pady=5)
+        ListModulesFrame(self.mainframe).grid(padx=10, row=1, column=0, sticky=N)
+        InfoModuleFrame(self.mainframe).grid(pady=5, row=1, column=1)
+
+        ReadonlyScrolledText(self.mainframe, height=5).grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
 
 
 
