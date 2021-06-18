@@ -8,6 +8,7 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry
+from applogger import AppLogger
 from modulecore.fnmodule import FNModule
 
 
@@ -25,6 +26,9 @@ class ModuleHelper:
     def __init__(self):
         pass
         self.errorlist = []
+        # import logging
+        # self.logger = logging.getLogger('app')
+        self.logger = AppLogger.instance()
 
     # только так можно получить объект реестра
     @staticmethod
@@ -36,6 +40,9 @@ class ModuleHelper:
 
     # инициализация (поиск и загрузка модуля)
     def init(self):
+        # logger = AppLogger.instance()
+        
+        self.logger.info('Start ModuleHandler init')
         # TODO в любом случае сканируем ?
         self.__getListModules()
         # print(AppRegistry.instance().getListModules())
@@ -53,11 +60,13 @@ class ModuleHelper:
         # Все должно быть исправлено при использовании exe-файла на соответствующие пути
         directory = ModuleHelper.__path
         if not os.path.isdir(directory):
+            self.logger.error('Стандартная папка с модулями не найдена.')
             # Стандартная папка не найдена, ищем вручную
             if askyesno('Поиск модулей', 'Стандартная папка с модулями не найдена.\nХотите указать, где она находиться?'):
                 directory = askdirectory(initialdir=os.getcwd())
             else:
                 # Если папку не выбирают, предлагаем выбрать отдельный модуль
+                self.logger.error('Не выбрана папка или модуль для работы.')
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
                 self.getSingleModule()
                 # Выходим, когда выбран отдельный модуль
@@ -67,6 +76,7 @@ class ModuleHelper:
                 return
         # На данный момент у нас есть директория с модулями (если не вышли при выборе отдельного модуля)
         if not directory:
+            self.logger.error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
             # обработка стандартной папки
@@ -84,8 +94,10 @@ class ModuleHelper:
                     mod = FNModule(link, self.getConfigFNMFile(link))
                     ModListRegistry.instance().addModule(mod.getName(), mod)
             else:
+                self.logger.error('Не выбрана папка или модуль для работы.')
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
+            self.logger.error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
     def getModuleDirectory(self, directory):
@@ -95,17 +107,18 @@ class ModuleHelper:
                 mod = FNModule(link, self.getConfigFNMFile(link))
                 ModListRegistry.instance().addModule(mod.getName(), mod)
         else:
+            self.logger.error('В указанной папке модули отсутствуют.')
             showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
 
     def getConfigFNMFile(self, fnm):
         # 1) проверить расширение файла
         if os.path.splitext(fnm)[1] != '.fnm':
-            self.errorlist.append('Ошибочное расширение модуля')
+            self.logger.error('Ошибочное расширение модуля')
             return
         # 2) проверить возможность чтения файла
         # TODO возможно просто нужно его попробовать загрузить и обработать в try-except
         if not os.path.exists(fnm):
-            self.errorlist.append('Файл не существует')
+            self.logger.error(f'Файл {fnm} не существует.')
             return
         # Пробуем возвратить текст из xml
         return self.getXMLfromZip(fnm)
@@ -119,7 +132,7 @@ class ModuleHelper:
                 with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
                     xml = myfile.read()
         except Exception as msg:
-            self.errorlist.append(msg)
+            self.logger.error('Ошибка при распаковке файла: ' + msg)
             return
         return xml
 

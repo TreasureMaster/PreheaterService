@@ -52,6 +52,7 @@ modules/
 module/
 data/
 save/
+tmplog/
 !tasks/yes2.png
 !tasks/no2.png
 

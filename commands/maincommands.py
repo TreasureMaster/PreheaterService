@@ -5,6 +5,7 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry
+from applogger import AppLogger
 from modulehelper import ModuleHelper
 
 
@@ -71,6 +72,7 @@ class ViewModule(Command):
         current_module.unpackData()
         WidgetsRegistry.instance().getInfoFrame().updateText()
         WidgetsRegistry.instance().getInfoFrame().updateImage()
+        AppLogger.instance().info(f'Распакован модуль {current_module.getName()}.')
 
 
 class ClearModuleWindow(Command, CommandMixin):
@@ -78,6 +80,7 @@ class ClearModuleWindow(Command, CommandMixin):
     def execute(self):
         AppRegistry.instance().clearModulesWindow()
         self.clearModuleInfo()
+        AppLogger.instance().info('Окно выбора модулей очищено.')
 
 
 
@@ -86,9 +89,16 @@ class DeleteModule(Command, CommandMixin):
         cur_mod = AppRegistry.instance().getCurrentModule()
         if askokcancel('Удаление модуля', 'Удалить модуль?\nМодуль {} будет удален из текущей папки.'.format(cur_mod.getTitle())):
             if cur_mod is not None and os.path.exists(cur_mod.link):
-                os.remove(cur_mod.link)
+                try:
+                    os.remove(cur_mod.link)
+                    AppLogger.instance().info('Файл модуля был успешно удален.')
+                except (FileNotFoundError, LookupError):
+                    AppLogger.instance().error('Ошибка удаления файла.')
             else:
-                # error log
+                if cur_mod:
+                    AppLogger.instance().error('Файл не существует.')
+                else:
+                    AppLogger.instance().error('Текущий модуль не найден.')
                 return
             ModListRegistry.instance().deleteModule(cur_mod.getName())
             AppRegistry.instance().deleteCurrentModule()
@@ -97,6 +107,7 @@ class DeleteModule(Command, CommandMixin):
 
 class LoadModuleFile(Command, CommandMixin):
     def execute(self):
+        AppLogger.instance().info('Загрузка файла модуля.')
         ModuleHelper.instance().getSingleModule()
         self.clearModuleInfo()
 
@@ -108,12 +119,15 @@ class LoadModuleDirectory(Command, CommandMixin):
             directory = askdirectory(initialdir=os.getcwd())
         else:
             # Если папку не выбирают, предлагаем выбрать отдельный модуль
+            AppLogger.instance().error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
             return
         if directory:
+            AppLogger.instance().info('Выбор папки с модулями.')
             ModuleHelper.instance().getModuleDirectory(directory)
             self.clearModuleInfo()
         else:
+            AppLogger.instance().error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
 
@@ -123,6 +137,13 @@ class OpenModule(Command):
     # Варианты: клик в ListBox, выбран загрузкой как отдельный модуль (выделить в ListBox)
     def execute(self):
         pass
+
+class TestSaveStream(Command):
+    def execute(self):
+        stream = AppLogger.get_stream()
+        # print(stream.getvalue())
+        with open('tmplog/stream.log', 'w', encoding='utf-8') as fd:
+            fd.write(stream.getvalue())
 
 # ---------------------------------------------------------------------------- #
 

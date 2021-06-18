@@ -4,7 +4,7 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 
 from registry import ModListRegistry, WidgetsRegistry
-from commands.maincommands import ViewModule, ClearModuleWindow, DeleteModule, LoadModuleFile, LoadModuleDirectory
+from commands.maincommands import ViewModule, ClearModuleWindow, DeleteModule, LoadModuleFile, LoadModuleDirectory, TestSaveStream
 
 
 class ListModulesFrame(Frame):
@@ -33,7 +33,7 @@ class ListModulesFrame(Frame):
 
         btn_frame = Frame(self)
         btn_frame.pack(fill=X, padx=20)
-        Button(btn_frame, text='Открыть', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Открыть', command=TestSaveStream()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Копировать', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Удалить', command=DeleteModule()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Очистить', command=ClearModuleWindow()).grid(sticky=W+E+S+N, pady=2)

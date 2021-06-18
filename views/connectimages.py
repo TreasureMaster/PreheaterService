@@ -79,7 +79,8 @@ class ModuleImage(Frame):
             self._make_image()
 
     def clearImage(self):
-        if self.background:
+        # ERROR: если еще не был показан модуль (соответственно нет картинки)
+        if hasattr(self, 'background'):
             self.background.destroy()
         # self.update()
 

@@ -1,6 +1,8 @@
+import logging
 from accessify import private
 
 from registry import AppRegistry
+from applogger import AppLogger
 from modulehelper import ModuleHelper
 
 from views.mainwindow import MainWindow
@@ -23,8 +25,20 @@ class Controller:
         Controller.__instance.handleView()
 
     def init(self):
+        logger = AppLogger.instance()
+        logger.info('Start controller init')
+        
         self.__moduleHelper = ModuleHelper.instance()
         self.__moduleHelper.init()
+        # logger.error('Test second handler')
+        # logger.error('Русский текст')
+        # AppLogger.instance().error('Русский текст 2')
+        # AppLogger.instance().info('Русский текст 3')
+        AppLogger.instance().debugv('Тест пользовательского уровня DEBUGV с новой func')
+        # logging.debugv('Тест пользовательского уровня DEBUGV')
+        # print((logger))
+        # import logging
+        # print(logging._handlerList)
         # На данном этапе должен быть загружен список модулей либо ошибка
         # TODO [x] должны быть извлечены имена модулей, т.е. должны быть раскрыты архивы всех модулей и извлечены конфигурации
 
