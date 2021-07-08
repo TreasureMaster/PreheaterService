@@ -9,6 +9,7 @@ class AppLogger:
     DEBUG_LEVELV_NUM = 11
     __instance = None
     __logger = None
+    __stream = None
     __lock = Lock()
 
     @private
@@ -55,13 +56,20 @@ class AppLogger:
 
     @staticmethod
     def get_stream():
-        # AppLogger.__instance.handler.flush()
-        return AppLogger.__instance.stream
+        # TODO потом заменить командами для потока, а не отдавать поток
+        return AppLogger.__instance.__stream.getvalue()
+
+    @staticmethod
+    def set_command_stream(command):
+        # TODO возможно нужно будет использовать инициализацию, если до этого момента не будет создан экземпляр AppLogger
+        # AppLogger.instance()
+        AppLogger.__instance.__stream.add_command(command)
 
     def __make_handlers(self):
         # handler - куда будут записаны логи
-        self.stream = io.StringIO()
-        self.handler = logging.StreamHandler(stream=self.stream)
+        self.__stream = CommandsStringIO()
+        # TODO заменить на MemoryHandler ?
+        self.handler = logging.StreamHandler(stream=self.__stream)
         # self.stream.write('Test entry...')
         # self.stream.flush()
         self.handler.setLevel(logging.INFO)
@@ -97,6 +105,24 @@ class AppLogger:
         def filter(self, logRecord):
             return logRecord.levelno == self.__level
 
+
+# Класс потока с выполнением команд
+class CommandsStringIO(io.StringIO):
+    """Переопределение потока StringIO для выполнения команды."""
+    def add_command(self, command=None):
+        if not hasattr(self, 'outer_commands'):
+            self.outer_commands = []
+        if command:
+            self.outer_commands.append(command)
+
+    def write(self, s):
+        super().write(s)
+        if hasattr(self, 'outer_commands'):
+            for command in self.outer_commands:
+                command.execute()
+            # Очистка потока для новых данных
+            self.truncate(0)
+            self.seek(0)
 
 
 # тест адаптера

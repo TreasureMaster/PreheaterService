@@ -162,10 +162,12 @@ class WidgetsRegistry(Registry):
     # 1) info_frame - информационный фрейм первого окна с параметрами модуля (правый)
     # 2) main_window - главное окно менеджера (первое окно)
     # 3) list_modules - переменная StringVar списка модулей (левое окно)
+    # 4) log_frame - фрейм отображения логов
     __values = {
         'info_frame': None,
         'main_window': None,
-        'list_modules': None
+        'list_modules': None,
+        'log_frame': None
     }
     __instance = None
     __lock = Lock()
@@ -226,6 +228,13 @@ class WidgetsRegistry(Registry):
 
     def updateListVar(self):
         self.get('list_modules').set(ModListRegistry.instance().getListModules())
+
+    # СВОЙСТВО: фрейм отображения логов на экране
+    def getLogFrame(self):
+        return self.get('log_frame')
+
+    def setLogFrame(self, frame):
+        self.set('log_frame', frame)
 
 
 if __name__ == '__main__':

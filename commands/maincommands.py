@@ -138,12 +138,17 @@ class OpenModule(Command):
     def execute(self):
         pass
 
-class TestSaveStream(Command):
+class ViewLog(Command):
     def execute(self):
-        stream = AppLogger.get_stream()
-        # print(stream.getvalue())
-        with open('tmplog/stream.log', 'w', encoding='utf-8') as fd:
-            fd.write(stream.getvalue())
+        # print(AppLogger.get_stream().getvalue())
+        WidgetsRegistry.instance().getLogFrame().insert(
+            'end',
+            AppLogger.get_stream()
+        )
+        # TODO блокировать Lock, пока идет запись?
+        # with open('tmplog/stream.log', 'a', encoding='utf-8') as fd:
+        #     fd.write('----------------\n')
+        #     fd.write(stream.getvalue())
 
 # ---------------------------------------------------------------------------- #
 

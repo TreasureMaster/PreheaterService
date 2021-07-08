@@ -35,6 +35,7 @@ class Controller:
         # AppLogger.instance().error('Русский текст 2')
         # AppLogger.instance().info('Русский текст 3')
         AppLogger.instance().debugv('Тест пользовательского уровня DEBUGV с новой func')
+        AppLogger.instance().critical('Тест записи уровня выше, чем задан в test.log')
         # logging.debugv('Тест пользовательского уровня DEBUGV')
         # print((logger))
         # import logging

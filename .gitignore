@@ -55,6 +55,8 @@ save/
 tmplog/
 !tasks/yes2.png
 !tasks/no2.png
+!tasks/catalog_tree.txt
+!tasks/todo_list.txt
 
 # Temp data
 # controller.py
