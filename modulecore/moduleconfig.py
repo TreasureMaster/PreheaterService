@@ -5,6 +5,7 @@ class ModuleConfig:
 
     __HEADER = {'name', 'title', 'revision', 'manufacturer', 'releasedate', 'lastupdated', 'editor'}
     __OPTIONS = {'voltage', 'remote', 'fuel', 'extra'}
+    __MANAGER = {'mainname', 'major', 'minor', 'micro'}
 
     # def __init__(self, filename=None):
     #     if filename:
@@ -32,10 +33,12 @@ class ModuleConfig:
         return self
 
     def getProperty(self, key):
-        if key in ModuleConfig.__HEADER | ModuleConfig.__OPTIONS:
+        if key in ModuleConfig.__HEADER | ModuleConfig.__OPTIONS | ModuleConfig.__MANAGER:
             try:
                 if key in ModuleConfig.__HEADER:
-                    return self.root.header[key] 
+                    return self.root.header[key]
+                elif key in ModuleConfig.__MANAGER:
+                    return self.root.manager[key]
                 else:
                     return list(self.root.options[key].value)
             except AttributeError:

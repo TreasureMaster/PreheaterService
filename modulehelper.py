@@ -19,7 +19,8 @@ class ModuleHelper:
     __instance = None
     # __registry = None
     __lock = Lock()
-    __REQUIRED_CONFIG = 'data/config.xml'
+    # TODO внести все пути в config.py
+    __REQUIRED_CONFIG = 'module/data/config.xml'
 
     # создать объект напрямую невозможно
     @private
