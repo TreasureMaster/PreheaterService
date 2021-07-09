@@ -2,11 +2,12 @@
 import os, shutil, zipfile, glob
 import datetime, time
 
+from registry import ConfigRegistry
 from .moduleconfig import ModuleConfig
 
 class FNModule:
-    __REQUIRED_MAINPATH = 'module'
-    __REQUIRED_DATAPATH = '{}/data'.format(__REQUIRED_MAINPATH)
+    __REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getMainPath()
+    __REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getDataPath()
     __REQUIRED_DESCRIPTION = '{}/readme.txt'
     __REQUIRED_CONFIG = '{}/config.xml'
     __REQUIRED_IMAGE = '{}/image.jpg'
@@ -15,10 +16,11 @@ class FNModule:
     # 1) ссылки в папке data на картинку модуля, файл readme и т.п. (может просто ссылку на папку data ?)
     # 2) сами объекты описания и т.п. (ленивая загрузка)
     # 3) словарь конфигурации (должен уметь распарсить xml или т.п. файл)
-    def __init__(self, link, xml=None):
+    def __init__(self, link, cfg=None):
+        # cfg теперь bin
         # расположение папки data модуля
         self.link = link
-        self.config = ModuleConfig(xml)
+        self.config = ModuleConfig(cfg)
 
     def getName(self):
         return self.config.getProperty('name')
@@ -48,7 +50,7 @@ class FNModule:
             # self.errorlist.append(msg)
             return
         fnlist = fnmfile.namelist()
-        print('data:', fnlist)
+        # print('data:', fnlist)
 
         if os.path.exists(FNModule.__REQUIRED_MAINPATH):
             shutil.rmtree(FNModule.__REQUIRED_MAINPATH)

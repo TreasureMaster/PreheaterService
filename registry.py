@@ -4,7 +4,9 @@ from abc import ABC, abstractmethod
 from accessify import protected, private
 
 from modulemapper import ModuleMapper
+from config.manager import FNConfig
 
+# ------------------------- Абстрактный класс реестра ------------------------ #
 
 class Registry(ABC):
     """
@@ -20,6 +22,7 @@ class Registry(ABC):
     def set(self, key, value):
         pass
 
+# ----------------------------- Реестр приложения ---------------------------- #
 
 class AppRegistry(Registry):
     """Реестр приложения."""
@@ -89,6 +92,7 @@ class AppRegistry(Registry):
         self.deleteCurrentModule()
         ModListRegistry.instance().clearAllModules()
 
+# ------------------------------ Реестр модулей ------------------------------ #
 
 class ModListRegistry(Registry):
     """Реестр списка модулей. Это класс-оболочка для словаря сканированых модулей."""
@@ -153,6 +157,7 @@ class ModListRegistry(Registry):
         """Есть ли модули в списке?"""
         return len(self.__modules) > 0
 
+# ------------------------------ Реестр виджетов ----------------------------- #
 
 class WidgetsRegistry(Registry):
     """Реестр виджетов приложения.
@@ -235,6 +240,49 @@ class WidgetsRegistry(Registry):
 
     def setLogFrame(self, frame):
         self.set('log_frame', frame)
+
+# ----------------------- Реестр конфигурации менеджера ---------------------- #
+
+class ConfigRegistry(Registry):
+    """Реестр конфигураций (обертка класса конфигурации, н-р, менеджера)."""
+    # статические приватные свойства
+    # 1) manager - класс конфигурации менеджера
+    __values = {
+        'manager': None,
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        self.__values['manager'] = FNConfig()
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with ConfigRegistry.__lock:
+            if not ConfigRegistry.__instance:
+                ConfigRegistry.__instance = ConfigRegistry()
+        return ConfigRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: объект класс конфигурации менеджера
+    def getManagerConfig(self):
+        return self.get('manager')
+
+    # TODO возможно следует возвращать некоторые ключи менеджера ?
+
+    # def setInfoFrame(self, frame):
+    #     self.set('info_frame', frame)
 
 
 if __name__ == '__main__':

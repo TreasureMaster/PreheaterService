@@ -1,5 +1,7 @@
 from lxml import objectify
 
+from managercore.encryption import decode_xml
+
 
 class ModuleConfig:
 
@@ -11,11 +13,15 @@ class ModuleConfig:
     #     if filename:
     #         self.parseXML(filename)
 
-    def __init__(self, xml=None):
+    def __init__(self, cfg=None):
+        # cfg_text = None
+        # cgf теперь считанный bin, нужно расшифровать
+        # if cfg:
+        #     cfg_text = decode_xml(cfg)
         # if xml:
         #     self.parseXML(xml)
-        if xml:
-            self.root = objectify.XML(xml)
+        if cfg:
+            self.root = objectify.XML(cfg)
 
     # def parseXML(self, xml=None):
     #     """парсинг XML файла."""
@@ -25,7 +31,7 @@ class ModuleConfig:
         # self.root = objectify.XML(xml)
 
     def getFromXML(self, filename=None):
-        """Получить объект конфигурации из XML файла."""
+        """Получить объект конфигурации из незашифрованного XML файла."""
         # self.xml_file = filename
         # TODO указать ошибку при отсутствии файла
         with open(filename, encoding='utf-8') as f:

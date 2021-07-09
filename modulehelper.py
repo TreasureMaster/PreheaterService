@@ -7,9 +7,10 @@ from tkinter import *
 from tkinter.messagebox import *
 from tkinter.filedialog import *
 
-from registry import AppRegistry, WidgetsRegistry, ModListRegistry
+from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegistry
 from applogger import AppLogger
 from modulecore.fnmodule import FNModule
+from managercore.encryption import decode_xml
 
 
 class ModuleHelper:
@@ -20,7 +21,7 @@ class ModuleHelper:
     # __registry = None
     __lock = Lock()
     # TODO внести все пути в config.py
-    __REQUIRED_CONFIG = 'module/data/config.xml'
+    __REQUIRED_CONFIG = '{}/config.bin'.format(ConfigRegistry.instance().getManagerConfig().getDataPath())
 
     # создать объект напрямую невозможно
     @private
@@ -92,7 +93,9 @@ class ModuleHelper:
             fnm = askopenfilenames(initialdir=os.getcwd(), filetypes=(('fnm files', '*.fnm'),))
             if fnm:
                 for link in fnm:
-                    mod = FNModule(link, self.getConfigFNMFile(link))
+                    cfg = self.getConfigFNMFile(link)
+                    if cfg is not None:
+                        mod = FNModule(link, cfg)
                     ModListRegistry.instance().addModule(mod.getName(), mod)
             else:
                 self.logger.error('Не выбрана папка или модуль для работы.')
@@ -105,7 +108,9 @@ class ModuleHelper:
         modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
         if modules:
             for link in modules:
-                mod = FNModule(link, self.getConfigFNMFile(link))
+                cfg = self.getConfigFNMFile(link)
+                if cfg is not None:
+                    mod = FNModule(link, cfg)
                 ModListRegistry.instance().addModule(mod.getName(), mod)
         else:
             self.logger.error('В указанной папке модули отсутствуют.')
@@ -130,12 +135,13 @@ class ModuleHelper:
         # 5) если все нормально, считать требуемые файлы
         try:
             with zipfile.ZipFile(fnm) as myzip:
-                with myzip.open(ModuleHelper.__REQUIRED_CONFIG) as myfile:
-                    xml = myfile.read()
+                # zipfile использует байтовый режим, поэтому не нужно указывать 'b'
+                with myzip.open(ModuleHelper.__REQUIRED_CONFIG, 'r') as myfile:
+                    cfg = decode_xml(myfile.read(), fnm)
         except Exception as msg:
-            self.logger.error('Ошибка при распаковке файла: ' + msg)
+            self.logger.error('Ошибка при распаковке файла: ' + str(msg))
             return
-        return xml
+        return cfg
 
 if __name__ == '__main__':
     pass
