@@ -30,9 +30,9 @@ class InfoModuleFrame(Frame):
         self.__description = ReadonlyScrolledText(self, width=75, height=10, wrap=WORD)
         self.__description.pack(padx=5, pady=5, fill=X)
 
-        InfoTitleLabel(self, text='Параметры модуля:').pack(padx=5, fill=X)
-        self.__options = ReadonlyScrolledText(self, width=75, height=10, wrap=WORD)
-        self.__options.pack(padx=5, pady=5, fill=X)
+        # InfoTitleLabel(self, text='Параметры модуля:').pack(padx=5, fill=X)
+        # self.__options = ReadonlyScrolledText(self, width=75, height=10, wrap=WORD)
+        # self.__options.pack(padx=5, pady=5, fill=X)
 
         InfoTitleLabel(self, text='Конфигурация модуля:').pack(padx=5, fill=X)
         self.__config = ReadonlyScrolledText(self, width=75, height=5, wrap=WORD)
@@ -44,12 +44,13 @@ class InfoModuleFrame(Frame):
         return cur_mod.getDescription(field) if cur_mod else 'Сообщение: модуль не выбран.'
 
     def updateText(self):
-        self.__description.delete('1.0', END)
-        self.__description.insert('1.0', self.__getText('description'))
-        self.__options.delete('1.0', END)
-        self.__options.insert('1.0', self.__getText('options'))
-        self.__config.delete('1.0', END)
-        self.__config.insert('1.0', self.__getText('config'))
+        # self.__description.delete('1.0', END)
+        self.__description.update_text(self.__getText('description'))
+        # self.__description.see('1.0')
+        # self.__options.delete('1.0', END)
+        # self.__options.insert('1.0', self.__getText('options'))
+        # self.__config.delete('1.0', END)
+        self.__config.update_text(self.__getText('config'))
 
     def updateImage(self):
         cur_mod = AppRegistry.instance().getCurrentModule()

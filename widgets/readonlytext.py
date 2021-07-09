@@ -19,3 +19,8 @@ class ReadonlyScrolledText(ScrolledText):
         super().insert(index, chars, *args)
         self.see(END)
         self.config(state=DISABLED)
+
+    def update_text(self, text):
+        self.delete('1.0', END)
+        self.insert('1.0', text)
+        self.see('1.0')
