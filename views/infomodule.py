@@ -44,12 +44,7 @@ class InfoModuleFrame(Frame):
         return cur_mod.getDescription(field) if cur_mod else 'Сообщение: модуль не выбран.'
 
     def updateText(self):
-        # self.__description.delete('1.0', END)
         self.__description.update_text(self.__getText('description'))
-        # self.__description.see('1.0')
-        # self.__options.delete('1.0', END)
-        # self.__options.insert('1.0', self.__getText('options'))
-        # self.__config.delete('1.0', END)
         self.__config.update_text(self.__getText('config'))
 
     def updateImage(self):
@@ -58,6 +53,11 @@ class InfoModuleFrame(Frame):
 
     def clearImage(self):
         self.__modulemage.clearImage()
+
+    def getScrollWidgets(self):
+        """Возвращает текстовые виджеты для корректировки событий прокрутки главного окна."""
+        # WARNING опасно, можно изменить
+        return (self.__description, self.__config)
 
 
 if __name__ == '__main__':

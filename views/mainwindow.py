@@ -58,13 +58,16 @@ class MainWindow:
     def _make_widgets(self):
         Label(self.mainframe, text='Здесь будет меню первого окна').grid(row=0, columnspan=2)
 
-        ListModulesFrame(self.mainframe).grid(padx=10, row=1, column=0, sticky=N)
-        self.info = InfoModuleFrame(self.mainframe)
-        self.info.grid(pady=5, row=1, column=1)
+        listmodules = ListModulesFrame(self.mainframe)
+        listmodules.grid(padx=10, row=1, column=0, sticky=N)
+        self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
+        info = InfoModuleFrame(self.mainframe)
+        info.grid(pady=5, row=1, column=1)
+        self.scrollwindow.bind_widgets(info.getScrollWidgets())
 
         self.log_window = ReadonlyScrolledText(self.mainframe, height=5)
         self.log_window.grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
-        # self.scrollwindow.make_widgets(self.log_window)
+        self.scrollwindow.bind_widgets((self.log_window,))
         WidgetsRegistry.instance().setLogFrame(self.log_window)
         self.log_window.bind('<Map>', self.on_frame_mapped)
 

@@ -40,6 +40,9 @@ class ListModulesFrame(Frame):
         Button(btn_frame, text='Загрузить модуль', command=LoadModuleFile()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Открыть папку с модулями', command=LoadModuleDirectory()).grid(sticky=W+E+S+N, pady=2)
 
+    def getScrollWidgets(self):
+        return (self.listbox,)
+
 
 if __name__ == '__main__':
     root = Tk()
