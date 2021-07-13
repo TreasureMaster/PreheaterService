@@ -3,13 +3,15 @@ from views.infomodule import InfoModuleFrame
 from accessify import private
 
 from tkinter import *
-from tkinter.ttk import *
+# ttk.Frame не имеет background или bg
+# from tkinter.ttk import *
 
 # from connectionframe import ConnectionFrame
 # from moduleframe import ControlPanelFrame, LogPanelFrame
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame
 from widgets.readonlytext import ReadonlyScrolledText
+from widgets.scrolledwindow import ScrolledWindow
 # Здесь размещать подготовку команды?
 from commands.maincommands import ViewLog
 from registry import WidgetsRegistry
@@ -24,8 +26,11 @@ class MainWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title(MainWindow.__APPTITLE)
+        self.window.geometry('1078x504')
         # все окно
-        self.mainframe = Frame(self.window)
+        self.scrollwindow = ScrolledWindow(self.window)
+        self.scrollwindow.pack(expand=YES, fill=BOTH)
+        self.mainframe = Frame(self.scrollwindow.frame)
         self.mainframe.pack(expand=YES, fill=BOTH)
         # self.window.geometry(str(width) + 'x' + str(height))    #Размер окна
         self.images = []
@@ -54,11 +59,14 @@ class MainWindow:
         Label(self.mainframe, text='Здесь будет меню первого окна').grid(row=0, columnspan=2)
 
         ListModulesFrame(self.mainframe).grid(padx=10, row=1, column=0, sticky=N)
-        InfoModuleFrame(self.mainframe).grid(pady=5, row=1, column=1)
+        self.info = InfoModuleFrame(self.mainframe)
+        self.info.grid(pady=5, row=1, column=1)
 
         self.log_window = ReadonlyScrolledText(self.mainframe, height=5)
         self.log_window.grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
+        # self.scrollwindow.make_widgets(self.log_window)
         WidgetsRegistry.instance().setLogFrame(self.log_window)
+        self.log_window.bind('<Map>', self.on_frame_mapped)
 
     def __prepare_commands(self):
         # WARNING до этого момента не выполняется запись логов в stream
@@ -67,6 +75,18 @@ class MainWindow:
         # self.window.event_add('<<StreamFlush>>', 'None')
         # self.window.bind('<<StreamFlush>>', TestSaveStream(), '%d')
 
+    def on_frame_mapped(self, event):
+        """Изменяет размеры окна после упаковки последнего виджета (окна логов)."""
+        # print(event.widget.winfo_width())
+        # print(event.widget.winfo_height())
+        # префикс req - видимые на экране размеры виджета ???
+        # self.scrollwindow.update()
+        # print(self.scrollwindow.winfo_reqwidth())
+        # print(self.scrollwindow.winfo_reqheight())
+        self.scrollwindow.canvas.config(
+            width=self.mainframe.winfo_width(),
+            height=self.mainframe.winfo_height()
+        )
 
 
 # connectionframe = ConnectionFrame(mainframe)

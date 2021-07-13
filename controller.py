@@ -35,7 +35,8 @@ class Controller:
         # AppLogger.instance().error('Русский текст 2')
         # AppLogger.instance().info('Русский текст 3')
         AppLogger.instance().debugv('Тест пользовательского уровня DEBUGV с новой func')
-        AppLogger.instance().critical('Тест записи уровня выше, чем задан в test.log')
+        for _ in range(20):
+            AppLogger.instance().critical('Тест записи уровня выше, чем задан в test.log')
         # logging.debugv('Тест пользовательского уровня DEBUGV')
         # print((logger))
         # import logging
@@ -46,6 +47,7 @@ class Controller:
     def handleView(self):
         # Вывод на экран
         MainWindow.instance().startWindow()
+
 
 if __name__ == '__main__':
     Controller.run()
