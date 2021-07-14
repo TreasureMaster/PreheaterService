@@ -24,3 +24,11 @@ class ReadonlyScrolledText(ScrolledText):
         self.delete('1.0', END)
         self.insert('1.0', text)
         self.see('1.0')
+
+
+class LoggerWindow(ReadonlyScrolledText):
+    """Должна быть добавлена подсветка частей текста в зависимости от уровня логов."""
+
+    def __init__(self, master=None, **kw):
+        ReadonlyScrolledText.__init__(self, master, **kw)
+        self.tag_config('error', foreground='red')

@@ -141,10 +141,14 @@ class OpenModule(Command):
 class ViewLog(Command):
     def execute(self):
         # print(AppLogger.get_stream().getvalue())
-        WidgetsRegistry.instance().getLogFrame().insert(
-            'end',
-            AppLogger.get_stream()
-        )
+        logwindow = WidgetsRegistry.instance().getLogFrame()
+        for line in AppLogger.get_stream().split('\n'):
+            logwindow.insert(
+                'end',
+                (line + '\n') if line else '',
+                # Вроде бы работает и с None, и с ''
+                ('error' if 'ERROR]' in line else None)
+            )
         # TODO блокировать Lock, пока идет запись?
         # with open('tmplog/stream.log', 'a', encoding='utf-8') as fd:
         #     fd.write('----------------\n')

@@ -10,7 +10,7 @@ from tkinter import *
 # from moduleframe import ControlPanelFrame, LogPanelFrame
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame
-from widgets.readonlytext import ReadonlyScrolledText
+from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
 from widgets.scrolledwindow import ScrolledWindow
 # Здесь размещать подготовку команды?
 from commands.maincommands import ViewLog
@@ -65,7 +65,7 @@ class MainWindow:
         info.grid(pady=5, row=1, column=1)
         self.scrollwindow.bind_widgets(info.getScrollWidgets())
 
-        self.log_window = ReadonlyScrolledText(self.mainframe, height=5)
+        self.log_window = LoggerWindow(self.mainframe, height=5)
         self.log_window.grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
         self.scrollwindow.bind_widgets((self.log_window,))
         WidgetsRegistry.instance().setLogFrame(self.log_window)
