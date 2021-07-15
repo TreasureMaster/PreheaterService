@@ -38,6 +38,15 @@ class ModuleConfig:
             self.root = objectify.XML(f.read())
         return self
 
+    def getFromBIN(self, filename=None):
+        """Получить объект конфигурации из зашифрованного XML->BIN файла."""
+        # self.xml_file = filename
+        # TODO указать ошибку при отсутствии файла
+        with open(filename, 'rb') as f:
+            cfg = decode_xml(f.read(), filename)
+            self.root = objectify.XML(cfg)
+        return self
+
     def getProperty(self, key):
         if key in ModuleConfig.__HEADER | ModuleConfig.__OPTIONS | ModuleConfig.__MANAGER:
             try:

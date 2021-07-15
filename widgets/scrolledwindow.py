@@ -5,7 +5,7 @@ class ScrolledWindow(Frame):
 
     def __init__(self, parent, **kwargs):
         Frame.__init__(self, parent, kwargs)
-        self.canvas = Canvas(self, borderwidth=0)
+        self.canvas = Canvas(self, bd=0, highlightthickness=0)
         self.frame = Frame(self.canvas)
         self.vsb = Scrollbar(self, orient='vertical', command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.vsb.set)

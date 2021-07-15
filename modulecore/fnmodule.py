@@ -8,16 +8,20 @@ from .moduleconfig import ModuleConfig
 class FNModule:
     __REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getMainPath()
     __REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getDataPath()
-    __REQUIRED_DESCRIPTION = '{}/readme.txt'
-    __REQUIRED_CONFIG = '{}/config.xml'
-    __REQUIRED_IMAGE = '{}/image.jpg'
+    __REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getDescriptionFullPath()
+    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getConfigFullPath()
+    __REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getImageFullPath()
 
     # TODO содержит поля:
     # 1) ссылки в папке data на картинку модуля, файл readme и т.п. (может просто ссылку на папку data ?)
     # 2) сами объекты описания и т.п. (ленивая загрузка)
     # 3) словарь конфигурации (должен уметь распарсить xml или т.п. файл)
     def __init__(self, link, cfg=None):
-        # cfg теперь bin
+        """При инициализации здесь хранится только ссылка на файл модуля.
+        А также <временно> распакованный и распарсенный config.bin.
+        Полностью файлы модуля распаковываются только после выбора модуля.
+        """
+        # TODO cfg теперь bin, он уже расшифрован в modulehelper
         # расположение папки data модуля
         self.link = link
         self.config = ModuleConfig(cfg)
@@ -59,10 +63,11 @@ class FNModule:
 
     def checkCurrentData(self):
         """Проверяет соответствие файла конфигурации в папке DATA
-        и в случае несоответствия распаковывает данные текущего модуля."""
+        и в случае несоответствия распаковывает данные текущего модуля
+        (то есть, если в папке с текущим модулем находяться старые файлы)."""
         path = FNModule.__REQUIRED_CONFIG.format(FNModule.__REQUIRED_DATAPATH)
         # print('path from checkCurrentData:', path)
-        if self.getName() != ModuleConfig().getFromXML(path).getProperty('name'):
+        if self.getName() != ModuleConfig().getFromBIN(path).getProperty('name'):
             self.unpackData()
 
     def getDescription(self, field):

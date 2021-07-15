@@ -97,7 +97,7 @@ class AppRegistry(Registry):
 class ModListRegistry(Registry):
     """Реестр списка модулей. Это класс-оболочка для словаря сканированых модулей."""
     # статические приватные свойства
-    # 1) modules - словарь предварительно загруженных из папки модулей
+    # 1) __modules - словарь предварительно загруженных из папки модулей
     __modules = ModuleMapper()
     __instance = None
     __lock = Lock()

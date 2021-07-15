@@ -15,12 +15,19 @@ class FNConfig:
     ]
     # Совместимые ключи менеджеров, с версиями которых может работать данный менеджер
     __compatible_keys = []
-    # Базовый путь папки модуля
+    # Базовый путь папки модуля (корневая папка, куда распаковывается вся структура модуля)
     __required_mainfolder = 'module'
-    # Название подпапки с данными
+    # Название подпапки с данными (распаковка данных)
     __required_datafolder = 'data'
     # Путь к папке с данными
     __required_datapath = f"{__required_mainfolder}/{__required_datafolder}"
+    # Полные относительные пути для файлов модуля
+    # рисунок
+    __required_image = f"{__required_datapath}/image.jpg"
+    # описание
+    __required_description = f"{__required_datapath}/readme.txt"
+    # конфигурация
+    __required_config = f"{__required_datapath}/config.bin"
     # ---------------------------------------------------------------------------- #
 
     def getManagerName(self):
@@ -49,6 +56,15 @@ class FNConfig:
 
     def getDataPath(self):
         return self.__required_datapath
+
+    def getImageFullPath(self):
+        return self.__required_image
+
+    def getDescriptionFullPath(self):
+        return self.__required_description
+
+    def getConfigFullPath(self):
+        return self.__required_config
 
 
 

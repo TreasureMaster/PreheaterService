@@ -26,7 +26,11 @@ def encode_xml():
 
 
 def decode_xml(raw_data, fnm):
-    """Пробует декодировать данные config.bin в xml"""
+    """Пробует декодировать данные config.bin в xml.
+
+    raw_data - двоичный config.bin файл
+    fnm - имя файла, который расшифровывается.
+    """
     # fnm - только для вывод ошибки
     # try:
     #     file_in = open(path, 'rb')
