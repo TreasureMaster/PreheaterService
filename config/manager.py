@@ -15,6 +15,8 @@ class FNConfig:
     ]
     # Совместимые ключи менеджеров, с версиями которых может работать данный менеджер
     __compatible_keys = []
+    # Путь к папке, где хранятся архивы модулей
+    __required_modulesfolder = 'modules'
     # Базовый путь папки модуля (корневая папка, куда распаковывается вся структура модуля)
     __required_mainfolder = 'module'
     # Название подпапки с данными (распаковка данных)
@@ -50,6 +52,9 @@ class FNConfig:
     def getAllKeys(self):
         for key in self.__main_keys + self.__compatible_keys:
             yield key
+
+    def getModulesPath(self):
+        return self.__required_modulesfolder
 
     def getMainPath(self):
         return self.__required_mainfolder

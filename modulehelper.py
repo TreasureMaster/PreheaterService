@@ -16,12 +16,12 @@ from managercore.encryption import decode_xml
 class ModuleHelper:
     """Загружает модуль."""
     # статические приватные свойства
-    __path = 'modules'
+    __REQUIRED_MODULESPATH = ConfigRegistry.instance().getManagerConfig().getModulesPath()
     __instance = None
     # __registry = None
     __lock = Lock()
     # TODO внести все пути в config.py
-    __REQUIRED_CONFIG = '{}/config.bin'.format(ConfigRegistry.instance().getManagerConfig().getDataPath())
+    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getConfigFullPath()
 
     # создать объект напрямую невозможно
     @private
@@ -60,7 +60,7 @@ class ModuleHelper:
             fakeroot = Tk()
             fakeroot.withdraw()
         # Все должно быть исправлено при использовании exe-файла на соответствующие пути
-        directory = ModuleHelper.__path
+        directory = ModuleHelper.__REQUIRED_MODULESPATH
         if not os.path.isdir(directory):
             self.logger.error('Стандартная папка с модулями не найдена.')
             # Стандартная папка не найдена, ищем вручную
