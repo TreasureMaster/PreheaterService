@@ -4,7 +4,11 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 
 from registry import ModListRegistry, WidgetsRegistry
-from commands.maincommands import ViewModule, ClearModuleWindow, DeleteModule, LoadModuleFile, LoadModuleDirectory
+from commands.maincommands import (
+    ViewModule, ClearModuleWindow, DeleteModule,
+    LoadModuleFile, LoadModuleDirectory,
+    CommandMixin
+)
 
 
 class ListModulesFrame(Frame):
@@ -27,9 +31,17 @@ class ListModulesFrame(Frame):
         sbar.pack(side=RIGHT, fill=Y)
         self.listbox.pack(side=LEFT, expand=YES, fill=BOTH)
         self.listmodules = StringVar(value=ModListRegistry.instance().getListModules())
+        # self.listmodules.trace_add(('write', 'read'), lambda name, index, mode: print('trace work:', name, mode))
         self.listbox.config(listvariable=self.listmodules)
+        WidgetsRegistry.instance().setModulesListbox(self.listbox)
         WidgetsRegistry.instance().setListVar(self.listmodules)
         self.listbox.bind('<<ListboxSelect>>', ViewModule())
+        # self.listbox.itemconfig(0, fg='red')
+        # print(self.listbox.size())
+        # for line in range(self.listbox.size()):
+        #     if not ModListRegistry.instance().ilocModule(line).isCompatible():
+        #         self.listbox.itemconfig(line, fg='red')
+        CommandMixin().highlightListBox()
 
         btn_frame = Frame(self)
         btn_frame.pack(fill=X, padx=20)

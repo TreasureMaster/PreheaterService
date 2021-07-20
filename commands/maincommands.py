@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter.messagebox import *
 from tkinter.filedialog import *
 
-from registry import AppRegistry, WidgetsRegistry, ModListRegistry
+from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegistry
 from applogger import AppLogger
 from base.modulehelper import ModuleHelper
 
@@ -31,8 +31,15 @@ class CommandMixin:
         WidgetsRegistry.instance().getInfoFrame().clearImage()
         WidgetsRegistry.instance().updateListVar()
         # TODO заменить на путь из Registry
-        if os.path.exists('data'):
-            shutil.rmtree('data')
+        mainpath = ConfigRegistry.instance().getManagerConfig().getMainPath()
+        if os.path.exists(mainpath):
+            shutil.rmtree(mainpath)
+
+    def highlightListBox(self):
+        listbox = WidgetsRegistry.instance().getModulesListbox()
+        for numline in range(listbox.size()):
+            if not ModListRegistry.instance().ilocModule(numline).isCompatible():
+                listbox.itemconfig(numline, fg='red', selectforeground='red', selectbackground='yellow')
 
 
 class Command(ABC):
@@ -56,6 +63,7 @@ class Command(ABC):
 # -5) Сохранить и Сохранить как нужны ???
 
 class ViewModule(Command):
+    """Вывод информации о выбранном модуле в инфоокне."""
     def __call__(self, event):
         self.execute(event)
 
@@ -68,15 +76,15 @@ class ViewModule(Command):
         # print('select module form listbox:', current_module)
         AppRegistry.instance().setCurrentModule(current_module)
         # print(AppRegistry.instance().getCurrentModule())
-        # Распаковка данных в каталог DATA
-        current_module.unpackData()
-        WidgetsRegistry.instance().getInfoFrame().updateText()
-        WidgetsRegistry.instance().getInfoFrame().updateImage()
-        AppLogger.instance().info(f'Распакован модуль {current_module.getName()}.')
+        # Распаковка данных в каталог MODULE
+        if current_module.unpackData():
+            WidgetsRegistry.instance().getInfoFrame().updateText()
+            WidgetsRegistry.instance().getInfoFrame().updateImage()
+            AppLogger.instance().info(f'Распакован модуль {current_module.getName()}.')
 
 
 class ClearModuleWindow(Command, CommandMixin):
-
+    """Команда очистки окна списка модулей."""
     def execute(self):
         AppRegistry.instance().clearModulesWindow()
         self.clearModuleInfo()
@@ -85,6 +93,7 @@ class ClearModuleWindow(Command, CommandMixin):
 
 
 class DeleteModule(Command, CommandMixin):
+    """Команда удаления модуля из списка модулей и самого файла модуля."""
     def execute(self):
         cur_mod = AppRegistry.instance().getCurrentModule()
         if askokcancel('Удаление модуля', 'Удалить модуль?\nМодуль {} будет удален из текущей папки.'.format(cur_mod.getTitle())):
@@ -103,16 +112,20 @@ class DeleteModule(Command, CommandMixin):
             ModListRegistry.instance().deleteModule(cur_mod.getName())
             AppRegistry.instance().deleteCurrentModule()
             self.clearModuleInfo()
+            self.highlightListBox()
 
 
 class LoadModuleFile(Command, CommandMixin):
+    """Команда загрузкт отдельного файла модуля."""
     def execute(self):
         AppLogger.instance().info('Загрузка файла модуля.')
         ModuleHelper.instance().getSingleModule()
         self.clearModuleInfo()
+        self.highlightListBox()
 
 
 class LoadModuleDirectory(Command, CommandMixin):
+    """Команда загрузки папки с модулями."""
     def execute(self):
         directory = None
         if askyesno('Поиск модулей', 'Стандартная папка с модулями не найдена.\nХотите указать, где она находиться?'):
@@ -126,6 +139,7 @@ class LoadModuleDirectory(Command, CommandMixin):
             AppLogger.instance().info('Выбор папки с модулями.')
             ModuleHelper.instance().getModuleDirectory(directory)
             self.clearModuleInfo()
+            self.highlightListBox()
         else:
             AppLogger.instance().error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')

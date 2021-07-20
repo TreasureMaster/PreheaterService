@@ -8,7 +8,9 @@ class FNConfig:
     # Версия менеджера (major.minor.micro)
     __version__ = '0.2.0'
     # Совместимые версии менеджеров
-    __compatible_version = []
+    __compatible_versions = [
+        # '0.1.0'
+    ]
     # Базовые ключи менеджера, введенные именно для этого менеджера
     __main_keys = [
         b'kF-4g(kl{[s</!!~',
@@ -54,6 +56,13 @@ class FNConfig:
     def getAllKeys(self):
         for key in self.__main_keys + self.__compatible_keys:
             yield key
+
+    def getCompatibleVersions(self):
+        for version in [self.__version__] + self.__compatible_versions:
+            yield '{}-{}'.format(
+                self.__mainname,
+                version
+            )
 
     def getModulesPath(self):
         return self.__required_modulesfolder
