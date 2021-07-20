@@ -57,6 +57,13 @@ class FNConfig:
         for key in self.__main_keys + self.__compatible_keys:
             yield key
 
+    def getCompatibleVersions(self):
+        for version in [self.__version__] + self.__compatible_versions:
+            yield '{}-{}'.format(
+                self.__mainname,
+                version
+            )
+
     def getModulesPath(self):
         return self.__required_modulesfolder
 
