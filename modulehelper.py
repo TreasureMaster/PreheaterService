@@ -10,7 +10,7 @@ from tkinter.filedialog import *
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegistry
 from applogger import AppLogger
 from base.fnmodule import FNModule
-from managercore.encryption import decode_xml
+from base.encryption import decode_xml
 
 
 class ModuleHelper:
