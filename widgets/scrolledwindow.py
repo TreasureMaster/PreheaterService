@@ -33,10 +33,12 @@ class ScrolledWindow(Frame):
 
     def on_binds(self, event):
         """Включает прокрутку всего главного экрана."""
+        self.config(cursor='arrow')
         self.frame.bind_all("<MouseWheel>", self._on_mousewheel)
         
     def off_binds(self, event):
         """Отключить прокрутку всего главного экрана для прокрутки встроенных экранов."""
+        self.config(cursor='right_ptr')
         self.frame.unbind_all("<MouseWheel>")
 
     def onFrameConfigure(self, event):

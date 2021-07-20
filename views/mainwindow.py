@@ -26,7 +26,7 @@ class MainWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title(MainWindow.__APPTITLE)
-        self.window.geometry('1078x504')
+        # self.window.geometry('1078x504')
         # все окно
         self.scrollwindow = ScrolledWindow(self.window)
         self.scrollwindow.pack(expand=YES, fill=BOTH)
