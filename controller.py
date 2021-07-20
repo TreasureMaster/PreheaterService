@@ -3,7 +3,7 @@ from accessify import private
 
 from registry import AppRegistry
 from applogger import AppLogger
-from modulehelper import ModuleHelper
+from base.modulehelper import ModuleHelper
 
 from views.mainwindow import MainWindow
 

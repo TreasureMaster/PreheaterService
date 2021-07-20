@@ -6,7 +6,7 @@ from tkinter.filedialog import *
 
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry
 from applogger import AppLogger
-from modulehelper import ModuleHelper
+from base.modulehelper import ModuleHelper
 
 
 # NOTE В данной структуре получателем будет являться реестр AppRegistry
