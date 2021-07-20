@@ -4,7 +4,7 @@ from tkinter.messagebox import *
 from tkinter.filedialog import *
 
 from registry import AppRegistry, WidgetsRegistry
-from views.connectimages import ModuleImage
+from widgets.connectimages import ModuleImage
 from widgets.readonlytext import ReadonlyScrolledText
 from widgets.infolabels import InfoTitleLabel
 

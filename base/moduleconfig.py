@@ -1,6 +1,6 @@
 from lxml import objectify
 
-from managercore.encryption import decode_xml
+from .encryption import decode_xml
 
 
 class ModuleConfig:

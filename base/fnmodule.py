@@ -3,6 +3,7 @@ import os, shutil, zipfile, glob
 import datetime, time
 
 from registry import ConfigRegistry
+from applogger import AppLogger
 from .moduleconfig import ModuleConfig
 
 class FNModule:
@@ -27,7 +28,11 @@ class FNModule:
         self.config = ModuleConfig(cfg)
 
     def getName(self):
-        return self.config.getProperty('name')
+        # return self.config.getProperty('name')
+        return '{}-{}'.format(
+            self.config.getProperty('name'),
+            self.config.getProperty('revision'),
+        )
 
     def getTitle(self):
         return '{}  (rev. {})'.format(
@@ -44,6 +49,18 @@ class FNModule:
     def getReleaseDate(self):
         return time.strftime('%d %b %Y', time.localtime(self.config.getProperty('releasedate')))
 
+    def getMakingManager(self):
+        return '{}-{}.{}.{}'.format(
+            self.config.getProperty('mainname'),
+            self.config.getProperty('major'),
+            self.config.getProperty('minor'),
+            self.config.getProperty('micro')
+        )
+
+    def isCompatible(self):
+        current = self.getMakingManager()
+        return any([version == current for version in ConfigRegistry.instance().getManagerConfig().getCompatibleVersions()])
+
     # Распаковать файлы в папку
     def unpackData(self):
         # TODO распаковать в память
@@ -51,15 +68,17 @@ class FNModule:
             fnmfile = zipfile.ZipFile(self.link, 'r')
         except Exception as msg:
             # TODO должна быть реализация ошибки извлечения файла
-            # self.errorlist.append(msg)
+            AppLogger.instance().error(f'Невозможно распаковать архив модуля: {msg}')
             return
-        fnlist = fnmfile.namelist()
+        # fnlist = fnmfile.namelist()
         # print('data:', fnlist)
 
         if os.path.exists(FNModule.__REQUIRED_MAINPATH):
             shutil.rmtree(FNModule.__REQUIRED_MAINPATH)
         fnmfile.extractall()
         fnmfile.close()
+        # просто метка об успехе
+        return True
 
     def checkCurrentData(self):
         """Проверяет соответствие файла конфигурации в папке DATA

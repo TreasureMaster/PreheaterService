@@ -9,8 +9,8 @@ from tkinter.filedialog import *
 
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegistry
 from applogger import AppLogger
-from modulecore.fnmodule import FNModule
-from managercore.encryption import decode_xml
+from base.fnmodule import FNModule
+from base.encryption import decode_xml
 
 
 class ModuleHelper:
@@ -105,6 +105,7 @@ class ModuleHelper:
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
     def getModuleDirectory(self, directory):
+        """Сканирует указанную папку и ищет в ней модули (файлы с раширением fnm)."""
         modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
         if modules:
             for link in modules:

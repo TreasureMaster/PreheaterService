@@ -172,7 +172,8 @@ class WidgetsRegistry(Registry):
         'info_frame': None,
         'main_window': None,
         'list_modules': None,
-        'log_frame': None
+        'log_frame': None,
+        'listbox': None
     }
     __instance = None
     __lock = Lock()
@@ -240,6 +241,13 @@ class WidgetsRegistry(Registry):
 
     def setLogFrame(self, frame):
         self.set('log_frame', frame)
+
+    # СВОЙСТВО: ListBox отображения списка модулей
+    def getModulesListbox(self):
+        return self.get('listbox')
+
+    def setModulesListbox(self, listbox):
+        self.set('listbox', listbox)
 
 # ----------------------- Реестр конфигурации менеджера ---------------------- #
 
