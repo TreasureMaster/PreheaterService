@@ -105,6 +105,7 @@ class ModuleHelper:
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
     def getModuleDirectory(self, directory):
+        """Сканирует указанную папку и ищет в ней модули (файлы с раширением fnm)."""
         modules = list(map(os.path.abspath, glob.glob(f'{directory}/*.fnm')))
         if modules:
             for link in modules:

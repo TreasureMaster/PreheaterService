@@ -7,6 +7,8 @@ class FNConfig:
     __mainname = 'FN-Service'
     # Версия менеджера (major.minor.micro)
     __version__ = '0.2.0'
+    # Совместимые версии менеджеров
+    __compatible_version = []
     # Базовые ключи менеджера, введенные именно для этого менеджера
     __main_keys = [
         b'kF-4g(kl{[s</!!~',

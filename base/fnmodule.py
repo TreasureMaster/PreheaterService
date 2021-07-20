@@ -27,7 +27,11 @@ class FNModule:
         self.config = ModuleConfig(cfg)
 
     def getName(self):
-        return self.config.getProperty('name')
+        # return self.config.getProperty('name')
+        return '{}-{}'.format(
+            self.config.getProperty('name'),
+            self.config.getProperty('revision'),
+        )
 
     def getTitle(self):
         return '{}  (rev. {})'.format(
