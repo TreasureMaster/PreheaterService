@@ -26,6 +26,7 @@ class MainWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title(MainWindow.__APPTITLE)
+        WidgetsRegistry.instance().setMainWindow(self.window)
         # self.window.geometry('1078x504')
         # все окно
         self.scrollwindow = ScrolledWindow(self.window)
@@ -63,6 +64,7 @@ class MainWindow:
         self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
         info = InfoModuleFrame(self.mainframe)
         info.grid(pady=5, row=1, column=1)
+        WidgetsRegistry.instance().setInfoFrame(info)
         self.scrollwindow.bind_widgets(info.getScrollWidgets())
 
         self.log_window = LoggerWindow(self.mainframe, height=5)

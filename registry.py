@@ -29,10 +29,11 @@ class AppRegistry(Registry):
     # статические приватные свойства
     # 1) run_path - путь запуска программы (будет важно для exe-файла)
     # 2) current_module - текущий, выбранный для работы модуль
+    # 3) editable_module - редактируемый в данный момент модуль
     __values = {
-        'value': None,
         'run_path': None,
-        'current_module': None
+        'current_module': None,
+        'editable_module': None
     }
     __instance = None
     __lock = Lock()
@@ -50,7 +51,7 @@ class AppRegistry(Registry):
                 AppRegistry.__instance = AppRegistry()
         return AppRegistry.__instance
 
-    # нельзя напрямую изменять свойства
+    # Базовые методы set и get (нельзя напрямую изменять свойства)
     @protected
     def get(self, key):
         return self.__values[key]
@@ -58,13 +59,6 @@ class AppRegistry(Registry):
     @protected
     def set(self, key, value):
         self.__values[key] = value
-
-    # СВОЙСТВО: тестовое, можно удалить
-    def getValue(self):
-        return self.get('value')
-
-    def setValue(self, value):
-        self.set('value', value)
 
     # СВОЙСТВО: путь запуска программы
     def getRunPath(self):
@@ -91,6 +85,16 @@ class AppRegistry(Registry):
         # AppRegistry.__values = {key: (value if key in {'modules', 'run_path'} else None) for key, value in AppRegistry.__values.items()}
         self.deleteCurrentModule()
         ModListRegistry.instance().clearAllModules()
+
+    # СВОЙСТВО: объект нового модуля, который будет редактироваться (копия текущего)
+    def getEditableModule(self):
+        return self.get('editable_module')
+
+    def setEditableModule(self, value):
+        self.set('editable_module', value)
+
+    def deleteEditableModule(self):
+        self.set('editable_module', None)
 
 # ------------------------------ Реестр модулей ------------------------------ #
 
@@ -208,8 +212,8 @@ class WidgetsRegistry(Registry):
         self.set('info_frame', frame)
 
     # СВОЙСТВО: существование главного окна
-    # def getMainWindow(self):
-    #     return self.get('main_window')
+    def getMainWindow(self):
+        return self.get('main_window')
 
     def setMainWindow(self, frame):
         self.set('main_window', frame)

@@ -1,4 +1,4 @@
-import os, shutil
+import copy, os, shutil
 from abc import ABC, abstractmethod
 
 from tkinter.messagebox import *
@@ -7,6 +7,7 @@ from tkinter.filedialog import *
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegistry
 from applogger import AppLogger
 from base.modulehelper import ModuleHelper
+from views.editwindow import EditWindow
 
 
 # NOTE В данной структуре получателем будет являться реестр AppRegistry
@@ -74,13 +75,17 @@ class ViewModule(Command):
         # Текущий модуль
         current_module = ModListRegistry.instance().ilocModule(event.widget.curselection()[0])
         # print('select module form listbox:', current_module)
-        AppRegistry.instance().setCurrentModule(current_module)
+        
         # print(AppRegistry.instance().getCurrentModule())
         # Распаковка данных в каталог MODULE
         if current_module.unpackData():
+            # Текущий модуль сохраняется в реестре только, если распаковывается
+            AppRegistry.instance().setCurrentModule(current_module)
+            # print(WidgetsRegistry.instance().getInfoFrame())
             WidgetsRegistry.instance().getInfoFrame().updateText()
             WidgetsRegistry.instance().getInfoFrame().updateImage()
             AppLogger.instance().info(f'Распакован модуль {current_module.getName()}.')
+            print(WidgetsRegistry.instance().getInfoFrame()._getWorkModule())
 
 
 class ClearModuleWindow(Command, CommandMixin):
@@ -116,7 +121,7 @@ class DeleteModule(Command, CommandMixin):
 
 
 class LoadModuleFile(Command, CommandMixin):
-    """Команда загрузкт отдельного файла модуля."""
+    """Команда загрузки отдельного файла модуля."""
     def execute(self):
         AppLogger.instance().info('Загрузка файла модуля.')
         ModuleHelper.instance().getSingleModule()
@@ -151,6 +156,20 @@ class OpenModule(Command):
     # Варианты: клик в ListBox, выбран загрузкой как отдельный модуль (выделить в ListBox)
     def execute(self):
         pass
+
+
+class EditModule(Command):
+
+    def execute(self):
+        # TODO вначале проверить, что модуль выбран
+        current_module = AppRegistry.instance().getCurrentModule()
+        if current_module:
+            AppRegistry.instance().setEditableModule(copy.deepcopy(current_module))
+            EditWindow()
+        else:
+            AppLogger.instance().error('Не выбран модуль для редактирования.')
+            showerror('Редактирование модуля', 'Вы должны выбрать модуль для редактирования.')
+
 
 class ViewLog(Command):
     def execute(self):
