@@ -154,6 +154,10 @@ class ModListRegistry(Registry):
         # извлечь как список названий-ключей для Listbox
         return list(map(lambda t: t.getTitle(), self.__modules.values())) if len(self.__modules) > 0 else []
 
+    def getRevisions(self):
+        # извлечь как список редакций модулей для проверки совпадающих
+        return list(map(lambda t: t.revision, self.__modules.values())) if len(self.__modules) > 0 else []
+
     def clearAllModules(self):
         """Очистить список модулей."""
         self.__modules.clear()

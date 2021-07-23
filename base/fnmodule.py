@@ -2,9 +2,12 @@
 import os, shutil, zipfile, glob
 import datetime, time
 
+from typing import Optional
+
 from registry import ConfigRegistry
 from applogger import AppLogger
 from .moduleconfig import ModuleConfig
+from .modulerevision import ModuleRevision
 
 class FNModule:
     __REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getWorkPath()
@@ -17,7 +20,7 @@ class FNModule:
     # 1) ссылки в папке data на картинку модуля, файл readme и т.п. (может просто ссылку на папку data ?)
     # 2) сами объекты описания и т.п. (ленивая загрузка)
     # 3) словарь конфигурации (должен уметь распарсить xml или т.п. файл)
-    def __init__(self, link, cfg=None):
+    def __init__(self, link: str, cfg: Optional[str] = None) -> None:
         """При инициализации здесь хранится только ссылка на файл модуля.
         А также <временно> распакованный и распарсенный config.bin.
         Полностью файлы модуля распаковываются только после выбора модуля.
@@ -26,6 +29,11 @@ class FNModule:
         # расположение папки data модуля
         self.link = link
         self.__config = ModuleConfig(cfg)
+        self.__revision = ModuleRevision(self.__config)
+
+    @property
+    def revision(self):
+        return self.__revision
 
     def getBaseName(self):
         return self.__config.getProperty('name')
@@ -44,22 +52,13 @@ class FNModule:
         )
 
     def getBaseRevision(self):
-        return '{}.{}'.format(
-            self.__config.getProperty('majorrevision'),
-            self.__config.getProperty('minorrevision')
-        )
+        return self.__revision.getBaseRevision()
 
     def getEdition(self):
-        return '{}-{}'.format(
-            self.__config.getProperty('editrevision'),
-            time.strftime('%d%m%y', time.localtime(self.__config.getProperty('lastupdated')))
-        )
+        return self.__revision.getEdition()
 
     def getRevision(self):
-        return '{}.{}'.format(
-            self.getBaseRevision(),
-            self.getEdition()
-        )
+        return self.__revision.getRevision()
 
     def getManufacturer(self):
         return self.__config.getProperty('manufacturer')

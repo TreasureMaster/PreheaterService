@@ -185,6 +185,9 @@ class EditModule(Command):
             editmodule.link = None
             editmodule.setEditablePaths()
             AppRegistry.instance().setEditableModule(editmodule)
+            print('сравнение версий:', current_module.revision == editmodule.revision)
+            editmodule.revision.increment()
+            print('сравнение версий:', current_module.revision == editmodule.revision)
             EditWindow()
         else:
             AppLogger.instance().error('Не выбран модуль для редактирования.')
