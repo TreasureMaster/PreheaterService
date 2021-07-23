@@ -5,7 +5,12 @@ from .encryption import decode_xml
 
 class ModuleConfig:
 
-    __HEADER = {'name', 'title', 'revision', 'manufacturer', 'releasedate', 'lastupdated', 'editor'}
+    __HEADER = {
+        'name', 'title',
+        'majorrevision', 'minorrevision', 'editrevision',
+        'manufacturer', 'releasedate', 'lastupdated',
+        'editor'
+    }
     __OPTIONS = {'voltage', 'remote', 'fuel', 'extra'}
     __MANAGER = {'mainname', 'major', 'minor', 'micro'}
 
@@ -56,6 +61,21 @@ class ModuleConfig:
                     return self.root.manager[key]
                 else:
                     return list(self.root.options[key].value)
+            except AttributeError:
+                return
+
+    def setProperty(self, key, value):
+        # WARNING пока без options
+        if key in ModuleConfig.__HEADER | ModuleConfig.__MANAGER:
+            try:
+                if key in ModuleConfig.__HEADER:
+                    self.root.header[key] = value
+                elif key in ModuleConfig.__MANAGER:
+                    self.root.manager[key] = value
+                # else:
+                    # TODO не реализовано
+                    # return list(self.root.options[key].value)
+                    # return
             except AttributeError:
                 return
 

@@ -3,11 +3,11 @@ from accessify import private
 
 from tkinter import *
 
-from .infomodule import InfoModuleFrame
+from .infomodule import EditableModuleFrame
 from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
 from widgets.scrolledwindow import ScrolledWindow
 # Здесь размещать подготовку команды?
-# from commands.maincommands import ViewLog
+
 from registry import WidgetsRegistry
 from applogger import AppLogger
 
@@ -53,16 +53,18 @@ class EditWindow:
         # listmodules = Label(self.mainframe, text='Заглушка')
         buttonsframe.grid(padx=10, row=1, column=0, sticky=N)
         # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
-        Button(buttonsframe, text='Изменить изображение', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        from commands.maincommands import ReplaceImage
+        Button(buttonsframe, text='Изменить изображение', command=ReplaceImage()).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Сохранить', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Отмена', command=lambda: self.window.destroy()).grid(sticky=W+E+S+N, pady=2)
+        Button(buttonsframe, text='Отмена', command=lambda: self.editwindow_destroy()).grid(sticky=W+E+S+N, pady=2)
 
-        info = InfoModuleFrame(self.mainframe, editable=True)
+        info = EditableModuleFrame(self.mainframe)
         info.grid(pady=5, row=1, column=1)
         self.sw.bind_widgets(info.getScrollWidgets())
+        WidgetsRegistry.instance().setEditableInfoFrame(info)
 
         info.bind('<Map>', self.on_frame_mapped)
 
@@ -73,6 +75,11 @@ class EditWindow:
         # self.scrollwindow.bind_widgets((self.log_window,))
         # WidgetsRegistry.instance().setLogFrame(self.log_window)
         # self.log_window.bind('<Map>', self.on_frame_mapped)
+
+    def editwindow_destroy(self):
+        # WARNING не помогло
+        self.sw.off_binds(None)
+        self.window.destroy()
 
     # def __prepare_commands(self):
     #     from commands.maincommands import ViewLog

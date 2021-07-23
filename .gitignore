@@ -47,12 +47,14 @@ __pycache__/
 
 # My data
 examples/
-tasks/*
+tasks/
 modules/
 module/
+editable/
 data/
 save/
 tmplog/
+temp/
 !tasks/yes2.png
 !tasks/no2.png
 !tasks/catalog_tree.txt

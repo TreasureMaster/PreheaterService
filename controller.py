@@ -27,7 +27,8 @@ class Controller:
     def init(self):
         logger = AppLogger.instance()
         logger.info('Start controller init')
-        
+        AppRegistry.instance().setRunPath()
+
         self.__moduleHelper = ModuleHelper.instance()
         self.__moduleHelper.init()
         # logger.error('Test second handler')

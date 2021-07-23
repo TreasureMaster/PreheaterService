@@ -19,23 +19,46 @@ class FNConfig:
     ]
     # Совместимые ключи менеджеров, с версиями которых может работать данный менеджер
     __compatible_keys = []
+    # ПАПКИ, определенные в системе
     # Путь к папке, где хранятся архивы модулей
-    __required_modulesfolder = 'modules'
+    __modularlist_folder = 'modules'
+    # Основная папка, где хранятся файлы редактируемого модуля
+    __editablemodule_folder = 'editable'
     # Базовый путь папки модуля (корневая папка, куда распаковывается вся структура модуля)
-    __required_mainfolder = 'module'
+    __workmodule_folder = 'module'
     # Название подпапки с данными (распаковка данных)
-    __required_datafolder = 'data'
+    __data_subfolder = 'data'
+    # Название подпапки с документацией
+    __docs_subfolder = 'docs'
+    # ФАЙЛЫ, определенные в системе
+    # Изображение отопителя
+    __image_filename = 'image.jpg'
+    # Описание отопителя
+    __description_filename = 'readme.txt'
+    # Файл конфигурации отопителя
+    __config_filename = 'config.bin'
     # Путь к папке с данными
-    __required_datapath = f"{__required_mainfolder}/{__required_datafolder}"
+    __workmodule_datapath = f"{__workmodule_folder}/{__data_subfolder}"
+    # Путь к папке с редактируемыми данными
+    __editablemodule_datapath = f"{__editablemodule_folder}/{__data_subfolder}"
+    # TODO изменить эти данные на зашитые названия файлов и формирование названия в вызовах 'get'
     # Полные относительные пути для файлов модуля
     # рисунок
-    __required_image = f"{__required_datapath}/image.jpg"
+    # __required_image = f"{__workmodule_datapath}/image.jpg"
     # описание
-    __required_description = f"{__required_datapath}/readme.txt"
+    # __required_description = f"{__workmodule_datapath}/readme.txt"
     # конфигурация
-    __required_config = f"{__required_datapath}/config.bin"
+    # __required_config = f"{__workmodule_datapath}/config.bin"
+    # Полные относительные пути для файлов редактируемого модуля
+    # рисунок
+    # __required_editable_image = f"{__editablemodule_datapath}/image.jpg"
+    # описание
+    # __required_editable_description = f"{__editablemodule_datapath}/readme.txt"
+    # конфигурация
+    # __required_editable_config = f"{__editablemodule_datapath}/config.bin"
     # ---------------------------------------------------------------------------- #
 
+# ----------------------------- Данные менеджера ----------------------------- #
     def getManagerName(self):
         return self.__mainname
 
@@ -64,24 +87,45 @@ class FNConfig:
                 version
             )
 
+# --------------------------- Пути рабочего модуля --------------------------- #
+    # def getPathsForZip(self):
+    #     for path in {self.__data_subfolder, self.__docs_subfolder}:
+    #         yield path
+
     def getModulesPath(self):
-        return self.__required_modulesfolder
+        return self.__modularlist_folder
 
-    def getMainPath(self):
-        return self.__required_mainfolder
+    def getWorkPath(self):
+        return self.__workmodule_folder
 
-    def getDataPath(self):
-        return self.__required_datapath
+    def getWorkDataPath(self):
+        return self.__workmodule_datapath
 
-    def getImageFullPath(self):
-        return self.__required_image
+    def getWorkImageFilepath(self):
+        return f"{self.getWorkDataPath()}/{self.__image_filename}"
 
-    def getDescriptionFullPath(self):
-        return self.__required_description
+    def getWorkDescriptionFilepath(self):
+        return f"{self.getWorkDataPath()}/{self.__description_filename}"
 
-    def getConfigFullPath(self):
-        return self.__required_config
+    def getWorkConfigFilepath(self):
+        return f"{self.getWorkDataPath()}/{self.__config_filename}"
 
+# ------------------------ Пути редактируемого модуля ------------------------ #
+
+    def getEditablePath(self):
+        return self.__editablemodule_folder
+
+    def getEditableDataPath(self):
+        return self.__editablemodule_datapath
+
+    def getEditableImageFilepath(self):
+        return f"{self.getEditableDataPath()}/{self.__image_filename}"
+
+    def getEditableDescriptionFilepath(self):
+        return f"{self.getEditableDataPath()}/{self.__description_filename}"
+
+    def getEditableConfigFilepath(self):
+        return f"{self.getEditableDataPath()}/{self.__config_filename}"
 
 
 if __name__ == '__main__':

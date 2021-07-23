@@ -62,8 +62,9 @@ class AppRegistry(Registry):
 
     # СВОЙСТВО: путь запуска программы
     def getRunPath(self):
-        if self.get('run_path') is None:
-            self.setRunPath()
+        # WARNING наверное, установка, если None, ошибочна, так как к этому времени может смениться папка
+        # if self.get('run_path') is None:
+        #     self.setRunPath()
         return self.get('run_path')
 
     def setRunPath(self):
@@ -168,12 +169,14 @@ class WidgetsRegistry(Registry):
     Используется как канал передачи информации между самими виджетами
     и между виджетами и другими объектами."""
     # статические приватные свойства
-    # 1) info_frame - информационный фрейм первого окна с параметрами модуля (правый)
+    # 1) work_info_frame - информационный фрейм первого окна с параметрами модуля (правый)
     # 2) main_window - главное окно менеджера (первое окно)
     # 3) list_modules - переменная StringVar списка модулей (левое окно)
     # 4) log_frame - фрейм отображения логов
+    # 5) edit_info_frame - информационный фрейм окна редактирования с параметрами модуля (правый)
     __values = {
-        'info_frame': None,
+        'work_info_frame': None,
+        'edit_info_frame': None,
         'main_window': None,
         'list_modules': None,
         'log_frame': None,
@@ -205,11 +208,18 @@ class WidgetsRegistry(Registry):
         self.__values[key] = value
 
     # СВОЙСТВО: правый фрейм информации о модуле (первое окно)
-    def getInfoFrame(self):
-        return self.get('info_frame')
+    def getWorkInfoFrame(self):
+        return self.get('work_info_frame')
 
-    def setInfoFrame(self, frame):
-        self.set('info_frame', frame)
+    def setWorkInfoFrame(self, frame):
+        self.set('work_info_frame', frame)
+
+    # СВОЙСТВО: правый фрейм информации о модуле (окно редактирования модуля)
+    def getEditableInfoFrame(self):
+        return self.get('edit_info_frame')
+
+    def setEditableInfoFrame(self, frame):
+        self.set('edit_info_frame', frame)
 
     # СВОЙСТВО: существование главного окна
     def getMainWindow(self):
@@ -292,9 +302,6 @@ class ConfigRegistry(Registry):
         return self.get('manager')
 
     # TODO возможно следует возвращать некоторые ключи менеджера ?
-
-    # def setInfoFrame(self, frame):
-    #     self.set('info_frame', frame)
 
 
 if __name__ == '__main__':

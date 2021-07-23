@@ -7,11 +7,11 @@ from applogger import AppLogger
 from .moduleconfig import ModuleConfig
 
 class FNModule:
-    __REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getMainPath()
-    __REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getDataPath()
-    __REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getDescriptionFullPath()
-    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getConfigFullPath()
-    __REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getImageFullPath()
+    __REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getWorkPath()
+    __REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getWorkDataPath()
+    __REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getWorkDescriptionFilepath()
+    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getWorkConfigFilepath()
+    __REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getWorkImageFilepath()
 
     # TODO содержит поля:
     # 1) ссылки в папке data на картинку модуля, файл readme и т.п. (может просто ссылку на папку data ?)
@@ -25,36 +25,54 @@ class FNModule:
         # TODO cfg теперь bin, он уже расшифрован в modulehelper
         # расположение папки data модуля
         self.link = link
-        self.config = ModuleConfig(cfg)
+        self.__config = ModuleConfig(cfg)
+
+    def getBaseName(self):
+        return self.__config.getProperty('name')
 
     def getName(self):
-        # return self.config.getProperty('name')
+        # return self.__config.getProperty('name')
         return '{}-{}'.format(
-            self.config.getProperty('name'),
-            self.config.getProperty('revision'),
+            self.getBaseName(),
+            self.getRevision()
         )
 
     def getTitle(self):
         return '{}  (rev. {})'.format(
-            self.config.getProperty('title'),
-            self.config.getProperty('revision'),
+            self.__config.getProperty('title'),
+            self.getRevision()
+        )
+
+    def getBaseRevision(self):
+        return '{}.{}'.format(
+            self.__config.getProperty('majorrevision'),
+            self.__config.getProperty('minorrevision')
+        )
+
+    def getEdition(self):
+        return '{}-{}'.format(
+            self.__config.getProperty('editrevision'),
+            time.strftime('%d%m%y', time.localtime(self.__config.getProperty('lastupdated')))
         )
 
     def getRevision(self):
-        return self.config.getProperty('revision')
+        return '{}.{}'.format(
+            self.getBaseRevision(),
+            self.getEdition()
+        )
 
     def getManufacturer(self):
-        return self.config.getProperty('manufacturer')
+        return self.__config.getProperty('manufacturer')
 
     def getReleaseDate(self):
-        return time.strftime('%d %b %Y', time.localtime(self.config.getProperty('releasedate')))
+        return time.strftime('%d %b %Y', time.localtime(self.__config.getProperty('releasedate')))
 
     def getMakingManager(self):
         return '{}-{}.{}.{}'.format(
-            self.config.getProperty('mainname'),
-            self.config.getProperty('major'),
-            self.config.getProperty('minor'),
-            self.config.getProperty('micro')
+            self.__config.getProperty('mainname'),
+            self.__config.getProperty('major'),
+            self.__config.getProperty('minor'),
+            self.__config.getProperty('micro')
         )
 
     def isCompatible(self):
@@ -73,8 +91,8 @@ class FNModule:
         # fnlist = fnmfile.namelist()
         # print('data:', fnlist)
 
-        if os.path.exists(FNModule.__REQUIRED_MAINPATH):
-            shutil.rmtree(FNModule.__REQUIRED_MAINPATH)
+        if os.path.exists(self.__REQUIRED_MAINPATH):
+            shutil.rmtree(self.__REQUIRED_MAINPATH)
         fnmfile.extractall()
         fnmfile.close()
         # просто метка об успехе
@@ -84,17 +102,19 @@ class FNModule:
         """Проверяет соответствие файла конфигурации в папке DATA
         и в случае несоответствия распаковывает данные текущего модуля
         (то есть, если в папке с текущим модулем находяться старые файлы)."""
-        path = FNModule.__REQUIRED_CONFIG.format(FNModule.__REQUIRED_DATAPATH)
+        path = self.__REQUIRED_CONFIG.format(self.__REQUIRED_DATAPATH)
         # print('path from checkCurrentData:', path)
         if self.getName() != ModuleConfig().getFromBIN(path).getProperty('name'):
             self.unpackData()
 
     def getDescription(self, field):
         # проверка соответствия модуля тому, что есть в папке data
-        self.checkCurrentData()
+        # Пока заглушка - не выполнять проверку, если модуль редактируемый?
+        if self.link is not None:
+            self.checkCurrentData()
         if field == 'config':
             return self.getConfiguration()
-        path = FNModule.__REQUIRED_DESCRIPTION.format(FNModule.__REQUIRED_DATAPATH)
+        path = self.__REQUIRED_DESCRIPTION.format(self.__REQUIRED_DATAPATH)
         # Реализация с вычислением пути может пригодиться, если будут использоваться разные папки (для чтения и редактирования копии)
         with open(path, encoding='utf-8') as fd:
             desc = fd.read()
@@ -102,9 +122,10 @@ class FNModule:
 
     def getConfiguration(self):
         # Создать описание конфигурации
-        text = 'Базовый блок: {}\nВерсия: {}\nПроизводитель: {}\nДата выпуска: {}'.format(
-            self.getName(),
-            self.getRevision(),
+        text = 'Базовый блок: {}\nВерсия: {}\nРедакция: {}\nПроизводитель: {}\nДата выпуска: {}'.format(
+            self.getBaseName(),
+            self.getBaseRevision(),
+            self.getEdition(),
             self.getManufacturer(),
             self.getReleaseDate()
         )
@@ -112,9 +133,20 @@ class FNModule:
 
     def getImageLink(self):
         """Возвращает ссылку на файл изображения подогревателя."""
-        path = FNModule.__REQUIRED_IMAGE.format(FNModule.__REQUIRED_DATAPATH)
+        path = self.__REQUIRED_IMAGE.format(self.__REQUIRED_DATAPATH)
         # link = None
         # path = f'{FNModule.__REQUIRED_PATH}/*.%s'
         # for link in (filter(lambda x: bool(x), [glob.glob(path % ext) for ext in ('jpg', 'png')])):
         #     pass
         return os.path.normpath(os.path.abspath(path)) if os.path.isfile(path) else None
+
+    def updateConfigProperty(self, key, value):
+        self.__config.setProperty(key, value)
+
+    def setEditablePaths(self):
+        # WARNING пути ломаются. Нужен другой выход - self везде ???
+        self.__REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getEditablePath()
+        self.__REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getEditableDataPath()
+        self.__REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getEditableDescriptionFilepath()
+        self.__REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath()
+        self.__REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getEditableImageFilepath()

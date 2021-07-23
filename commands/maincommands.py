@@ -1,4 +1,7 @@
-import copy, os, shutil
+import copy, imghdr, os, shutil, glob
+
+# from glob import glob
+from distutils.dir_util import copy_tree
 from abc import ABC, abstractmethod
 
 from tkinter.messagebox import *
@@ -28,11 +31,11 @@ from views.editwindow import EditWindow
 class CommandMixin:
 
     def clearModuleInfo(self):
-        WidgetsRegistry.instance().getInfoFrame().updateText()
-        WidgetsRegistry.instance().getInfoFrame().clearImage()
+        WidgetsRegistry.instance().getWorkInfoFrame().updateText()
+        WidgetsRegistry.instance().getWorkInfoFrame().clearImage()
         WidgetsRegistry.instance().updateListVar()
         # TODO заменить на путь из Registry
-        mainpath = ConfigRegistry.instance().getManagerConfig().getMainPath()
+        mainpath = ConfigRegistry.instance().getManagerConfig().getWorkPath()
         if os.path.exists(mainpath):
             shutil.rmtree(mainpath)
 
@@ -81,11 +84,11 @@ class ViewModule(Command):
         if current_module.unpackData():
             # Текущий модуль сохраняется в реестре только, если распаковывается
             AppRegistry.instance().setCurrentModule(current_module)
-            # print(WidgetsRegistry.instance().getInfoFrame())
-            WidgetsRegistry.instance().getInfoFrame().updateText()
-            WidgetsRegistry.instance().getInfoFrame().updateImage()
+            # print(WidgetsRegistry.instance().getWorkInfoFrame())
+            WidgetsRegistry.instance().getWorkInfoFrame().updateText()
+            WidgetsRegistry.instance().getWorkInfoFrame().updateImage()
             AppLogger.instance().info(f'Распакован модуль {current_module.getName()}.')
-            print(WidgetsRegistry.instance().getInfoFrame()._getWorkModule())
+            print(WidgetsRegistry.instance().getWorkInfoFrame()._getWorkModule())
 
 
 class ClearModuleWindow(Command, CommandMixin):
@@ -157,20 +160,64 @@ class OpenModule(Command):
     def execute(self):
         pass
 
-
+# -------------------------- Команды редактирования -------------------------- #
 class EditModule(Command):
 
     def execute(self):
         # TODO вначале проверить, что модуль выбран
         current_module = AppRegistry.instance().getCurrentModule()
+        # print(current_module.link)
         if current_module:
-            AppRegistry.instance().setEditableModule(copy.deepcopy(current_module))
+            # удалить содержимое редактируемой папки
+            editpath = ConfigRegistry.instance().getManagerConfig().getEditablePath()
+            if os.path.exists(editpath):
+                [os.remove(f) for f in glob.glob(editpath + '/**', recursive=True) if os.path.isfile(f)]
+            # скопировать в нее содержимое рабочей папки модуля
+            copy_tree(
+                ConfigRegistry.instance().getManagerConfig().getWorkPath(),
+                ConfigRegistry.instance().getManagerConfig().getEditablePath()
+            )
+            # Создание fnm, наверное, сейчас не нужно. Данные уже скопированы.
+            # ModuleHelper.instance().createFNMFile()
+            # зарегистрировать модуль в реестре как редактируемый
+            editmodule = copy.deepcopy(current_module)
+            # Модуль пока не сохранен, поэтому ссылки на fnm-файл нет
+            editmodule.link = None
+            editmodule.setEditablePaths()
+            AppRegistry.instance().setEditableModule(editmodule)
             EditWindow()
         else:
             AppLogger.instance().error('Не выбран модуль для редактирования.')
             showerror('Редактирование модуля', 'Вы должны выбрать модуль для редактирования.')
 
 
+class ReplaceImage(Command):
+    """Вставка новой картинки отопителя."""
+    def execute(self):
+        editablepath = ConfigRegistry.instance().getManagerConfig().getEditableDataPath()
+        if not os.path.exists(editablepath):
+            os.makedirs(editablepath)
+            # shutil.rmtree(editablepath)
+        image = askopenfilename(
+            initialdir=os.getcwd(),
+            title='Загрузить файл изображения отопителя',
+            filetypes=(('jpeg files', '*.jpeg .jpg'),)
+        )
+        # проверка, не передан ли другой файл под видом jpeg
+        if not imghdr.what(image):
+            showerror('Выбор файла изображения', f"Файл '{image}' не является файлом изображения или поврежден.")
+            AppLogger.instance().error(f"Файл '{image}' не является файлом изображения или поврежден.")
+            return
+        else:
+            with open(image, 'rb') as oldimage:
+                with open(ConfigRegistry.instance().getManagerConfig().getEditableImageFilepath(), 'wb') as newimage:
+                    newimage.write(oldimage.read())
+        # если все нормально, надо обновить ссылку
+        # editmodule = AppRegistry.instance().getEditableModule()
+        WidgetsRegistry.instance().getEditableInfoFrame().updateImage()
+        print('добавлена картинка')
+
+# ---------------------------------------------------------------------------- #
 class ViewLog(Command):
     def execute(self):
         # print(AppLogger.get_stream().getvalue())

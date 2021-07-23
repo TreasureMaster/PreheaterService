@@ -15,9 +15,8 @@ class InfoModuleFrame(Frame):
     editable - флаг, какой модуль используется (редактируемый или обычный)
     """
     # Левая панель выбора модулей из списка
-    def __init__(self, master, *args, editable=False):
+    def __init__(self, master, *args):
         Frame.__init__(self, master, *args)
-        self.editable = editable
         # Переменные окон Message
         self.__make_widgets()
         self.updateText()
@@ -42,10 +41,7 @@ class InfoModuleFrame(Frame):
 
     def _getWorkModule(self):
         # Получение рабочего модуля
-        if self.editable:
-            return AppRegistry.instance().getEditableModule()
-        else:
-            return AppRegistry.instance().getCurrentModule()
+        return AppRegistry.instance().getCurrentModule()
 
     def __getText(self, field):
         # cur_mod = AppRegistry.instance().getCurrentModule()
@@ -67,6 +63,26 @@ class InfoModuleFrame(Frame):
         """Возвращает текстовые виджеты для корректировки событий прокрутки главного окна."""
         # WARNING опасно, можно изменить
         return (self.__description, self.__config)
+
+
+class EditableModuleFrame(InfoModuleFrame):
+
+    def _getWorkModule(self):
+        return AppRegistry.instance().getEditableModule()
+
+    def __make_widgets(self):
+        Label(self, text='Информация о модуле').pack(padx=5)
+
+        self.__modulemage = ModuleImage(self, image=(self._getWorkModule().getImageLink() if self._getWorkModule() else None))
+        self.__modulemage.pack()
+
+        InfoTitleLabel(self, text='Описание модуля:').pack(padx=5, fill=X)
+        self.__description = ReadonlyScrolledText(self, width=75, height=10, wrap=WORD)
+        self.__description.pack(padx=5, pady=5, fill=X)
+
+        InfoTitleLabel(self, text='Конфигурация модуля:').pack(padx=5, fill=X)
+        self.__config = ReadonlyScrolledText(self, width=75, height=5, wrap=WORD)
+        self.__config.pack(padx=5, pady=5, fill=X)
 
 
 if __name__ == '__main__':

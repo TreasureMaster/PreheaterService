@@ -64,7 +64,7 @@ class MainWindow:
         self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
         info = InfoModuleFrame(self.mainframe)
         info.grid(pady=5, row=1, column=1)
-        WidgetsRegistry.instance().setInfoFrame(info)
+        WidgetsRegistry.instance().setWorkInfoFrame(info)
         self.scrollwindow.bind_widgets(info.getScrollWidgets())
 
         self.log_window = LoggerWindow(self.mainframe, height=5)

@@ -2,6 +2,7 @@ import os, glob, shutil
 import zipfile
 from threading import Lock
 from accessify import private
+from distutils.dir_util import copy_tree
 
 from tkinter import *
 from tkinter.messagebox import *
@@ -21,7 +22,7 @@ class ModuleHelper:
     # __registry = None
     __lock = Lock()
     # TODO внести все пути в config.py
-    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getConfigFullPath()
+    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getWorkConfigFilepath()
 
     # создать объект напрямую невозможно
     @private
@@ -143,6 +144,18 @@ class ModuleHelper:
             self.logger.error('Ошибка при распаковке файла: ' + str(msg))
             return
         return cfg
+
+    def createFNMFile(self):
+        """Создание архива файлов модуля во временной папке."""
+        os.chdir(ConfigRegistry.instance().getManagerConfig().getWorkPath())
+        with zipfile.ZipFile('../temp/tmp.fnm', 'w') as myzip:
+            myzip.write('data')
+            myzip.write('docs')
+            for file in os.listdir(os.getcwd() + '/data'):
+                myzip.write('data/' + file)
+            for file in os.listdir(os.getcwd() + '/docs'):
+                myzip.write('docs/' + file)
+        os.chdir(AppRegistry.instance().getRunPath())
 
 if __name__ == '__main__':
     pass
