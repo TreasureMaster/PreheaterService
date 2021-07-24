@@ -35,6 +35,10 @@ class FNModule:
     def revision(self):
         return self.__revision
 
+    @property
+    def config(self):
+        return self.__config
+
     def getBaseName(self):
         return self.__config.getProperty('name')
 
@@ -143,9 +147,16 @@ class FNModule:
         self.__config.setProperty(key, value)
 
     def setEditablePaths(self):
-        # WARNING пути ломаются. Нужен другой выход - self везде ???
         self.__REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getEditablePath()
         self.__REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getEditableDataPath()
         self.__REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getEditableDescriptionFilepath()
         self.__REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath()
         self.__REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getEditableImageFilepath()
+
+    def setWorkPaths(self):
+        # TODO необходимо убрать дублирование кода (может что-то изменить в config ?)
+        self.__REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getWorkPath()
+        self.__REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getWorkDataPath()
+        self.__REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getWorkDescriptionFilepath()
+        self.__REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getWorkConfigFilepath()
+        self.__REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getWorkImageFilepath()

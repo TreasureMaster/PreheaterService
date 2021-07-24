@@ -1,6 +1,9 @@
-from lxml import objectify
+from __future__ import annotations
+from lxml import objectify, etree
+from typing import Any
 
 from .encryption import decode_xml
+from registry import ConfigRegistry
 
 
 class ModuleConfig:
@@ -18,7 +21,7 @@ class ModuleConfig:
     #     if filename:
     #         self.parseXML(filename)
 
-    def __init__(self, cfg=None):
+    def __init__(self, cfg: str = None) -> None:
         # cfg_text = None
         # cgf теперь считанный bin, нужно расшифровать
         # if cfg:
@@ -35,7 +38,7 @@ class ModuleConfig:
         # with open(self.xml_file, encoding='utf-8') as f:
         # self.root = objectify.XML(xml)
 
-    def getFromXML(self, filename=None):
+    def getFromXML(self, filename: str = None) -> ModuleConfig:
         """Получить объект конфигурации из незашифрованного XML файла."""
         # self.xml_file = filename
         # TODO указать ошибку при отсутствии файла
@@ -43,16 +46,34 @@ class ModuleConfig:
             self.root = objectify.XML(f.read())
         return self
 
-    def getFromBIN(self, filename=None):
+    def getFromBIN(self, filename: str = None) -> ModuleConfig:
         """Получить объект конфигурации из зашифрованного XML->BIN файла."""
         # self.xml_file = filename
         # TODO указать ошибку при отсутствии файла
         with open(filename, 'rb') as f:
-            cfg = decode_xml(f.read(), filename)
+            cfg = decode_xml(
+                raw_data = f.read(),
+                fnm = filename,
+                keys = ConfigRegistry.instance().getManagerConfig().getAllKeys()
+            )
             self.root = objectify.XML(cfg)
         return self
 
-    def getProperty(self, key):
+    def toStringXML(self) -> str:
+        """Возвращает строковое представление текущей конфигурации XML."""
+        # WARNING для шифрования нужно байтовое ???
+        # Вначале удаляет все лишние аннотации lxml
+        objectify.deannotate(self.root)
+        etree.cleanup_namespaces(self.root)
+        return etree.tostring(
+            self.root,
+            encoding='utf-8',
+            pretty_print=True,
+            # xml_declaration=True
+        )#.decode('utf-8')
+
+    def getProperty(self, key: str) -> Any:
+        """Возвращает значение свойства, указанного в XML-объекте файла конфигурации."""
         if key in ModuleConfig.__HEADER | ModuleConfig.__OPTIONS | ModuleConfig.__MANAGER:
             try:
                 if key in ModuleConfig.__HEADER:
@@ -64,7 +85,8 @@ class ModuleConfig:
             except AttributeError:
                 return
 
-    def setProperty(self, key, value):
+    def setProperty(self, key: str, value: Any) -> None:
+        """Присваивает новое значение свойству XML-объекта файла конфигурации."""
         # WARNING пока без options
         if key in ModuleConfig.__HEADER | ModuleConfig.__MANAGER:
             try:

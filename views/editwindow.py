@@ -53,13 +53,14 @@ class EditWindow:
         # listmodules = Label(self.mainframe, text='Заглушка')
         buttonsframe.grid(padx=10, row=1, column=0, sticky=N)
         # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
-        from commands.maincommands import ReplaceImage
+        # WARNING размещено здесь из-за перекрестного импорта
+        from commands.maincommands import ReplaceImage, SaveModule
         Button(buttonsframe, text='Изменить изображение', command=ReplaceImage()).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Сохранить', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Отмена', command=lambda: self.editwindow_destroy()).grid(sticky=W+E+S+N, pady=2)
+        Button(buttonsframe, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
+        Button(buttonsframe, text='Отмена', command=self.window.destroy).grid(sticky=W+E+S+N, pady=2)
 
         info = EditableModuleFrame(self.mainframe)
         info.grid(pady=5, row=1, column=1)
@@ -76,10 +77,10 @@ class EditWindow:
         # WidgetsRegistry.instance().setLogFrame(self.log_window)
         # self.log_window.bind('<Map>', self.on_frame_mapped)
 
-    def editwindow_destroy(self):
-        # WARNING не помогло
-        self.sw.off_binds(None)
-        self.window.destroy()
+    # def editwindow_destroy(self):
+    #     # WARNING не помогло
+    #     self.sw.off_binds(None)
+    #     self.window.destroy()
 
     # def __prepare_commands(self):
     #     from commands.maincommands import ViewLog

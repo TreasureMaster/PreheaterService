@@ -11,21 +11,25 @@ class FNConfig:
     __compatible_versions = [
         # '0.1.0'
     ]
-    # Базовые ключи менеджера, введенные именно для этого менеджера
+    # WARNING Длина ключей РОВНО 16 символов !!!
+    # Базовый ключ этой версии менеджера, действующий именно для этого менеджера
     __main_keys = [
-        b'kF-4g(kl{[s</!!~',
+        b'kF-4g(kl{[s</!!~'
+    ]
+    # Совместимые ключи менеджеров, с версиями которых может работать данный менеджер
+    __compatible_keys = [
         b'sjioGY29<<!"n_=k',
         b'YRod48&:*fst^%@j'
     ]
-    # Совместимые ключи менеджеров, с версиями которых может работать данный менеджер
-    __compatible_keys = []
     # ПАПКИ, определенные в системе
     # Путь к папке, где хранятся архивы модулей
     __modularlist_folder = 'modules'
-    # Основная папка, где хранятся файлы редактируемого модуля
-    __editablemodule_folder = 'editable'
     # Базовый путь папки модуля (корневая папка, куда распаковывается вся структура модуля)
     __workmodule_folder = 'module'
+    # Основная папка, где хранятся файлы редактируемого модуля
+    __base_editablemodule_folder = 'editable'
+    # Рабочая папка редактируемого модуля
+    __editablemodule_folder = f'{__base_editablemodule_folder}/{__workmodule_folder}'
     # Название подпапки с данными (распаковка данных)
     __data_subfolder = 'data'
     # Название подпапки с документацией
@@ -39,6 +43,8 @@ class FNConfig:
     __config_filename = 'config.bin'
     # Путь к папке с данными
     __workmodule_datapath = f"{__workmodule_folder}/{__data_subfolder}"
+    # Путь к папке с документацией
+    __workmodule_docspath = f"{__workmodule_folder}/{__docs_subfolder}"
     # Путь к папке с редактируемыми данными
     __editablemodule_datapath = f"{__editablemodule_folder}/{__data_subfolder}"
     # TODO изменить эти данные на зашитые названия файлов и формирование названия в вызовах 'get'
@@ -101,6 +107,9 @@ class FNConfig:
     def getWorkDataPath(self):
         return self.__workmodule_datapath
 
+    def getWorkDocsPath(self):
+        return self.__workmodule_docspath
+
     def getWorkImageFilepath(self):
         return f"{self.getWorkDataPath()}/{self.__image_filename}"
 
@@ -111,6 +120,9 @@ class FNConfig:
         return f"{self.getWorkDataPath()}/{self.__config_filename}"
 
 # ------------------------ Пути редактируемого модуля ------------------------ #
+
+    def getBaseEditablePath(self):
+        return self.__base_editablemodule_folder
 
     def getEditablePath(self):
         return self.__editablemodule_folder

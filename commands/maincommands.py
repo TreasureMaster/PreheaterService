@@ -10,6 +10,7 @@ from tkinter.filedialog import *
 from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegistry
 from applogger import AppLogger
 from base.modulehelper import ModuleHelper
+from base.encryption import encode_xml
 from views.editwindow import EditWindow
 
 
@@ -78,7 +79,8 @@ class ViewModule(Command):
         # Текущий модуль
         current_module = ModListRegistry.instance().ilocModule(event.widget.curselection()[0])
         # print('select module form listbox:', current_module)
-        
+        # print(event.widget.curselection())
+        # print(current_module.link)
         # print(AppRegistry.instance().getCurrentModule())
         # Распаковка данных в каталог MODULE
         if current_module.unpackData():
@@ -185,9 +187,9 @@ class EditModule(Command):
             editmodule.link = None
             editmodule.setEditablePaths()
             AppRegistry.instance().setEditableModule(editmodule)
-            print('сравнение версий:', current_module.revision == editmodule.revision)
+            # print('сравнение версий:', current_module.revision == editmodule.revision)
             editmodule.revision.increment()
-            print('сравнение версий:', current_module.revision == editmodule.revision)
+            # print('сравнение версий:', current_module.revision == editmodule.revision)
             EditWindow()
         else:
             AppLogger.instance().error('Не выбран модуль для редактирования.')
@@ -219,6 +221,44 @@ class ReplaceImage(Command):
         # editmodule = AppRegistry.instance().getEditableModule()
         WidgetsRegistry.instance().getEditableInfoFrame().updateImage()
         print('добавлена картинка')
+
+
+class SaveModule(Command):
+    """Создание архива модуля и его сохранение в папке модулей."""
+    def execute(self):
+        # Сохранить описание модуля в readme.txt
+        with open(ConfigRegistry.instance().getManagerConfig().getEditableDescriptionFilepath(), 'w', encoding='utf-8') as readme:
+            readme.write(WidgetsRegistry.instance().getEditableInfoFrame().getText())
+        # Зашифровать и сохранить конфигурацию модуля в config.bin
+        encode_xml(
+            key = next(ConfigRegistry.instance().getManagerConfig().getMainKeys()),
+            xml = AppRegistry.instance().getEditableModule().config.toStringXML(),
+            cfgfilename = ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath()
+        )
+        # Упаковать все файлы в архив .fnm и сохранить в рабочей папке со всеми модулями
+        save_path = ModuleHelper.instance().createFNMFile(
+            where = ConfigRegistry.instance().getManagerConfig().getBaseEditablePath()
+        )
+        # добавить новый модуль к списку модулей в реестре
+        newmodule = copy.deepcopy(AppRegistry.instance().getEditableModule())
+        newmodule.link = save_path
+        newmodule.setWorkPaths()
+        ModListRegistry.instance().addModule(newmodule.getName(), newmodule)
+        # обновить список в листинге
+        WidgetsRegistry.instance().getListVar().set(
+            ModListRegistry.instance().getListModules()
+        )
+        # TODO распаковать и открыть его в инфофрейме главного окна
+        listbox = WidgetsRegistry.instance().getModulesListbox()
+        # Очистить выбор в окне listbox, если позиция выбрана
+        listbox.selection_clear(
+            listbox.curselection()[0]
+        ) if listbox.curselection() else None
+        # Переместиться на последний (добавленный) модуль в списке
+        listbox.select_set(
+            ModListRegistry.instance().last_indexModules()
+        )
+        listbox.event_generate('<<ListboxSelect>>')
 
 # ---------------------------------------------------------------------------- #
 class ViewLog(Command):

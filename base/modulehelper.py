@@ -139,23 +139,36 @@ class ModuleHelper:
             with zipfile.ZipFile(fnm) as myzip:
                 # zipfile использует байтовый режим, поэтому не нужно указывать 'b'
                 with myzip.open(ModuleHelper.__REQUIRED_CONFIG, 'r') as myfile:
-                    cfg = decode_xml(myfile.read(), fnm)
+                    cfg = decode_xml(
+                        raw_data = myfile.read(),
+                        fnm = fnm,
+                        keys = ConfigRegistry.instance().getManagerConfig().getAllKeys()
+                    )
         except Exception as msg:
             self.logger.error('Ошибка при распаковке файла: ' + str(msg))
             return
         return cfg
 
-    def createFNMFile(self):
-        """Создание архива файлов модуля во временной папке."""
-        os.chdir(ConfigRegistry.instance().getManagerConfig().getWorkPath())
-        with zipfile.ZipFile('../temp/tmp.fnm', 'w') as myzip:
-            myzip.write('data')
-            myzip.write('docs')
-            for file in os.listdir(os.getcwd() + '/data'):
-                myzip.write('data/' + file)
-            for file in os.listdir(os.getcwd() + '/docs'):
-                myzip.write('docs/' + file)
+    def createFNMFile(self, where: str) -> str:
+        """Создание архива файлов модуля и перемещение его в папку со всеми модулями."""
+        manager_cfg = ConfigRegistry.instance().getManagerConfig()
+        save_path = os.path.join(
+            AppRegistry.instance().getRunPath(),
+            manager_cfg.getModulesPath(),
+            AppRegistry.instance().getEditableModule().getName() + '.fnm'
+        )
+        os.chdir(where)
+        with zipfile.ZipFile(save_path, 'w') as myzip:
+            myzip.write(manager_cfg.getWorkPath())
+            myzip.write(manager_cfg.getWorkDataPath())
+            myzip.write(manager_cfg.getWorkDocsPath())
+            for file in os.listdir(os.path.join(os.getcwd(), manager_cfg.getWorkDataPath())):
+                myzip.write(os.path.join(manager_cfg.getWorkDataPath(), file))
+            for file in os.listdir(os.path.join(os.getcwd(), manager_cfg.getWorkDocsPath())):
+                myzip.write(os.path.join(manager_cfg.getWorkDocsPath(), file))
         os.chdir(AppRegistry.instance().getRunPath())
+        # Возвращает путь сохранения для регистрации в списке модулей нового модуля
+        return save_path
 
 if __name__ == '__main__':
     pass

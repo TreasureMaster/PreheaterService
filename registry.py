@@ -143,6 +143,9 @@ class ModListRegistry(Registry):
     def deleteModule(self, name):
         self.__modules.pop(name, None)
 
+    def last_indexModules(self):
+        return self.__modules.last_index()
+
     # WARNING никакой защиты нет (надо продумать, может возвращать копию?)
     # Вроде получение всех модулей нигде не используется...
     # СВОЙСТВО: работа со словарем модулей
@@ -243,9 +246,8 @@ class WidgetsRegistry(Registry):
     #     AppRegistry.__values['modules'] = ModuleMapper()
 
     # СВОЙСТВО: переменная списка модулей (в Listbox)
-    # def getListVar(self):
-    #     # TODO метод не нужен ???
-    #     return self.instance().get('list_modules')
+    def getListVar(self):
+        return self.instance().get('list_modules')
 
     def setListVar(self, var):
         self.set('list_modules', var)

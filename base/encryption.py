@@ -1,34 +1,42 @@
 import os
 
+from typing import Iterable
+
 from Cryptodome.Cipher import AES
 # from Cryptodome.Random import get_random_bytes
 
 from applogger import AppLogger
-from registry import ConfigRegistry
+# from registry import ConfigRegistry, AppRegistry
 
 
 class MismatchedKeys(Exception):
+    """Ошибка несовпадения ключей."""
     pass
 
-def encode_xml():
-    # TODO пока не реализовано
-    key = b'fg(GG4_+=|~?/{;}'
+def encode_xml(key: bytes, xml: bytes, cfgfilename: str) -> None:
+    """Кодирование данных XML и запись в файл.
+
+    key - действующий ключ менеджера.
+    xml - подготовленный для шифрования текст XML (должен быть тип bytes).
+    cfgfilename - имя и путь файла для сохранения зашифрованного файла конфигурации (сейчас - config.bin).
+    """
+    # key = next(ConfigRegistry.instance().getManagerConfig().getMainKeys())
     cipher = AES.new(key, AES.MODE_EAX)
 
-    with open('config.xml', 'r', encoding='utf-8') as fd:
-        data = fd.read()
+    # xml = AppRegistry.instance().getEditableModule().config.toStringXML()
 
-    ciphertext, tag = cipher.encrypt_and_digest(data.encode())
+    ciphertext, tag = cipher.encrypt_and_digest(xml)
 
-    file_out = open('config.bin', 'wb')
+    # file_out = open(ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath(), 'wb')
+    file_out = open(cfgfilename, 'wb')
     [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
     file_out.close()
 
 
-def decode_xml(raw_data, fnm):
+def decode_xml(raw_data: bytes, fnm: str, keys: Iterable[bytes]) -> str:
     """Пробует декодировать данные config.bin в xml.
 
-    raw_data - двоичный config.bin файл
+    raw_data - двоичные данные config.bin файла
     fnm - имя файла, который расшифровывается.
     """
     # fnm - только для вывод ошибки
@@ -38,7 +46,8 @@ def decode_xml(raw_data, fnm):
     #     AppLogger.instance().error("Файл '{}' не найден.".format(path))
     #     return
 
-    for key in ConfigRegistry.instance().getManagerConfig().getMainKeys():
+    # for key in ConfigRegistry.instance().getManagerConfig().getAllKeys():
+    for key in keys:
         try:
             # nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
             nonce, tag, ciphertext = raw_data[:16], raw_data[16:32], raw_data[32:]
