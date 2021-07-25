@@ -1,16 +1,17 @@
 from threading import Lock
-from views.infomodule import InfoModuleFrame
+from tkinter import *
+
 from accessify import private
 
-from tkinter import *
 # ttk.Frame не имеет background или bg
 # from tkinter.ttk import *
 
 # from connectionframe import ConnectionFrame
 # from moduleframe import ControlPanelFrame, LogPanelFrame
+from views.infomodule import InfoModuleFrame
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame
-from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
+from widgets.readonlytext import LoggerWindow
 from widgets.scrolledwindow import ScrolledWindow
 # Здесь размещать подготовку команды?
 from commands.maincommands import ViewLog
@@ -33,8 +34,6 @@ class MainWindow:
         self.scrollwindow.pack(expand=YES, fill=BOTH)
         self.mainframe = Frame(self.scrollwindow.frame)
         self.mainframe.pack(expand=YES, fill=BOTH)
-        # self.window.geometry(str(width) + 'x' + str(height))    #Размер окна
-        self.images = []
 
     @staticmethod
     def instance():
@@ -51,10 +50,6 @@ class MainWindow:
         self._make_widgets()
         self.__prepare_commands()
         self.window.mainloop()
- 
-    def press(self):
-        # self.c.move(self.img, 20, 0)
-        pass
  
     def _make_widgets(self):
         Label(self.mainframe, text='Здесь будет меню первого окна').grid(row=0, columnspan=2)
@@ -76,9 +71,6 @@ class MainWindow:
     def __prepare_commands(self):
         # WARNING до этого момента не выполняется запись логов в stream
         AppLogger.set_command_stream(ViewLog())
-        # TODO создать и привязать событие обновления
-        # self.window.event_add('<<StreamFlush>>', 'None')
-        # self.window.bind('<<StreamFlush>>', TestSaveStream(), '%d')
 
     def on_frame_mapped(self, event):
         """Изменяет размеры окна после упаковки последнего виджета (окна логов)."""

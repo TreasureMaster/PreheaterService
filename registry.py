@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import os
 from threading import Lock
+from typing import Any
 from abc import ABC, abstractmethod
 from accessify import protected, private
 
@@ -40,12 +43,12 @@ class AppRegistry(Registry):
 
     # создать объект напрямую невозможно
     @private
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     # только так можно получить объект реестра
     @staticmethod
-    def instance():
+    def instance() -> AppRegistry:
         with AppRegistry.__lock:
             if not AppRegistry.__instance:
                 AppRegistry.__instance = AppRegistry()
@@ -53,11 +56,11 @@ class AppRegistry(Registry):
 
     # Базовые методы set и get (нельзя напрямую изменять свойства)
     @protected
-    def get(self, key):
+    def get(self, key: str) -> Any:
         return self.__values[key]
 
     @protected
-    def set(self, key, value):
+    def set(self, key: str, value: Any) -> None:
         self.__values[key] = value
 
     # СВОЙСТВО: путь запуска программы
@@ -67,7 +70,7 @@ class AppRegistry(Registry):
         #     self.setRunPath()
         return self.get('run_path')
 
-    def setRunPath(self):
+    def setRunPath(self) -> None:
         path = os.getcwd()
         # Для exe-файла path = sys.executable
         self.set('run_path', path)
@@ -109,12 +112,12 @@ class ModListRegistry(Registry):
 
     # создать объект напрямую невозможно
     @private
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     # только так можно получить объект реестра
     @staticmethod
-    def instance():
+    def instance() -> ModListRegistry:
         with ModListRegistry.__lock:
             if not ModListRegistry.__instance:
                 ModListRegistry.__instance = ModListRegistry()
@@ -122,11 +125,11 @@ class ModListRegistry(Registry):
 
     # нельзя напрямую изменять свойства
     @protected
-    def get(self, key):
+    def get(self, key: str) -> Any:
         return self.__modules[key]
 
     @protected
-    def set(self, key, value):
+    def set(self, key: str, value: Any) -> None:
         self.__modules[key] = value
 
     # СВОЙСТВО: конкретный модуль (получение, добавление, удаление)

@@ -71,13 +71,13 @@ class FNConfig:
     }
 
 # ----------------------------- Данные менеджера ----------------------------- #
-    def getManagerName(self):
+    def getManagerName(self) -> str:
         return self.__mainname
 
-    def getVersion(self):
+    def getVersion(self) -> str:
         return self.__version__
 
-    def getFullVersion(self):
+    def getFullVersion(self) -> str:
         return self.__mainname + ' ' + self.__version__
 
     def getMainKeys(self):
@@ -100,7 +100,7 @@ class FNConfig:
             )
 
 # --------------------------- Пути рабочего модуля --------------------------- #
-    def getModulesPath(self):
+    def getModulesPath(self) -> str:
         return self.__modularlist_folder
 
 # --------------------------- Универсальные функции -------------------------- #

@@ -41,37 +41,37 @@ class FNModule:
     def config(self):
         return self.__config
 
-    def getBaseName(self):
+    def getBaseName(self) -> str:
         return self.__config.getProperty('name')
 
-    def getName(self):
+    def getName(self) -> str:
         return '{}-{}'.format(
             self.getBaseName(),
             self.getRevision()
         )
 
-    def getTitle(self):
+    def getTitle(self) -> str:
         return '{}  (rev. {})'.format(
             self.__config.getProperty('title'),
             self.getRevision()
         )
 
-    def getBaseRevision(self):
+    def getBaseRevision(self) -> str:
         return self.__revision.getBaseRevision()
 
-    def getEdition(self):
+    def getEdition(self) -> str:
         return self.__revision.getEdition()
 
-    def getRevision(self):
+    def getRevision(self) -> str:
         return self.__revision.getRevision()
 
-    def getManufacturer(self):
+    def getManufacturer(self) -> str:
         return self.__config.getProperty('manufacturer')
 
-    def getReleaseDate(self):
+    def getReleaseDate(self) -> str:
         return time.strftime('%d %b %Y', time.localtime(self.__config.getProperty('releasedate')))
 
-    def getMakingManager(self):
+    def getMakingManager(self) -> str:
         return '{}-{}.{}.{}'.format(
             self.__config.getProperty('mainname'),
             self.__config.getProperty('major'),
@@ -79,12 +79,12 @@ class FNModule:
             self.__config.getProperty('micro')
         )
 
-    def isCompatible(self):
+    def isCompatible(self) -> bool:
         current = self.getMakingManager()
         return any([version == current for version in self.__manager_config.getCompatibleVersions()])
 
     # Распаковать файлы в папку
-    def unpackData(self):
+    def unpackData(self) -> Optional[bool]:
         # TODO распаковать в память
         try:
             fnmfile = zipfile.ZipFile(self.link, 'r')
@@ -102,14 +102,14 @@ class FNModule:
         # просто метка об успехе
         return True
 
-    def checkCurrentData(self):
+    def checkCurrentData(self) -> None:
         """Проверяет соответствие файла конфигурации в папке DATA
         и в случае несоответствия распаковывает данные текущего модуля
         (то есть, если в папке с текущим модулем находяться старые файлы)."""
         if self.getName() != ModuleConfig().getFromBIN(self.__CONFIGFILEPATH).getProperty('name'):
             self.unpackData()
 
-    def getDescription(self, field):
+    def getDescription(self, field: str) -> str:
         # проверка соответствия модуля тому, что есть в папке data
         # Пока заглушка - не выполнять проверку, если модуль редактируемый?
         if self.link is not None:
