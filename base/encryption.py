@@ -20,14 +20,10 @@ def encode_xml(key: bytes, xml: bytes, cfgfilename: str) -> None:
     xml - подготовленный для шифрования текст XML (должен быть тип bytes).
     cfgfilename - имя и путь файла для сохранения зашифрованного файла конфигурации (сейчас - config.bin).
     """
-    # key = next(ConfigRegistry.instance().getManagerConfig().getMainKeys())
     cipher = AES.new(key, AES.MODE_EAX)
-
-    # xml = AppRegistry.instance().getEditableModule().config.toStringXML()
 
     ciphertext, tag = cipher.encrypt_and_digest(xml)
 
-    # file_out = open(ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath(), 'wb')
     file_out = open(cfgfilename, 'wb')
     [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
     file_out.close()

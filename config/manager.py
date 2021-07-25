@@ -1,5 +1,7 @@
 """Файл конфигурационных настроек менеджера."""
 
+from exceptions.exceptions import FNModuleInvalidModeException
+
 
 class FNConfig:
     # ------------------------- Базовые данные настройки ------------------------- #
@@ -21,48 +23,52 @@ class FNConfig:
         b'sjioGY29<<!"n_=k',
         b'YRod48&:*fst^%@j'
     ]
-    # ПАПКИ, определенные в системе
-    # Путь к папке, где хранятся архивы модулей
+
+    # ПАПКИ, определенные в системе:
+    # Путь к папке, где хранятся все архивы модулей
     __modularlist_folder = 'modules'
-    # Базовый путь папки модуля (корневая папка, куда распаковывается вся структура модуля)
+    # Базовый путь папки модуля (корневая папка, куда распаковывается вся структура выбранного модуля)
     __workmodule_folder = 'module'
     # Основная папка, где хранятся файлы редактируемого модуля
     __base_editablemodule_folder = 'editable'
-    # Рабочая папка редактируемого модуля
-    __editablemodule_folder = f'{__base_editablemodule_folder}/{__workmodule_folder}'
-    # Название подпапки с данными (распаковка данных)
+    # Распакованный путь:
+    # Название подпапки с данными
     __data_subfolder = 'data'
     # Название подпапки с документацией
     __docs_subfolder = 'docs'
-    # ФАЙЛЫ, определенные в системе
+    # ФАЙЛЫ, определенные в системе:
     # Изображение отопителя
     __image_filename = 'image.jpg'
     # Описание отопителя
     __description_filename = 'readme.txt'
     # Файл конфигурации отопителя
     __config_filename = 'config.bin'
-    # Путь к папке с данными
-    __workmodule_datapath = f"{__workmodule_folder}/{__data_subfolder}"
-    # Путь к папке с документацией
-    __workmodule_docspath = f"{__workmodule_folder}/{__docs_subfolder}"
-    # Путь к папке с редактируемыми данными
-    __editablemodule_datapath = f"{__editablemodule_folder}/{__data_subfolder}"
-    # TODO изменить эти данные на зашитые названия файлов и формирование названия в вызовах 'get'
-    # Полные относительные пути для файлов модуля
-    # рисунок
-    # __required_image = f"{__workmodule_datapath}/image.jpg"
-    # описание
-    # __required_description = f"{__workmodule_datapath}/readme.txt"
-    # конфигурация
-    # __required_config = f"{__workmodule_datapath}/config.bin"
-    # Полные относительные пути для файлов редактируемого модуля
-    # рисунок
-    # __required_editable_image = f"{__editablemodule_datapath}/image.jpg"
-    # описание
-    # __required_editable_description = f"{__editablemodule_datapath}/readme.txt"
-    # конфигурация
-    # __required_editable_config = f"{__editablemodule_datapath}/config.bin"
-    # ---------------------------------------------------------------------------- #
+
+    # Поддерживаемые режимы работы модуля
+    __REQUIRED_WORKMODES = {
+        'work',
+        'edit'
+    }
+    # Формирование путей к рабочим папкам
+    __REQUIRED_PATHS = {
+        'work': {
+            'main': __workmodule_folder,
+            'data': f"{__workmodule_folder}/{__data_subfolder}",
+            'docs': f"{__workmodule_folder}/{__docs_subfolder}"
+        },
+        'edit': {
+            'root': __base_editablemodule_folder,
+            'main': f"{__base_editablemodule_folder}/{__workmodule_folder}",
+            'data': f"{__base_editablemodule_folder}/{__workmodule_folder}/{__data_subfolder}",
+            'docs': f"{__base_editablemodule_folder}/{__workmodule_folder}/{__docs_subfolder}"
+        }
+    }
+    # Имена файлов
+    __REQUIRED_FILES = {
+        'image': __image_filename,
+        'config': __config_filename,
+        'description': __description_filename
+    }
 
 # ----------------------------- Данные менеджера ----------------------------- #
     def getManagerName(self):
@@ -94,50 +100,36 @@ class FNConfig:
             )
 
 # --------------------------- Пути рабочего модуля --------------------------- #
-    # def getPathsForZip(self):
-    #     for path in {self.__data_subfolder, self.__docs_subfolder}:
-    #         yield path
-
     def getModulesPath(self):
         return self.__modularlist_folder
 
-    def getWorkPath(self):
-        return self.__workmodule_folder
+# --------------------------- Универсальные функции -------------------------- #
+    def isSupportedModes(self, mode: str) -> bool:
+        """Проверяет вяляется ли режим работы модуля допустимым в данном менеджере."""
+        mode = mode.lower()
+        if mode in FNConfig.__REQUIRED_WORKMODES:
+            return True
+        else:
+            raise FNModuleInvalidModeException(mode)
 
-    def getWorkDataPath(self):
-        return self.__workmodule_datapath
+    def getPath(self, mode: str, path: str) -> str:
+        """Возвращает относительный путь к папке.
+        
+        mode - режим модуля (работа/редактирование)
+        path - название требуемой подпапки (например, data или docs)
+        """
+        if self.isSupportedModes(mode):
+            return FNConfig.__REQUIRED_PATHS[mode][path]
+        
 
-    def getWorkDocsPath(self):
-        return self.__workmodule_docspath
-
-    def getWorkImageFilepath(self):
-        return f"{self.getWorkDataPath()}/{self.__image_filename}"
-
-    def getWorkDescriptionFilepath(self):
-        return f"{self.getWorkDataPath()}/{self.__description_filename}"
-
-    def getWorkConfigFilepath(self):
-        return f"{self.getWorkDataPath()}/{self.__config_filename}"
-
-# ------------------------ Пути редактируемого модуля ------------------------ #
-
-    def getBaseEditablePath(self):
-        return self.__base_editablemodule_folder
-
-    def getEditablePath(self):
-        return self.__editablemodule_folder
-
-    def getEditableDataPath(self):
-        return self.__editablemodule_datapath
-
-    def getEditableImageFilepath(self):
-        return f"{self.getEditableDataPath()}/{self.__image_filename}"
-
-    def getEditableDescriptionFilepath(self):
-        return f"{self.getEditableDataPath()}/{self.__description_filename}"
-
-    def getEditableConfigFilepath(self):
-        return f"{self.getEditableDataPath()}/{self.__config_filename}"
+    def getDatafile(self, mode: str, filename: str) -> str:
+        """Возвращет относительный путь к файлу.
+        
+        mode - режим модуля (работа/редактирование)
+        filename - требуемый файл (например, image.jpg, config.bin, readme.txt)
+        """
+        if self.isSupportedModes(mode):
+            return f"{FNConfig.__REQUIRED_PATHS[mode]['data']}/{FNConfig.__REQUIRED_FILES[filename]}"
 
 
 if __name__ == '__main__':

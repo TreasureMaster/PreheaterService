@@ -36,7 +36,7 @@ class CommandMixin:
         WidgetsRegistry.instance().getWorkInfoFrame().clearImage()
         WidgetsRegistry.instance().updateListVar()
         # TODO заменить на путь из Registry
-        mainpath = ConfigRegistry.instance().getManagerConfig().getWorkPath()
+        mainpath = ConfigRegistry.instance().getManagerConfig().getPath('work', 'main')
         if os.path.exists(mainpath):
             shutil.rmtree(mainpath)
 
@@ -171,25 +171,21 @@ class EditModule(Command):
         # print(current_module.link)
         if current_module:
             # удалить содержимое редактируемой папки
-            editpath = ConfigRegistry.instance().getManagerConfig().getEditablePath()
+            editpath = ConfigRegistry.instance().getManagerConfig().getPath('edit', 'main')
             if os.path.exists(editpath):
                 [os.remove(f) for f in glob.glob(editpath + '/**', recursive=True) if os.path.isfile(f)]
             # скопировать в нее содержимое рабочей папки модуля
             copy_tree(
-                ConfigRegistry.instance().getManagerConfig().getWorkPath(),
-                ConfigRegistry.instance().getManagerConfig().getEditablePath()
+                ConfigRegistry.instance().getManagerConfig().getPath('work', 'main'),
+                ConfigRegistry.instance().getManagerConfig().getPath('edit', 'main')
             )
-            # Создание fnm, наверное, сейчас не нужно. Данные уже скопированы.
-            # ModuleHelper.instance().createFNMFile()
             # зарегистрировать модуль в реестре как редактируемый
             editmodule = copy.deepcopy(current_module)
             # Модуль пока не сохранен, поэтому ссылки на fnm-файл нет
             editmodule.link = None
-            editmodule.setEditablePaths()
+            editmodule.setMode('edit')
             AppRegistry.instance().setEditableModule(editmodule)
-            # print('сравнение версий:', current_module.revision == editmodule.revision)
             editmodule.revision.increment()
-            # print('сравнение версий:', current_module.revision == editmodule.revision)
             EditWindow()
         else:
             AppLogger.instance().error('Не выбран модуль для редактирования.')
@@ -199,7 +195,7 @@ class EditModule(Command):
 class ReplaceImage(Command):
     """Вставка новой картинки отопителя."""
     def execute(self):
-        editablepath = ConfigRegistry.instance().getManagerConfig().getEditableDataPath()
+        editablepath = ConfigRegistry.instance().getManagerConfig().getPath('edit', 'data')
         if not os.path.exists(editablepath):
             os.makedirs(editablepath)
             # shutil.rmtree(editablepath)
@@ -215,10 +211,9 @@ class ReplaceImage(Command):
             return
         else:
             with open(image, 'rb') as oldimage:
-                with open(ConfigRegistry.instance().getManagerConfig().getEditableImageFilepath(), 'wb') as newimage:
+                with open(ConfigRegistry.instance().getManagerConfig().getDatafile('edit', 'image'), 'wb') as newimage:
                     newimage.write(oldimage.read())
-        # если все нормально, надо обновить ссылку
-        # editmodule = AppRegistry.instance().getEditableModule()
+        # если все нормально, надо обновить ссылку рисунка
         WidgetsRegistry.instance().getEditableInfoFrame().updateImage()
         print('добавлена картинка')
 
@@ -227,22 +222,22 @@ class SaveModule(Command):
     """Создание архива модуля и его сохранение в папке модулей."""
     def execute(self):
         # Сохранить описание модуля в readme.txt
-        with open(ConfigRegistry.instance().getManagerConfig().getEditableDescriptionFilepath(), 'w', encoding='utf-8') as readme:
+        with open(ConfigRegistry.instance().getManagerConfig().getDatafile('edit', 'description'), 'w', encoding='utf-8') as readme:
             readme.write(WidgetsRegistry.instance().getEditableInfoFrame().getText())
         # Зашифровать и сохранить конфигурацию модуля в config.bin
         encode_xml(
             key = next(ConfigRegistry.instance().getManagerConfig().getMainKeys()),
             xml = AppRegistry.instance().getEditableModule().config.toStringXML(),
-            cfgfilename = ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath()
+            cfgfilename = ConfigRegistry.instance().getManagerConfig().getDatafile('edit', 'config')
         )
         # Упаковать все файлы в архив .fnm и сохранить в рабочей папке со всеми модулями
         save_path = ModuleHelper.instance().createFNMFile(
-            where = ConfigRegistry.instance().getManagerConfig().getBaseEditablePath()
+            where = ConfigRegistry.instance().getManagerConfig().getPath('edit', 'root')
         )
         # добавить новый модуль к списку модулей в реестре
         newmodule = copy.deepcopy(AppRegistry.instance().getEditableModule())
         newmodule.link = save_path
-        newmodule.setWorkPaths()
+        newmodule.setMode('work')
         ModListRegistry.instance().addModule(newmodule.getName(), newmodule)
         # обновить список в листинге
         WidgetsRegistry.instance().getListVar().set(

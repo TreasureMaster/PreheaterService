@@ -1,6 +1,6 @@
 """Содержит класс для реализации объекта модуля."""
-import os, shutil, zipfile, glob
-import datetime, time
+import os, shutil, zipfile
+import time
 
 from typing import Optional
 
@@ -9,25 +9,27 @@ from applogger import AppLogger
 from .moduleconfig import ModuleConfig
 from .modulerevision import ModuleRevision
 
+
 class FNModule:
-    __REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getWorkPath()
-    __REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getWorkDataPath()
-    __REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getWorkDescriptionFilepath()
-    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getWorkConfigFilepath()
-    __REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getWorkImageFilepath()
 
     # TODO содержит поля:
     # 1) ссылки в папке data на картинку модуля, файл readme и т.п. (может просто ссылку на папку data ?)
     # 2) сами объекты описания и т.п. (ленивая загрузка)
     # 3) словарь конфигурации (должен уметь распарсить xml или т.п. файл)
-    def __init__(self, link: str, cfg: Optional[str] = None) -> None:
+    def __init__(self, link: str, cfg: Optional[str] = None, mode: str = 'work') -> None:
         """При инициализации здесь хранится только ссылка на файл модуля.
         А также <временно> распакованный и распарсенный config.bin.
         Полностью файлы модуля распаковываются только после выбора модуля.
+
+        link - путь к файлу модуля ('.fnm')
+        cfg - считанный и расшифрованный XML-файл конфигурации модуля
+        mode - режим работы модуля (пока только работа/редактирование)
         """
         # TODO cfg теперь bin, он уже расшифрован в modulehelper
         # расположение папки data модуля
         self.link = link
+        self.__manager_config = ConfigRegistry.instance().getManagerConfig()
+        self.setMode(mode)
         self.__config = ModuleConfig(cfg)
         self.__revision = ModuleRevision(self.__config)
 
@@ -43,7 +45,6 @@ class FNModule:
         return self.__config.getProperty('name')
 
     def getName(self):
-        # return self.__config.getProperty('name')
         return '{}-{}'.format(
             self.getBaseName(),
             self.getRevision()
@@ -80,7 +81,7 @@ class FNModule:
 
     def isCompatible(self):
         current = self.getMakingManager()
-        return any([version == current for version in ConfigRegistry.instance().getManagerConfig().getCompatibleVersions()])
+        return any([version == current for version in self.__manager_config.getCompatibleVersions()])
 
     # Распаковать файлы в папку
     def unpackData(self):
@@ -94,8 +95,8 @@ class FNModule:
         # fnlist = fnmfile.namelist()
         # print('data:', fnlist)
 
-        if os.path.exists(self.__REQUIRED_MAINPATH):
-            shutil.rmtree(self.__REQUIRED_MAINPATH)
+        if os.path.exists(self.__MAINPATH):
+            shutil.rmtree(self.__MAINPATH)
         fnmfile.extractall()
         fnmfile.close()
         # просто метка об успехе
@@ -105,9 +106,7 @@ class FNModule:
         """Проверяет соответствие файла конфигурации в папке DATA
         и в случае несоответствия распаковывает данные текущего модуля
         (то есть, если в папке с текущим модулем находяться старые файлы)."""
-        path = self.__REQUIRED_CONFIG.format(self.__REQUIRED_DATAPATH)
-        # print('path from checkCurrentData:', path)
-        if self.getName() != ModuleConfig().getFromBIN(path).getProperty('name'):
+        if self.getName() != ModuleConfig().getFromBIN(self.__CONFIGFILEPATH).getProperty('name'):
             self.unpackData()
 
     def getDescription(self, field):
@@ -117,13 +116,12 @@ class FNModule:
             self.checkCurrentData()
         if field == 'config':
             return self.getConfiguration()
-        path = self.__REQUIRED_DESCRIPTION.format(self.__REQUIRED_DATAPATH)
         # Реализация с вычислением пути может пригодиться, если будут использоваться разные папки (для чтения и редактирования копии)
-        with open(path, encoding='utf-8') as fd:
+        with open(self.__DESCRIPTIONFILEPATH, encoding='utf-8') as fd:
             desc = fd.read()
         return desc
 
-    def getConfiguration(self):
+    def getConfiguration(self) -> str:
         # Создать описание конфигурации
         text = 'Базовый блок: {}\nВерсия: {}\nРедакция: {}\nПроизводитель: {}\nДата выпуска: {}'.format(
             self.getBaseName(),
@@ -134,29 +132,23 @@ class FNModule:
         )
         return text
 
-    def getImageLink(self):
+    def getImageLink(self) -> Optional[str]:
         """Возвращает ссылку на файл изображения подогревателя."""
-        path = self.__REQUIRED_IMAGE.format(self.__REQUIRED_DATAPATH)
-        # link = None
-        # path = f'{FNModule.__REQUIRED_PATH}/*.%s'
-        # for link in (filter(lambda x: bool(x), [glob.glob(path % ext) for ext in ('jpg', 'png')])):
-        #     pass
-        return os.path.normpath(os.path.abspath(path)) if os.path.isfile(path) else None
+        return os.path.normpath(os.path.abspath(self.__IMAGEFILEPATH)) if os.path.isfile(self.__IMAGEFILEPATH) else None
 
     def updateConfigProperty(self, key, value):
         self.__config.setProperty(key, value)
 
-    def setEditablePaths(self):
-        self.__REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getEditablePath()
-        self.__REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getEditableDataPath()
-        self.__REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getEditableDescriptionFilepath()
-        self.__REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getEditableConfigFilepath()
-        self.__REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getEditableImageFilepath()
+    def __setPaths(self) -> None:
+        self.__MAINPATH = self.__manager_config.getPath(self.__mode, 'main')
+        # self.__DATAPATH = self.__manager_config.getPath(self.__mode, 'data')
+        self.__DESCRIPTIONFILEPATH = self.__manager_config.getDatafile(self.__mode, 'description')
+        self.__CONFIGFILEPATH = self.__manager_config.getDatafile(self.__mode, 'config')
+        self.__IMAGEFILEPATH = self.__manager_config.getDatafile(self.__mode, 'image')
 
-    def setWorkPaths(self):
-        # TODO необходимо убрать дублирование кода (может что-то изменить в config ?)
-        self.__REQUIRED_MAINPATH = ConfigRegistry.instance().getManagerConfig().getWorkPath()
-        self.__REQUIRED_DATAPATH = ConfigRegistry.instance().getManagerConfig().getWorkDataPath()
-        self.__REQUIRED_DESCRIPTION = ConfigRegistry.instance().getManagerConfig().getWorkDescriptionFilepath()
-        self.__REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getWorkConfigFilepath()
-        self.__REQUIRED_IMAGE = ConfigRegistry.instance().getManagerConfig().getWorkImageFilepath()
+    def setMode(self, mode: str) -> None:
+        """Установить режим работы и рабочие пути для этого модуля."""
+        mode = mode.lower()
+        if self.__manager_config.isSupportedModes(mode):
+            self.__mode = mode
+            self.__setPaths()

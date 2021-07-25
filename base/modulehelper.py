@@ -1,5 +1,6 @@
 import os, glob, shutil
 import zipfile
+
 from threading import Lock
 from accessify import private
 from distutils.dir_util import copy_tree
@@ -22,7 +23,7 @@ class ModuleHelper:
     # __registry = None
     __lock = Lock()
     # TODO внести все пути в config.py
-    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getWorkConfigFilepath()
+    __REQUIRED_CONFIG = ConfigRegistry.instance().getManagerConfig().getDatafile('work', 'config')
 
     # создать объект напрямую невозможно
     @private
@@ -113,7 +114,7 @@ class ModuleHelper:
                 cfg = self.getConfigFNMFile(link)
                 if cfg is not None:
                     mod = FNModule(link, cfg)
-                ModListRegistry.instance().addModule(mod.getName(), mod)
+                    ModListRegistry.instance().addModule(mod.getName(), mod)
         else:
             self.logger.error('В указанной папке модули отсутствуют.')
             showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
@@ -159,13 +160,13 @@ class ModuleHelper:
         )
         os.chdir(where)
         with zipfile.ZipFile(save_path, 'w') as myzip:
-            myzip.write(manager_cfg.getWorkPath())
-            myzip.write(manager_cfg.getWorkDataPath())
-            myzip.write(manager_cfg.getWorkDocsPath())
-            for file in os.listdir(os.path.join(os.getcwd(), manager_cfg.getWorkDataPath())):
-                myzip.write(os.path.join(manager_cfg.getWorkDataPath(), file))
-            for file in os.listdir(os.path.join(os.getcwd(), manager_cfg.getWorkDocsPath())):
-                myzip.write(os.path.join(manager_cfg.getWorkDocsPath(), file))
+            myzip.write(manager_cfg.getPath('work', 'main'))
+            myzip.write(manager_cfg.getPath('work', 'data'))
+            myzip.write(manager_cfg.getPath('work', 'docs'))
+            for file in os.listdir(os.path.join(os.getcwd(), manager_cfg.getPath('work', 'data'))):
+                myzip.write(os.path.join(manager_cfg.getPath('work', 'data'), file))
+            for file in os.listdir(os.path.join(os.getcwd(), manager_cfg.getPath('work', 'docs'))):
+                myzip.write(os.path.join(manager_cfg.getPath('work', 'docs'), file))
         os.chdir(AppRegistry.instance().getRunPath())
         # Возвращает путь сохранения для регистрации в списке модулей нового модуля
         return save_path
