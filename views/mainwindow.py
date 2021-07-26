@@ -13,9 +13,10 @@ from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame
 from widgets.readonlytext import LoggerWindow
 from widgets.scrolledwindow import ScrolledWindow
+from widgets.mainmenu import MainMenu
 # Здесь размещать подготовку команды?
 from commands.maincommands import ViewLog
-from registry import WidgetsRegistry
+from registry import WidgetsRegistry, ConfigRegistry
 from applogger import AppLogger
 
 class MainWindow:
@@ -32,8 +33,11 @@ class MainWindow:
         # все окно
         self.scrollwindow = ScrolledWindow(self.window)
         self.scrollwindow.pack(expand=YES, fill=BOTH)
+        
         self.mainframe = Frame(self.scrollwindow.frame)
         self.mainframe.pack(expand=YES, fill=BOTH)
+        self.menu = MainMenu(self.mainframe)
+        self.menu.grid(row=0, column=0, sticky='ew')
 
     @staticmethod
     def instance():
@@ -52,7 +56,10 @@ class MainWindow:
         self.window.mainloop()
  
     def _make_widgets(self):
-        Label(self.mainframe, text='Здесь будет меню первого окна').grid(row=0, columnspan=2)
+        Label(
+            self.mainframe,
+            text=f'Версия: {ConfigRegistry.instance().getManagerConfig().getVersion()}'
+        ).grid(row=0, column=1, sticky='e', padx=10)# columnspan=2)
 
         listmodules = ListModulesFrame(self.mainframe)
         listmodules.grid(padx=10, row=1, column=0, sticky=N)

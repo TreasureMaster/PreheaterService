@@ -49,7 +49,7 @@ class ListModulesFrame(Frame):
         Button(btn_frame, text='Копировать', command=EditModule()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Удалить', command=DeleteModule()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Очистить', command=ClearModuleWindow()).grid(sticky=W+E+S+N, pady=2)
-        Button(btn_frame, text='Загрузить модуль', command=LoadModuleFile()).grid(sticky=W+E+S+N, pady=2)
+        Button(btn_frame, text='Добавить модуль', command=LoadModuleFile()).grid(sticky=W+E+S+N, pady=2)
         Button(btn_frame, text='Открыть папку с модулями', command=LoadModuleDirectory()).grid(sticky=W+E+S+N, pady=2)
 
     def getScrollWidgets(self):
