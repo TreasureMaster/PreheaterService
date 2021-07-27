@@ -6,18 +6,16 @@ from accessify import private
 # ttk.Frame не имеет background или bg
 # from tkinter.ttk import *
 
-# from connectionframe import ConnectionFrame
-# from moduleframe import ControlPanelFrame, LogPanelFrame
-from views.infomodule import InfoModuleFrame
-from .listmodules import ListModulesFrame
-from .infomodule import InfoModuleFrame
-from widgets.readonlytext import LoggerWindow
-from widgets.scrolledwindow import ScrolledWindow
-from widgets.mainmenu import MainMenu
-# Здесь размещать подготовку команды?
-from commands.maincommands import ViewLog
 from registry import WidgetsRegistry, ConfigRegistry
 from applogger import AppLogger
+
+# from views.infomodule import InfoModuleFrame
+from .listmodules import ListModulesFrame
+from .infomodule import InfoModuleFrame
+from widgets import LoggerWindow, ScrolledWindow, MainMenu
+# Здесь размещать подготовку команды?
+from commands import ViewLog
+
 
 class MainWindow:
     __APPTITLE = 'FN-Service'

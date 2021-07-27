@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from accessify import protected, private
 
 from modulemapper import ModuleMapper
-from config.manager import FNConfig
+from config import FNConfig
 
 # ------------------------- Абстрактный класс реестра ------------------------ #
 

@@ -3,14 +3,14 @@ from accessify import private
 
 from tkinter import *
 
+from registry import WidgetsRegistry
+# from applogger import AppLogger
+
 from .infomodule import EditableModuleFrame
-from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
-from widgets.scrolledwindow import ScrolledWindow
-from widgets.modulemenu import ModuleMenu
+# from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
+from widgets import ScrolledWindow, ModuleMenu
 # Здесь размещать подготовку команды?
 
-from registry import WidgetsRegistry
-from applogger import AppLogger
 
 class ModuleWindow:
     __APPTITLE = 'Создание модуля'

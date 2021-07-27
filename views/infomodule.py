@@ -1,12 +1,7 @@
 from tkinter import *
-# from tkinter.ttk import *
-# from tkinter.messagebox import *
-# from tkinter.filedialog import *
 
 from registry import AppRegistry
-from widgets.connectimages import ModuleImage
-from widgets.readonlytext import ReadonlyScrolledText, EditableScrolledText
-from widgets.infolabels import InfoTitleLabel
+from widgets import ModuleImage, InfoTitleLabel, ReadonlyScrolledText, EditableScrolledText
 
 
 class InfoModuleFrame(Frame):

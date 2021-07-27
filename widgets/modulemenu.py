@@ -1,13 +1,14 @@
 from tkinter import *
 
-from commands.maincommands import (
-    ViewModule, ClearModuleWindow, DeleteModule, EditModule,
-    LoadModuleFile, LoadModuleDirectory,
-    CommandMixin, StartModule
-)
+# WARNING импортирование внутри класса (отложенный импорт) для избежания проблем циклического импорта
+# from commands.maincommands import (
+#     ViewModule, ClearModuleWindow, DeleteModule, EditModule,
+#     LoadModuleFile, LoadModuleDirectory,
+#     CommandMixin, StartModule
+# )
 
 class ModuleMenu(Frame):
-
+    """Меню окна модуля."""
     def __init__(self, parent=None, **kwargs) -> None:
         self.parent = parent
         super().__init__(parent, **kwargs)
@@ -25,6 +26,16 @@ class ModuleMenu(Frame):
 
 
     def _menu_composition(self):
+        """Шаблон команд меню модуля."""
+        from commands import (
+            StartModule,
+            EditModule,
+            DeleteModule,
+            ClearModuleWindow,
+            LoadModuleFile,
+            LoadModuleDirectory
+        )
+
         return {
             'Открыть': StartModule(),
             'Копировать': EditModule(),

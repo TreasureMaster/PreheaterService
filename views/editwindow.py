@@ -1,34 +1,32 @@
-from threading import Lock
-from accessify import private
+# from threading import Lock
+# from accessify import private
 
 from tkinter import *
 
-from .infomodule import EditableModuleFrame
-from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
-from widgets.scrolledwindow import ScrolledWindow
-# Здесь размещать подготовку команды?
-
 from registry import WidgetsRegistry
-from applogger import AppLogger
+# from applogger import AppLogger
+
+from .infomodule import EditableModuleFrame
+# from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
+from widgets import ScrolledWindow
+
 
 class EditWindow:
     __APPTITLE = 'Создание модуля'
     __instance = None
-    __lock = Lock()
+    # __lock = Lock()
 
     # @private
     def __init__(self):
         mainwindow = WidgetsRegistry.instance().getMainWindow()
         self.window = Toplevel(mainwindow)
         self.window.title(EditWindow.__APPTITLE)
-        # self.window.geometry('1078x504')
         # все окно
         self.sw = ScrolledWindow(self.window)
         self.sw.pack(expand=YES, fill=BOTH)
         self.mainframe = Frame(self.sw.frame)
         self.mainframe.pack(expand=YES, fill=BOTH)
-        # self.window.geometry(str(width) + 'x' + str(height))    #Размер окна
-        self.images = []
+
         self._make_widgets()
         self.window.focus_set()
         self.window.grab_set()
@@ -53,8 +51,10 @@ class EditWindow:
         # listmodules = Label(self.mainframe, text='Заглушка')
         buttonsframe.grid(padx=10, row=1, column=0, sticky=N)
         # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
+
         # WARNING размещено здесь из-за перекрестного импорта
-        from commands.maincommands import ReplaceImage, SaveModule
+        from commands import ReplaceImage, SaveModule
+
         Button(buttonsframe, text='Изменить изображение', command=ReplaceImage()).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
