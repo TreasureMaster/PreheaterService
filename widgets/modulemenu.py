@@ -1,12 +1,12 @@
 from tkinter import *
 
 from commands.maincommands import (
-    StartModule, ViewModule, ClearModuleWindow, DeleteModule, EditModule,
+    ViewModule, ClearModuleWindow, DeleteModule, EditModule,
     LoadModuleFile, LoadModuleDirectory,
-    CommandMixin
+    CommandMixin, StartModule
 )
 
-class MainMenu(Frame):
+class ModuleMenu(Frame):
 
     def __init__(self, parent=None, **kwargs) -> None:
         self.parent = parent
@@ -32,5 +32,5 @@ class MainMenu(Frame):
             'Очистить': ClearModuleWindow(),
             'Добавить': LoadModuleFile(),
             'Загрузить папку': LoadModuleDirectory(),
-            'Выход': self.parent.quit
+            'Закрыть': self.parent.destroy
         }

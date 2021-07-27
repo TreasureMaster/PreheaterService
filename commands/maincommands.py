@@ -1,4 +1,4 @@
-import copy, imghdr, os, shutil, glob
+import copy, imghdr, os, shutil, glob, multiprocessing
 
 # from glob import glob
 from distutils.dir_util import copy_tree
@@ -11,7 +11,8 @@ from registry import AppRegistry, WidgetsRegistry, ModListRegistry, ConfigRegist
 from applogger import AppLogger
 from base.modulehelper import ModuleHelper
 from base.encryption import encode_xml
-from views.editwindow import EditWindow
+# from views.editwindow import EditWindow
+# from views.modulewindow import ModuleWindow
 
 
 # NOTE В данной структуре получателем будет являться реестр AppRegistry
@@ -186,6 +187,8 @@ class EditModule(Command):
             editmodule.setMode('edit')
             AppRegistry.instance().setEditableModule(editmodule)
             editmodule.revision.increment()
+            # Отложенный импорт для предотвращения циклического импорта
+            from views.editwindow import EditWindow
             EditWindow()
         else:
             AppLogger.instance().error('Не выбран модуль для редактирования.')
@@ -255,6 +258,13 @@ class SaveModule(Command):
         )
         listbox.event_generate('<<ListboxSelect>>')
 
+# -------------------------- Команды запуска модуля -------------------------- #
+class StartModule(Command):
+
+    def execute(self):
+        # Отложенный импорт для предотвращения циклического импорта
+        from views.modulewindow import ModuleWindow
+        ModuleWindow()
 # ---------------------------------------------------------------------------- #
 class ViewLog(Command):
     def execute(self):

@@ -1,4 +1,3 @@
-import logging
 from accessify import private
 
 from registry import AppRegistry
