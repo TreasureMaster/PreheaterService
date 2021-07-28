@@ -58,6 +58,7 @@ data/
 save/
 tmplog/
 temp/
+tests/xmlfiles/*
 !tasks/yes2.png
 !tasks/no2.png
 !tasks/catalog_tree.txt

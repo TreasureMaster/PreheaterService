@@ -1,35 +1,37 @@
-from threading import Lock
-from accessify import private
+# from threading import Lock
+# from accessify import private
 
 from tkinter import *
 
 from registry import WidgetsRegistry
 # from applogger import AppLogger
 
-from .infomodule import EditableModuleFrame
+# from .infomodule import EditableModuleFrame
 # from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
 from widgets import ScrolledWindow, ModuleMenu
-# Здесь размещать подготовку команды?
+from views import EditableModuleFrame, ModuleOperation
 
 
 class ModuleWindow:
     __APPTITLE = 'Создание модуля'
     __instance = None
-    __lock = Lock()
+    # __lock = Lock()
 
     # @private
     def __init__(self):
         mainwindow = WidgetsRegistry.instance().getMainWindow()
         self.window = Toplevel(mainwindow)
         self.window.title(ModuleWindow.__APPTITLE)
-        # self.window.geometry('1078x504')
+        self.window.protocol('WM_DELETE_WINDOW', self._quit)
         # все окно
         self.sw = ScrolledWindow(self.window)
         self.sw.pack(expand=YES, fill=BOTH)
         self.mainframe = Frame(self.sw.frame)
         self.mainframe.pack(expand=YES, fill=BOTH)
-        self.menu = ModuleMenu(self.mainframe)
+        self.menu = ModuleMenu(self.mainframe, self._quit)
         self.menu.grid(row=0, column=0, sticky='ew')
+        self.operation = ModuleOperation(self.mainframe)
+        self.operation.grid(row=1, columnspan=2)
 
         self._make_widgets()
         self.window.focus_set()
@@ -53,7 +55,7 @@ class ModuleWindow:
         # Левый фрейм с кнопками управления
         buttonsframe = Frame(self.mainframe)
         # listmodules = Label(self.mainframe, text='Заглушка')
-        buttonsframe.grid(padx=10, row=1, column=0, sticky=N)
+        buttonsframe.grid(padx=10, row=2, column=0, sticky=N)
         # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
         # WARNING размещено здесь из-за перекрестного импорта
         from commands.maincommands import ReplaceImage, SaveModule
@@ -62,10 +64,10 @@ class ModuleWindow:
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Отмена', command=self.window.destroy).grid(sticky=W+E+S+N, pady=2)
+        Button(buttonsframe, text='Отмена', command=self._quit).grid(sticky=W+E+S+N, pady=2)
 
         info = EditableModuleFrame(self.mainframe)
-        info.grid(pady=5, row=1, column=1)
+        info.grid(pady=5, row=2, column=1)
         self.sw.bind_widgets(info.getScrollWidgets())
         WidgetsRegistry.instance().setEditableInfoFrame(info)
 
@@ -79,10 +81,10 @@ class ModuleWindow:
         # WidgetsRegistry.instance().setLogFrame(self.log_window)
         # self.log_window.bind('<Map>', self.on_frame_mapped)
 
-    # def editwindow_destroy(self):
-    #     # WARNING не помогло
-    #     self.sw.off_binds(None)
-    #     self.window.destroy()
+    def _quit(self):
+        """Собственная обработка выхода."""
+        WidgetsRegistry.instance().getMainWindow().deiconify()
+        self.window.destroy()
 
     # def __prepare_commands(self):
     #     from commands.maincommands import ViewLog

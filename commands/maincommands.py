@@ -262,6 +262,7 @@ class SaveModule(Command):
 class StartModule(Command):
 
     def execute(self):
+        WidgetsRegistry.instance().getMainWindow().withdraw()
         # Отложенный импорт для предотвращения циклического импорта
         from views.modulewindow import ModuleWindow
         ModuleWindow()

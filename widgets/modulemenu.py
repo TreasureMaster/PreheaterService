@@ -9,8 +9,9 @@ from tkinter import *
 
 class ModuleMenu(Frame):
     """Меню окна модуля."""
-    def __init__(self, parent=None, **kwargs) -> None:
+    def __init__(self, parent=None, _quit=None, **kwargs) -> None:
         self.parent = parent
+        self._quit = _quit
         super().__init__(parent, **kwargs)
         self._make_menu()
 
@@ -19,7 +20,7 @@ class ModuleMenu(Frame):
         mbutton.pack(side=LEFT, padx=10, pady=5)
         module = Menu(mbutton, tearoff=False)
         for name, command in self._menu_composition().items():
-            if name.lower() == 'выход':
+            if name.lower() == 'закрыть':
                 module.add_separator()
             module.add_command(label=name, command=command, underline=0)
         mbutton.config(menu=module)
@@ -43,5 +44,5 @@ class ModuleMenu(Frame):
             'Очистить': ClearModuleWindow(),
             'Добавить': LoadModuleFile(),
             'Загрузить папку': LoadModuleDirectory(),
-            'Закрыть': self.parent.destroy
+            'Закрыть': self._quit if self._quit else self.parent.destroy
         }

@@ -2,8 +2,9 @@ from __future__ import annotations
 from lxml import objectify, etree
 from typing import Any
 
-from .encryption import decode_xml
-from registry import ConfigRegistry
+if __name__ != '__main__':
+    from .encryption import decode_xml
+    from registry import ConfigRegistry
 
 
 class ModuleConfig:
@@ -80,8 +81,8 @@ class ModuleConfig:
                     return self.root.header[key]
                 elif key in ModuleConfig.__MANAGER:
                     return self.root.manager[key]
-                else:
-                    return list(self.root.options[key].value)
+                elif key in ModuleConfig.__OPTIONS:
+                    return list(map(str, self.root.options[key].opvalues))
             except AttributeError:
                 return
 
@@ -96,17 +97,20 @@ class ModuleConfig:
                     self.root.manager[key] = value
                 # else:
                     # TODO не реализовано
-                    # return list(self.root.options[key].value)
+                    # return list(self.root.options[key].opvalues)
                     # return
             except AttributeError:
                 return
 
 
 if __name__ == '__main__':
-    xml = ModuleConfig('config_binar.xml')
+    with open('tests/xmlfiles/config_binar5s.xml', encoding='utf-8') as fd:
+        xmltext = fd.read()
+    xml = ModuleConfig(xmltext)
     # xml = ModuleConfig()
-    print(xml.getProperty('name'))
-    print(xml.getProperty('aaa'))
-    print(xml.getProperty('voltage'))
-    print(xml.getProperty('remote'))
-    print(xml.getProperty('extra'))
+    print('имя отопителя:           ', xml.getProperty('name'))
+    print('неизвестное свойство:    ', xml.getProperty('aaa'))
+    print('вольтаж (список):        ', xml.getProperty('voltage'))
+    print('пульты (список):         ', xml.getProperty('remote'))
+    print('допы (список, если есть):', xml.getProperty('extra'))
+    # print(xml.toStringXML().decode('utf-8'))

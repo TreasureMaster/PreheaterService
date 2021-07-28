@@ -79,6 +79,9 @@ class FNModule:
             self.__config.getProperty('micro')
         )
 
+    def getRemoteControlList(self) -> str:
+        return ', '.join(self.__config.getProperty('remote'))
+
     def isCompatible(self) -> bool:
         current = self.getMakingManager()
         return any([version == current for version in self.__manager_config.getCompatibleVersions()])
@@ -123,12 +126,14 @@ class FNModule:
 
     def getConfiguration(self) -> str:
         # Создать описание конфигурации
-        text = 'Базовый блок: {}\nВерсия: {}\nРедакция: {}\nПроизводитель: {}\nДата выпуска: {}'.format(
+        text = ('Базовый блок: {}\nВерсия: {}\nРедакция: {}\nПроизводитель: {}\nДата выпуска: {}\n'
+                'Совместимые пульты: {}').format(
             self.getBaseName(),
             self.getBaseRevision(),
             self.getEdition(),
             self.getManufacturer(),
-            self.getReleaseDate()
+            self.getReleaseDate(),
+            self.getRemoteControlList()
         )
         return text
 
