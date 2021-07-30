@@ -3,16 +3,16 @@
 
 from tkinter import *
 
-from registry import WidgetsRegistry
+from registry import WidgetsRegistry, AppRegistry
 # from applogger import AppLogger
 
 # from .infomodule import EditableModuleFrame
 # from widgets.readonlytext import ReadonlyScrolledText, LoggerWindow
-from widgets import ScrolledWindow, ModuleMenu
-from views import EditableModuleFrame, ModuleOperation
+from widgets import ScrolledWindow, ModuleMenu, ConnectionFrame, GUIWidgetConfiguration
+from views import InfoModuleFrame
 
 
-class ModuleWindow:
+class ModuleWindow(GUIWidgetConfiguration):
     __APPTITLE = 'Создание модуля'
     __instance = None
     # __lock = Lock()
@@ -23,15 +23,23 @@ class ModuleWindow:
         self.window = Toplevel(mainwindow)
         self.window.title(ModuleWindow.__APPTITLE)
         self.window.protocol('WM_DELETE_WINDOW', self._quit)
+        self.__current_module = AppRegistry.instance().getCurrentModule()
         # все окно
         self.sw = ScrolledWindow(self.window)
         self.sw.pack(expand=YES, fill=BOTH)
         self.mainframe = Frame(self.sw.frame)
         self.mainframe.pack(expand=YES, fill=BOTH)
         self.menu = ModuleMenu(self.mainframe, self._quit)
+        # self.menu.config(borderwidth=2, highlightthickness=2, highlightbackground='red')
+        # self.add_border(self.menu, width=2, color='red')
+        # self.menu.add_border(width=2, color='red')
         self.menu.grid(row=0, column=0, sticky='ew')
-        self.operation = ModuleOperation(self.mainframe)
-        self.operation.grid(row=1, columnspan=2)
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=1, columnspan=2, sticky='ew')
+        # self.menu.grid_propagate(0)
+        # self.operation = ModuleOperation(self.mainframe)
+        self.connection = ConnectionFrame(self.mainframe)
+        self.connection.grid(row=2, columnspan=2, sticky='ew')
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=3, columnspan=2, sticky='ew', pady=5)
 
         self._make_widgets()
         self.window.focus_set()
@@ -50,12 +58,21 @@ class ModuleWindow:
         return ModuleWindow.__instance is not None
 
     def _make_widgets(self):
-        Label(self.mainframe, text='Модуль:').grid(row=0, column=1)
+        # Метка названия модуля (меню, справа)
+        Label(
+            self.mainframe,
+            text=f'Модуль: {self.__current_module.getTitle()}',
+            anchor=E
+        ).grid(
+            row=0,
+            column=1,
+            sticky='ew',
+            padx=10)
 
         # Левый фрейм с кнопками управления
         buttonsframe = Frame(self.mainframe)
         # listmodules = Label(self.mainframe, text='Заглушка')
-        buttonsframe.grid(padx=10, row=2, column=0, sticky=N)
+        buttonsframe.grid(padx=10, row=4, column=0, sticky=N)
         # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
         # WARNING размещено здесь из-за перекрестного импорта
         from commands.maincommands import ReplaceImage, SaveModule
@@ -66,10 +83,10 @@ class ModuleWindow:
         Button(buttonsframe, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
         Button(buttonsframe, text='Отмена', command=self._quit).grid(sticky=W+E+S+N, pady=2)
 
-        info = EditableModuleFrame(self.mainframe)
-        info.grid(pady=5, row=2, column=1)
+        info = InfoModuleFrame(self.mainframe)
+        info.grid(pady=5, row=4, column=1)
         self.sw.bind_widgets(info.getScrollWidgets())
-        WidgetsRegistry.instance().setEditableInfoFrame(info)
+        WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
         info.bind('<Map>', self.on_frame_mapped)
 
@@ -83,6 +100,7 @@ class ModuleWindow:
 
     def _quit(self):
         """Собственная обработка выхода."""
+        WidgetsRegistry.instance().popWorkInfoFrame()
         WidgetsRegistry.instance().getMainWindow().deiconify()
         self.window.destroy()
 

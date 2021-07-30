@@ -1,5 +1,6 @@
 from tkinter import *
 
+from widgets import GUIWidgetConfiguration
 # WARNING импортирование внутри класса (отложенный импорт) для избежания проблем циклического импорта
 # from commands.maincommands import (
 #     ViewModule, ClearModuleWindow, DeleteModule, EditModule,

@@ -263,6 +263,18 @@ class StartModule(Command):
 
     def execute(self):
         WidgetsRegistry.instance().getMainWindow().withdraw()
+
+    # current_module = ModListRegistry.instance().ilocModule(event.widget.curselection()[0])
+    # # Распаковка данных в каталог MODULE
+    # if current_module.unpackData():
+    #     # Текущий модуль сохраняется в реестре только, если распаковывается
+    #     AppRegistry.instance().setCurrentModule(current_module)
+    #     # print(WidgetsRegistry.instance().getWorkInfoFrame())
+    #     WidgetsRegistry.instance().getWorkInfoFrame().updateText()
+    #     WidgetsRegistry.instance().getWorkInfoFrame().updateImage()
+    #     AppLogger.instance().info(f'Распакован модуль {current_module.getName()}.')
+    #     print(WidgetsRegistry.instance().getWorkInfoFrame()._getWorkModule())
+
         # Отложенный импорт для предотвращения циклического импорта
         from views.modulewindow import ModuleWindow
         ModuleWindow()

@@ -2,7 +2,7 @@ import collections
 from tkinter import *
 from tkinter.ttk import *
 
-from connectimages import IndicatorImage
+# from connectimages import IndicatorImage
 
 COMPORTS = 7
 BAUDRATES = [
@@ -116,8 +116,8 @@ class ConnectionFrame(Frame):
         self.combo_baud.bind("<<ComboboxSelected>>", self.setBaudRate)
 
         # метка соединения
-        indicator = IndicatorImage(self.serialframe, image='yes2')
-        indicator.pack(side=LEFT, padx=5)
+        # indicator = IndicatorImage(self.serialframe, image='yes2')
+        # indicator.pack(side=LEFT, padx=5)
 
         # Кнопка настройки соединения
         combtn = Button(self.serialframe, text='Настройки', command=lambda: ComportWindow(comports=self.comports))

@@ -79,8 +79,11 @@ class FNModule:
             self.__config.getProperty('micro')
         )
 
-    def getRemoteControlList(self) -> str:
-        return ', '.join(self.__config.getProperty('remote'))
+    def getRemoteControlList(self) -> list:
+        return self.__config.getProperty('remote')
+
+    def getRemoteControlLine(self) -> str:
+        return ', '.join(self.getRemoteControlList())
 
     def isCompatible(self) -> bool:
         current = self.getMakingManager()
@@ -133,7 +136,7 @@ class FNModule:
             self.getEdition(),
             self.getManufacturer(),
             self.getReleaseDate(),
-            self.getRemoteControlList()
+            self.getRemoteControlLine()
         )
         return text
 

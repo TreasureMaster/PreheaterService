@@ -180,12 +180,14 @@ class WidgetsRegistry(Registry):
     и между виджетами и другими объектами."""
     # статические приватные свойства
     # 1) work_info_frame - информационный фрейм первого окна с параметрами модуля (правый)
-    # 2) main_window - главное окно менеджера (первое окно)
-    # 3) list_modules - переменная StringVar списка модулей (левое окно)
-    # 4) log_frame - фрейм отображения логов
-    # 5) edit_info_frame - информационный фрейм окна редактирования с параметрами модуля (правый)
+    # 2) save_work_info_frame - сохранение информационного фрейма первого окна, когда открывается рабочее второе окно
+    # 3) main_window - главное окно менеджера (первое окно)
+    # 4) list_modules - переменная StringVar списка модулей (левое окно)
+    # 5) log_frame - фрейм отображения логов
+    # 6) edit_info_frame - информационный фрейм окна редактирования с параметрами модуля (правый)
     __values = {
         'work_info_frame': None,
+        'save_work_info_frame': None,
         'edit_info_frame': None,
         'main_window': None,
         'list_modules': None,
@@ -219,10 +221,27 @@ class WidgetsRegistry(Registry):
 
     # СВОЙСТВО: правый фрейм информации о модуле (первое окно)
     def getWorkInfoFrame(self):
+        """Получить информационный фрейм главного окна менеджера."""
         return self.get('work_info_frame')
 
     def setWorkInfoFrame(self, frame):
+        """Установить информационный фрейм главного окна менеджера."""
         self.set('work_info_frame', frame)
+
+    def pushWorkInfoFrame(self, frame):
+        """Добавить информационный фрейм окна рабочего модуля и сделать его активным."""
+        self.set('save_work_info_frame', self.getWorkInfoFrame())
+        self.set('work_info_frame', frame)
+
+    def getSaveWorkInfoFrame(self):
+        """Получить информационный фрейм главного окна менеджера (неактивный в данный момент)."""
+        return self.get('save_work_info_frame')
+
+    def popWorkInfoFrame(self):
+        """Извлечь информационный фрейм окна модуля и сделать активным информационный фрейм главного окна менеджера."""
+        self.set('work_info_frame', self.getSaveWorkInfoFrame())
+        self.set('save_work_info_frame', None)
+        return self.getWorkInfoFrame()
 
     # СВОЙСТВО: правый фрейм информации о модуле (окно редактирования модуля)
     def getEditableInfoFrame(self):
