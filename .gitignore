@@ -45,6 +45,9 @@ $RECYCLE.BIN/
 # Python files
 __pycache__/
 
+# My Python modules
+modulenumber.py
+
 # Extra files
 *.svg
 

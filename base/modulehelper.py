@@ -14,6 +14,8 @@ from applogger import AppLogger
 from base.fnmodule import FNModule
 from base.encryption import decode_xml
 
+from tests import timethis
+
 
 class ModuleHelper:
     """Загружает модуль."""
@@ -43,10 +45,11 @@ class ModuleHelper:
         return ModuleHelper.__instance
 
     # инициализация (поиск и загрузка модуля)
+    @timethis
     def init(self):
         # logger = AppLogger.instance()
         
-        self.logger.info('Start ModuleHandler init')
+        # self.logger.info('Start ModuleHandler init')
         # TODO в любом случае сканируем ?
         self.__getListModules()
         # print(AppRegistry.instance().getListModules())
@@ -64,13 +67,13 @@ class ModuleHelper:
         # Все должно быть исправлено при использовании exe-файла на соответствующие пути
         directory = ModuleHelper.__REQUIRED_MODULESPATH
         if not os.path.isdir(directory):
-            self.logger.error('Стандартная папка с модулями не найдена.')
+            # self.logger.error('Стандартная папка с модулями не найдена.')
             # Стандартная папка не найдена, ищем вручную
             if askyesno('Поиск модулей', 'Стандартная папка с модулями не найдена.\nХотите указать, где она находиться?'):
                 directory = askdirectory(initialdir=os.getcwd())
             else:
                 # Если папку не выбирают, предлагаем выбрать отдельный модуль
-                self.logger.error('Не выбрана папка или модуль для работы.')
+                # self.logger.error('Не выбрана папка или модуль для работы.')
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
                 self.getSingleModule()
                 # Выходим, когда выбран отдельный модуль
@@ -80,7 +83,7 @@ class ModuleHelper:
                 return
         # На данный момент у нас есть директория с модулями (если не вышли при выборе отдельного модуля)
         if not directory:
-            self.logger.error('Не выбрана папка или модуль для работы.')
+            # self.logger.error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
             # обработка стандартной папки
@@ -100,10 +103,10 @@ class ModuleHelper:
                         mod = FNModule(link, cfg)
                     ModListRegistry.instance().addModule(mod.getName(), mod)
             else:
-                self.logger.error('Не выбрана папка или модуль для работы.')
+                # self.logger.error('Не выбрана папка или модуль для работы.')
                 showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
         else:
-            self.logger.error('Не выбрана папка или модуль для работы.')
+            # self.logger.error('Не выбрана папка или модуль для работы.')
             showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
 
     def getModuleDirectory(self, directory):
@@ -116,22 +119,23 @@ class ModuleHelper:
                     mod = FNModule(link, cfg)
                     ModListRegistry.instance().addModule(mod.getName(), mod)
         else:
-            self.logger.error('В указанной папке модули отсутствуют.')
+            # self.logger.error('В указанной папке модули отсутствуют.')
             showerror('Выбор модулей', 'В указанной папке файлы модулей не обнаружены.')
 
     def getConfigFNMFile(self, fnm):
         # 1) проверить расширение файла
         if os.path.splitext(fnm)[1] != '.fnm':
-            self.logger.error('Ошибочное расширение модуля')
+            # self.logger.error('Ошибочное расширение модуля')
             return
         # 2) проверить возможность чтения файла
         # TODO возможно просто нужно его попробовать загрузить и обработать в try-except
         if not os.path.exists(fnm):
-            self.logger.error(f'Файл {fnm} не существует.')
+            # self.logger.error(f'Файл {fnm} не существует.')
             return
         # Пробуем возвратить текст из xml
         return self.getXMLfromZip(fnm)
 
+    @timethis
     def getXMLfromZip(self, fnm):
         # 3) проверить является ли файл архивом zip
         # 4) проверить все ли обязательные файлы в архиве
@@ -146,7 +150,7 @@ class ModuleHelper:
                         keys = ConfigRegistry.instance().getManagerConfig().getAllKeys()
                     )
         except Exception as msg:
-            self.logger.error('Ошибка при распаковке файла: ' + str(msg))
+            # self.logger.error('Ошибка при распаковке файла: ' + str(msg))
             return
         return cfg
 
