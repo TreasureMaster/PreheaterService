@@ -1,5 +1,5 @@
 import os, glob, shutil
-import zipfile
+import zipfile, tarfile
 
 from threading import Lock
 from accessify import private
@@ -45,7 +45,7 @@ class ModuleHelper:
         return ModuleHelper.__instance
 
     # инициализация (поиск и загрузка модуля)
-    @timethis
+    # @timethis
     def init(self):
         # logger = AppLogger.instance()
         
@@ -135,7 +135,7 @@ class ModuleHelper:
         # Пробуем возвратить текст из xml
         return self.getXMLfromZip(fnm)
 
-    @timethis
+    # @timethis
     def getXMLfromZip(self, fnm):
         # 3) проверить является ли файл архивом zip
         # 4) проверить все ли обязательные файлы в архиве
@@ -144,11 +144,15 @@ class ModuleHelper:
             with zipfile.ZipFile(fnm) as myzip:
                 # zipfile использует байтовый режим, поэтому не нужно указывать 'b'
                 with myzip.open(ModuleHelper.__REQUIRED_CONFIG, 'r') as myfile:
-                    cfg = decode_xml(
-                        raw_data = myfile.read(),
-                        fnm = fnm,
-                        keys = ConfigRegistry.instance().getManagerConfig().getAllKeys()
-                    )
+            # with tarfile.open(fnm) as myfile:
+            #         prep = myfile.getmember('module/data/config.bin')
+            #         prep = myfile.extractfile(prep)
+                    # print(prep)
+                        cfg = decode_xml(
+                            raw_data = myfile.read(),
+                            fnm = fnm,
+                            keys = ConfigRegistry.instance().getManagerConfig().getAllKeys()
+                        )
         except Exception as msg:
             # self.logger.error('Ошибка при распаковке файла: ' + str(msg))
             return

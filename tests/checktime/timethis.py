@@ -8,7 +8,7 @@ def timethis(func=None, *, num_iter=1):
 
     @functools.wraps(func)
     def inner(*args, **kwargs):
-        print(func.__name__, end=' ... ')
+        print(func.__name__, end=' ... \n')
         acc = float('inf')
         for i in range(num_iter):
             tick = time.perf_counter()

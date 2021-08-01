@@ -8,6 +8,8 @@ from Cryptodome.Cipher import AES
 from applogger import AppLogger
 # from registry import ConfigRegistry, AppRegistry
 
+from tests import timethis
+
 
 class MismatchedKeys(Exception):
     """Ошибка несовпадения ключей."""
@@ -28,7 +30,7 @@ def encode_xml(key: bytes, xml: bytes, cfgfilename: str) -> None:
     [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
     file_out.close()
 
-
+# @timethis
 def decode_xml(raw_data: bytes, fnm: str, keys: Iterable[bytes]) -> str:
     """Пробует декодировать данные config.bin в xml.
 
