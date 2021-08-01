@@ -19,8 +19,8 @@ class ModuleWindow(GUIWidgetConfiguration):
 
     # @private
     def __init__(self):
-        mainwindow = WidgetsRegistry.instance().getMainWindow()
-        self.window = Toplevel(mainwindow)
+        self.mainwindow = WidgetsRegistry.instance().getMainWindow()
+        self.window = Toplevel(self.mainwindow)
         self.window.title(ModuleWindow.__APPTITLE)
         self.window.protocol('WM_DELETE_WINDOW', self._quit)
         self.__current_module = AppRegistry.instance().getCurrentModule()
@@ -122,7 +122,10 @@ class ModuleWindow(GUIWidgetConfiguration):
         # print(self.scrollwindow.winfo_reqheight())
         self.sw.canvas.config(
             width=self.mainframe.winfo_width(),
-            height=self.mainframe.winfo_height()
+            height=min(
+                round(self.mainwindow.winfo_screenheight() / 2),
+                self.mainframe.winfo_height()
+            )
         )
 
 

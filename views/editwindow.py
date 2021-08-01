@@ -18,8 +18,8 @@ class EditWindow:
 
     # @private
     def __init__(self):
-        mainwindow = WidgetsRegistry.instance().getMainWindow()
-        self.window = Toplevel(mainwindow)
+        self.mainwindow = WidgetsRegistry.instance().getMainWindow()
+        self.window = Toplevel(self.mainwindow)
         self.window.title(EditWindow.__APPTITLE)
         # все окно
         self.sw = ScrolledWindow(self.window)
@@ -99,8 +99,14 @@ class EditWindow:
         # print(self.scrollwindow.winfo_reqwidth())
         # print(self.scrollwindow.winfo_reqheight())
         self.sw.canvas.config(
+            # реальная ширина после упаковки
             width=self.mainframe.winfo_width(),
-            height=self.mainframe.winfo_height()
+            # height=self.mainframe.winfo_height()
+            # высота - половина экрана монитора
+            height=min(
+                round(self.mainwindow.winfo_screenheight() / 2),
+                self.mainframe.winfo_height()
+            )
         )
 
 

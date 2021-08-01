@@ -27,6 +27,9 @@ class MainWindow:
         self.window = Tk()
         self.window.title(MainWindow.__APPTITLE)
         WidgetsRegistry.instance().setMainWindow(self.window)
+        # print(self.window.winfo_screenheight())
+        # print(self.window.winfo_screenwidth())
+        # self.window.resizable(height=500)
         # self.window.geometry('1078x504')
         # все окно
         self.scrollwindow = ScrolledWindow(self.window)
@@ -87,7 +90,11 @@ class MainWindow:
         # print(self.scrollwindow.winfo_reqheight())
         self.scrollwindow.canvas.config(
             width=self.mainframe.winfo_width(),
-            height=self.mainframe.winfo_height()
+            # height=self.mainframe.winfo_height()
+            height=min(
+                round(self.window.winfo_screenheight() / 2),
+                self.mainframe.winfo_height()
+            )
         )
 
 
