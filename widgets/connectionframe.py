@@ -43,8 +43,6 @@ class ComportWindow(Toplevel):
         self.focus_set()
         self.grab_set()
         self.wait_window()
-        print('toplevel exit')
-        # print(self)
 
     def _make_widgets(self):
         # self.master.title = 'Настройки'
@@ -109,7 +107,6 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.combo_rmc.current(0)
         self.combo_rmc.pack(side=TOP, padx=5)
         # Сразу же вывод первой таблицы при первом запуске программы
-        # self.setComPort(0)
         self.combo_rmc.bind("<<ComboboxSelected>>", self.setRemoteControl)
 
         # (2) Фрейм выбора COM-порта и его скорости
@@ -123,19 +120,17 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.combo_port.current(0)
         self.combo_port.pack(side=TOP, padx=5)
         # Сразу же вывод первой таблицы при первом запуске программы
-        # self.setComPort(0)
         self.combo_port.bind("<<ComboboxSelected>>", self.setComPort)
 
-        baud_label = Label(port_frame, text='Скорость:', anchor=W)
-        baud_label.pack(side=TOP, padx=5, fill=X)
+        # baud_label = Label(port_frame, text='Скорость:', anchor=W)
+        # baud_label.pack(side=TOP, padx=5, fill=X)
 
-        self.combo_baud = ttk.Combobox(port_frame, values=(['----'] + BAUDRATES))
-        # Текущее значение - первая таблица
-        self.combo_baud.current(0)
-        self.combo_baud.pack(side=TOP, padx=5)
-        # Сразу же вывод первой таблицы при первом запуске программы
-        # self.setComPort(0)
-        self.combo_baud.bind("<<ComboboxSelected>>", self.setBaudRate)
+        # self.combo_baud = ttk.Combobox(port_frame, values=(['----'] + BAUDRATES))
+        # # Текущее значение - первая таблица
+        # self.combo_baud.current(0)
+        # self.combo_baud.pack(side=TOP, padx=5)
+        # # Сразу же вывод первой таблицы при первом запуске программы
+        # self.combo_baud.bind("<<ComboboxSelected>>", self.setBaudRate)
 
         # метка соединения
         # indicator = IndicatorImage(self.serialframe, image='yes2')
@@ -143,10 +138,10 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
 
         # (3) Фрейм кнопок управления
         btn_frame = Frame(self)
-        btn_frame.pack(side=LEFT, padx=5)
+        btn_frame.pack(side=LEFT, padx=5, fill=Y)
         # Кнопка настройки соединения
-        combtn = Button(btn_frame, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
-        combtn.pack(side=TOP, padx=5, fill=X, pady=2)
+        # combtn = Button(btn_frame, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
+        # combtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # Кнопка открытия/закрытия соединения
         connectbtn = Button(btn_frame, text='Открыть/Закрыть', command=lambda: None)
@@ -186,9 +181,9 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         comport = self.combo_port.get()
         print(comport)
 
-    def setBaudRate(self, event):
-        baudrate = self.combo_baud.get()
-        print(baudrate)
+    # def setBaudRate(self, event):
+    #     baudrate = self.combo_baud.get()
+    #     print(baudrate)
 
     def initComPortList(self, comport_number=None):
         if not comport_number:

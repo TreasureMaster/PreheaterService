@@ -157,7 +157,7 @@ class EditWindow(AppWindow):
         # self.window.event_add('<<StreamFlush>>', 'None')
         # self.window.bind('<<StreamFlush>>', TestSaveStream(), '%d')
 
-# from tests import timethis
+from tests import timethis
 # --------------------------- Окно работы с модулем -------------------------- #
 class ModuleWindow(AppWindow, GUIWidgetConfiguration):
     __APPTITLE = 'Работа с модулем'
@@ -174,12 +174,12 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.window.grab_set()
         self.window.wait_window()
 
-    # @timethis
+    @timethis
     def _make_widgets(self):
-        self.add_underline(self.mainframe, width=2, color='gray').grid(row=0, columnspan=2, sticky='ew', pady=5)
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=0, columnspan=2, sticky='ew')
         self.connection = ConnectionFrame(self.mainframe)
         self.connection.grid(row=1, columnspan=2, sticky='ew')
-        self.add_underline(self.mainframe, width=2, color='gray').grid(row=2, columnspan=2, sticky='ew', pady=5)
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=2, columnspan=2, sticky='ew')
         # Левый фрейм с кнопками управления
         buttonsframe = Frame(self.mainframe)
         # listmodules = Label(self.mainframe, text='Заглушка')
