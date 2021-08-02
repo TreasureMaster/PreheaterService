@@ -4,7 +4,8 @@ from registry import AppRegistry
 from applogger import AppLogger
 from base.modulehelper import ModuleHelper
 
-from views.mainwindow import MainWindow
+# from views.mainwindow import MainWindow
+from views import MainWindow
 
 
 class Controller:

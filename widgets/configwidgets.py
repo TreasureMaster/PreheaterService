@@ -1,5 +1,5 @@
 """Класс-миксин с функциями изменения конфигурации виджета."""
-from registry import WidgetsRegistry
+# from registry import WidgetsRegistry
 from tkinter import Frame, FLAT
 
 class GUIWidgetConfiguration:

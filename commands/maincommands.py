@@ -14,6 +14,8 @@ from base.encryption import encode_xml
 # from views.editwindow import EditWindow
 # from views.modulewindow import ModuleWindow
 
+# from tests import timethis
+
 
 # NOTE В данной структуре получателем будет являться реестр AppRegistry
 # Возможно, потом можно выделить получателя в отдельный класс
@@ -188,7 +190,7 @@ class EditModule(Command):
             AppRegistry.instance().setEditableModule(editmodule)
             editmodule.revision.increment()
             # Отложенный импорт для предотвращения циклического импорта
-            from views.editwindow import EditWindow
+            from views import EditWindow
             EditWindow()
         else:
             AppLogger.instance().error('Не выбран модуль для редактирования.')
@@ -261,6 +263,7 @@ class SaveModule(Command):
 # -------------------------- Команды запуска модуля -------------------------- #
 class StartModule(Command):
 
+    # @timethis
     def execute(self):
         WidgetsRegistry.instance().getMainWindow().withdraw()
 
@@ -276,7 +279,7 @@ class StartModule(Command):
     #     print(WidgetsRegistry.instance().getWorkInfoFrame()._getWorkModule())
 
         # Отложенный импорт для предотвращения циклического импорта
-        from views.modulewindow import ModuleWindow
+        from views import ModuleWindow
         ModuleWindow()
 # ---------------------------------------------------------------------------- #
 class ViewLog(Command):
