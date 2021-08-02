@@ -7,6 +7,7 @@ from .scrolledwindow import ScrolledWindow
 from .mainmenu import MainMenu
 from .modulemenu import ModuleMenu
 from .connectionframe import ConnectionFrame
+from .scrolledlistbox import ScrolledListboxFrame
 
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     'OnceByHeightResizedImage',
     'OnceByHeightMappedImage',
     'OnceResizedImage',
-    'HeightResizedImage'
+    'HeightResizedImage',
+    'ScrolledListboxFrame'
 ]

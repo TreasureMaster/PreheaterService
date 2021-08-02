@@ -43,6 +43,8 @@ class FNConfig:
     __description_filename = 'readme.txt'
     # Файл конфигурации отопителя
     __config_filename = 'config.bin'
+    # Файл с python кодом модуля
+    __code_filename = 'mod.py'
 
     # Поддерживаемые режимы работы модуля
     __REQUIRED_WORKMODES = {
@@ -67,7 +69,8 @@ class FNConfig:
     __REQUIRED_FILES = {
         'image': __image_filename,
         'config': __config_filename,
-        'description': __description_filename
+        'description': __description_filename,
+        'code': __code_filename
     }
 
 # ----------------------------- Данные менеджера ----------------------------- #

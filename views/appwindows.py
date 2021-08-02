@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from tkinter import *
+from tkinter import ttk
 
 from registry import WidgetsRegistry, ConfigRegistry, AppRegistry
 from applogger import AppLogger
@@ -7,7 +8,7 @@ from applogger import AppLogger
 # from views.infomodule import InfoModuleFrame
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame, EditableModuleFrame
-from widgets import LoggerWindow, ScrolledWindow, GUIWidgetConfiguration, ConnectionFrame
+from widgets import LoggerWindow, ScrolledWindow, GUIWidgetConfiguration, ConnectionFrame, ScrolledListboxFrame
 # Здесь размещать подготовку команды?
 from commands import ViewLog
 
@@ -174,26 +175,70 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.window.grab_set()
         self.window.wait_window()
 
-    @timethis
+    # @timethis
     def _make_widgets(self):
-        self.add_underline(self.mainframe, width=2, color='gray').grid(row=0, columnspan=2, sticky='ew')
-        self.connection = ConnectionFrame(self.mainframe)
-        self.connection.grid(row=1, columnspan=2, sticky='ew')
-        self.add_underline(self.mainframe, width=2, color='gray').grid(row=2, columnspan=2, sticky='ew')
-        # Левый фрейм с кнопками управления
-        buttonsframe = Frame(self.mainframe)
-        # listmodules = Label(self.mainframe, text='Заглушка')
-        buttonsframe.grid(padx=10, row=3, column=0, sticky=N)
-        # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
-        # WARNING размещено здесь из-за перекрестного импорта
-        from commands.maincommands import ReplaceImage, SaveModule
-        Button(buttonsframe, text='Изменить изображение', command=ReplaceImage()).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Резерв...', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
-        Button(buttonsframe, text='Отмена', command=self._quit).grid(sticky=W+E+S+N, pady=2)
+        self._make_static_widgets()
+        self._load_module()
+        # ---------------------------------
+        
+        # Формирование табов
+        # nb = ttk.Notebook(self.mainframe)
+        # # style = ttk.Style()
+        # # style.layout('TNotebook', {'borderwidth': 0})
+        
+        # # nb.grid(padx=10, row=3, column=0, sticky=N)
+        # # ---------------------------------
+        # # Первая вкладка с кнопками управления
+        # rc_frame = Frame(nb)
+        # # listmodules = Label(self.mainframe, text='Заглушка')
+        # rc_frame.pack(expand=YES, fill=BOTH)
+        # # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
+        # from widgets import InfoTitleLabel
+        # InfoTitleLabel(rc_frame, text='Пульт (прямое управление)').grid(sticky=W+E+S+N, pady=2)
+        # # WARNING размещено здесь из-за перекрестного импорта
+        # # from commands.maincommands import ReplaceImage, SaveModule
+        # Button(rc_frame, text='Выключить', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        # Button(rc_frame, text='Отопление', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        # Button(rc_frame, text='Вентиляция', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        # Button(rc_frame, text='Расширенный запрос', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
+        # # Button(rc_frame, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
+        # Button(rc_frame, text='Отмена', command=self._quit).grid(sticky=W+E+S+N, pady=2)
+        # # ------------------------------------
+        # # Вторая вкладка с кнопками
+        # ignition_frame = Frame(nb)
+        # ignition_frame.pack(expand=YES, fill=BOTH)
+        # InfoTitleLabel(ignition_frame, text='Розжиг').pack(fill=X, pady=2)
+        # listbar = ScrolledListboxFrame(ignition_frame)
+        # listbar.pack(pady=10)
+        # listbar.add_list([
+        #     'Параметры',
+        #     'Розжиг',
+        #     'Отопление',
+        #     'Температура',
+        #     'ДН импульс',
+        #     'Мониторинг',
+        #     'Прошивка'
+        # ])
+        # listbar.set_command(lambda event: None)
+        # listbar.listbox.config(width=30)
 
+        # Button(ignition_frame, text='Save to file', command=lambda: None).pack(fill=X, pady=2)
+        # Button(ignition_frame, text='Load from file', command=lambda: None).pack(fill=X, pady=2)
+        # Button(ignition_frame, text='AddRow', command=lambda: None).pack(fill=X, pady=2)
+        # Button(ignition_frame, text='DelRow', command=lambda: None).pack(fill=X, pady=2)
+        # Button(ignition_frame, text='Upload to Block', command=lambda: None).pack(fill=X, pady=2)
+        # # Button(ignition_frame, text='Мониторинг', command=lambda: None).pack(fill=X, pady=2)
+        # # Button(ignition_frame, text='Прошивка', command=lambda: None).pack(fill=X, pady=2)
+        # # Button(rc_frame, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
+        # Button(ignition_frame, text='Отмена', command=self._quit).pack(fill=X, pady=2)
+
+        # nb.add(rc_frame, text='Пульт')
+        # nb.add(ignition_frame, text='Розжиг')
+
+        # Прикрепление загруженного из модуля виджета
+        self.lefttabs.grid(padx=10, row=3, column=0, sticky=N)
+
+        # ------------------------------------
         info = InfoModuleFrame(self.mainframe)
         info.grid(pady=5, row=3, column=1)
         self.scrollwindow.bind_widgets(info.getScrollWidgets())
@@ -207,11 +252,44 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         # WidgetsRegistry.instance().setLogFrame(self.log_window)
         # self.log_window.bind('<Map>', self.on_frame_mapped)
 
+    def _make_static_widgets(self):
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=0, columnspan=2, sticky='ew')
+        self.connection = ConnectionFrame(self.mainframe)
+        self.connection.grid(row=1, columnspan=2, sticky='ew')
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=2, columnspan=2, sticky='ew')
+
     def _quit(self):
         """Собственная обработка выхода."""
         WidgetsRegistry.instance().popWorkInfoFrame()
         WidgetsRegistry.instance().getMainWindow().deiconify()
         self.window.destroy()
+
+    def _load_module(self):
+        # self.mymodul = __import__('testmdl')
+        # print('imported')
+        # import os, sys
+        # Подготовка пути
+        # print(os.path.abspath(__file__))
+        # print(sys.executable)
+        # print(os.path.dirname(sys.executable))
+        # path = os.path.join(os.path.dirname(sys.executable), 'testmdl.py')
+        # path = os.path.join('C:\\Temp\\test_pyinstaller', 'testmdl_2.py')
+        # path = os.path.join(
+        #     ConfigRegistry.instance().getManagerConfig().getPath('work', 'data'),
+        #     'mod.py'
+        # )
+        # path = 'tasks/mod.py'
+        path = ConfigRegistry.instance().getManagerConfig().getDatafile('work', 'code')
+        print(path)
+        # Загрузка модуля
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("mod", path)
+        self.foo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.foo)
+        print(self.foo)
+        # Запуск модуля (исполнение встроенного класса)
+        self.lefttabs = self.foo.LeftTabs(self.mainframe, self)
+        # self.lefttabs.work()
 
     def _prepare_commands(self):
         pass
