@@ -1,4 +1,6 @@
 import collections
+
+from serial.tools import list_ports
 from tkinter import *
 from tkinter import ttk
 
@@ -86,7 +88,9 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         # self.mainframe.pack(expand=YES, fill=BOTH, pady=5)
         self.current_module = AppRegistry.instance().getCurrentModule()
         self.remote_controls = self.initRemoteControlList(self.current_module.getRemoteControlList())
-        self.comports = self.initComPortList(comports)
+        # self.comports = self.initComPortList(comports)
+        # self.initComPortList(comports)
+        self.comports = list_ports.comports()
         # self.serialframe = Frame(master)
         # self.serialframe.pack(expand=YES, fill=X, pady=5)
         self._make_widgets()
@@ -98,7 +102,8 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
     def _make_widgets(self):
         # (1) Фрейм выбора пультов
         rmc_frame = Frame(self)
-        rmc_frame.pack(side=LEFT, padx=5, fill=Y)
+        rmc_frame.pack(side=LEFT, fill=Y)
+        self.add_border(rmc_frame, width=1)
         com_label = Label(rmc_frame, text='Пульт:', anchor=W)
         com_label.pack(side=TOP, padx=5, fill=X)
 
@@ -111,16 +116,25 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
 
         # (2) Фрейм выбора COM-порта и его скорости
         port_frame = Frame(self)
-        port_frame.pack(side=LEFT, padx=5, fill=Y)
+        port_frame.pack(side=LEFT, fill=Y)
+        self.add_border(port_frame, width=1)
         port_label = Label(port_frame, text='Порт:', anchor=W)
         port_label.pack(side=TOP, padx=5, fill=X)
 
-        self.combo_port = ttk.Combobox(port_frame, values=self.comports)
+        self.combo_port = ttk.Combobox(
+            port_frame,
+            values=(['----'] + [port.device for port in self.comports]),
+            postcommand=self.updateComPortList
+        )
         # Текущее значение - первая таблица
         self.combo_port.current(0)
-        self.combo_port.pack(side=TOP, padx=5)
+        self.combo_port.pack(side=TOP, padx=5, anchor=W)
         # Сразу же вывод первой таблицы при первом запуске программы
         self.combo_port.bind("<<ComboboxSelected>>", self.setComPort)
+
+        # Описание выбранного порта
+        self.port_description = Label(port_frame, text='', width=28, anchor=W)
+        self.port_description.pack()
 
         # baud_label = Label(port_frame, text='Скорость:', anchor=W)
         # baud_label.pack(side=TOP, padx=5, fill=X)
@@ -138,7 +152,8 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
 
         # (3) Фрейм кнопок управления
         btn_frame = Frame(self)
-        btn_frame.pack(side=LEFT, padx=5, fill=Y)
+        btn_frame.pack(side=LEFT, fill=Y)
+        self.add_border(btn_frame, width=1)
         # Кнопка настройки соединения
         # combtn = Button(btn_frame, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
         # combtn.pack(side=TOP, padx=5, fill=X, pady=2)
@@ -153,7 +168,8 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
 
         # (4) Фрейм с информацией о модуле
         info_frame = Frame(self)
-        info_frame.pack(side=LEFT, padx=5, fill=Y)
+        info_frame.pack(side=LEFT, fill=Y)
+        self.add_border(info_frame, width=1)
         # self.add_border(info_frame, width=2, color='red')
         # Информация о блоке
         versionlabel = Label(info_frame, text=f'Версия:     {self.current_module.getBaseRevision()}', anchor=W)
@@ -178,19 +194,34 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         print(rmc)
 
     def setComPort(self, event):
-        comport = self.combo_port.get()
-        print(comport)
+        # comport = self.combo_port.get()
+        # print(comport)
+        # print(event.widget.get())
+        # print(event.widget.current())
+        self.port_description.config(
+            text=(self.comports[event.widget.current()-1].description if event.widget.current() else ''),
+            justify=LEFT
+        )
 
     # def setBaudRate(self, event):
     #     baudrate = self.combo_baud.get()
     #     print(baudrate)
 
-    def initComPortList(self, comport_number=None):
-        if not comport_number:
-            comport_number = COMPORTS
-        ports = list(map(lambda n: 'COM'+str(n), range(comport_number)))
-        ports[0] = '----'
-        return ports
+    # def initComPortList(self, comport_number=None):
+    #     # print(list_ports.comports())
+    #     # self.comports = [port.device for port in list_ports.comports()]
+    #     self.comports = list_ports.comports()
+        # if not comport_number:
+        #     comport_number = COMPORTS
+        # ports = list(map(lambda n: 'COM'+str(n), range(comport_number)))
+        # self.comports[:0] = ('----',)
+        # return ports
+
+    def updateComPortList(self):
+        self.comports = list_ports.comports()
+        self.combo_port.config(
+            values=(['----'] + [port.device for port in self.comports])
+        )
 
     def initRemoteControlList(self, rmc_list=None):
         # if rmc_list:
