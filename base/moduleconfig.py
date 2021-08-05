@@ -17,6 +17,10 @@ class ModuleConfig:
     }
     __OPTIONS = {'voltage', 'remote', 'fuel', 'extra'}
     __MANAGER = {'mainname', 'major', 'minor', 'micro'}
+    __DIGITAL_PROPS = {
+        'majorrevision', 'minorrevision', 'editrevision',
+        'major', 'minor', 'micro'
+    }
 
     # def __init__(self, filename=None):
     #     if filename:
@@ -84,7 +88,26 @@ class ModuleConfig:
                 elif key in ModuleConfig.__OPTIONS:
                     return list(map(str, self.root.options[key].opvalues))
             except AttributeError:
-                return
+                if key in ModuleConfig.__HEADER | ModuleConfig.__MANAGER:
+                    return self.getUnknownProperty(key)
+                else:
+                    # TODO пустой список возвращать или нет ???
+                    return []
+
+    def getUnknownProperty(self, key: str) -> Any:
+        if key in ModuleConfig.__DIGITAL_PROPS:
+            return 0
+        elif key in {'name', 'mainname'}:
+            return 'unknown'
+        elif key == 'title':
+            return self.getProperty('name')
+        elif key == 'lastupdated':
+            return self.getProperty('releasedate')
+        elif key == 'releasedate':
+            # TODO неизвестно, что возвращать, если нет даты выпуска
+            return 0
+        else:
+            return ''
 
     def setProperty(self, key: str, value: Any) -> None:
         """Присваивает новое значение свойству XML-объекта файла конфигурации."""
