@@ -54,7 +54,7 @@ modulenumber.py
 # My data
 examples/
 images/*
-tasks/
+# tasks/
 modules/
 module/
 editable/
@@ -63,10 +63,17 @@ save/
 tmplog/
 temp/
 tests/xmlfiles/*
+
+# tasks dir
+tasks/*.png
+tasks/images/
+tasks/*.txt
+tasks/*.docx
 !tasks/yes2.png
 !tasks/no2.png
 !tasks/catalog_tree.txt
 !tasks/todo_list.txt
+!tasks/mod.py
 
 # Temp data
 # controller.py

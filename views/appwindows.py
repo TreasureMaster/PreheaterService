@@ -57,6 +57,7 @@ class AppWindow(ABC):
 # -------------------- Главное окно приложения (менеджер) -------------------- #
 
 class MainWindow(AppWindow, metaclass=AbstractSingletonMeta):
+    """Главное окно менеджера."""
     __APPTITLE = 'FN-Service'
 
     def __init__(self):
@@ -102,6 +103,7 @@ class MainWindow(AppWindow, metaclass=AbstractSingletonMeta):
 
 # ---------------------------- Окно редактирования --------------------------- #
 class EditWindow(AppWindow):
+    """Окно копирования и редактирования базовой информации модуля."""
     __APPTITLE = 'Создание модуля'
 
     def __init__(self):
@@ -161,7 +163,13 @@ class EditWindow(AppWindow):
 from tests import timethis
 # --------------------------- Окно работы с модулем -------------------------- #
 class ModuleWindow(AppWindow, GUIWidgetConfiguration):
+    """Рабочее окно модуля."""
     __APPTITLE = 'Работа с модулем'
+    # Переменная, определяющая откуда подгружается модуль (обычно из архива модуля - False)
+    # Если True, то модуль подгружается из заданного места
+    # (сделано для тестирования функционала модуля перед размещением в архиве)
+    __test = True
+    __testpath = 'tasks/mod.py'
 
     def __init__(self):
         self.mainwindow = WidgetsRegistry.instance().getMainWindow()
@@ -177,65 +185,14 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
 
     # @timethis
     def _make_widgets(self):
+        """Формирование виджетов окна."""
+        # Загрузка "шапки" модуля.
         self._make_static_widgets()
+        # Загрузка кода модуля из архива.
         self._load_module()
-
+        # Левая панель управления работой с модулем.
+        # TODO изменить в соответствии с ТЗ
         self.lefttabs = self.module.LeftTabs(self.mainframe, self)
-        # ---------------------------------
-        
-        # Формирование табов
-        # nb = ttk.Notebook(self.mainframe)
-        # # style = ttk.Style()
-        # # style.layout('TNotebook', {'borderwidth': 0})
-        
-        # # nb.grid(padx=10, row=3, column=0, sticky=N)
-        # # ---------------------------------
-        # # Первая вкладка с кнопками управления
-        # rc_frame = Frame(nb)
-        # # listmodules = Label(self.mainframe, text='Заглушка')
-        # rc_frame.pack(expand=YES, fill=BOTH)
-        # # self.scrollwindow.bind_widgets(listmodules.getScrollWidgets())
-        # from widgets import InfoTitleLabel
-        # InfoTitleLabel(rc_frame, text='Пульт (прямое управление)').grid(sticky=W+E+S+N, pady=2)
-        # # WARNING размещено здесь из-за перекрестного импорта
-        # # from commands.maincommands import ReplaceImage, SaveModule
-        # Button(rc_frame, text='Выключить', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        # Button(rc_frame, text='Отопление', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        # Button(rc_frame, text='Вентиляция', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        # Button(rc_frame, text='Расширенный запрос', command=lambda: None).grid(sticky=W+E+S+N, pady=2)
-        # # Button(rc_frame, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
-        # Button(rc_frame, text='Отмена', command=self._quit).grid(sticky=W+E+S+N, pady=2)
-        # # ------------------------------------
-        # # Вторая вкладка с кнопками
-        # ignition_frame = Frame(nb)
-        # ignition_frame.pack(expand=YES, fill=BOTH)
-        # InfoTitleLabel(ignition_frame, text='Розжиг').pack(fill=X, pady=2)
-        # listbar = ScrolledListboxFrame(ignition_frame)
-        # listbar.pack(pady=10)
-        # listbar.add_list([
-        #     'Параметры',
-        #     'Розжиг',
-        #     'Отопление',
-        #     'Температура',
-        #     'ДН импульс',
-        #     'Мониторинг',
-        #     'Прошивка'
-        # ])
-        # listbar.set_command(lambda event: None)
-        # listbar.listbox.config(width=30)
-
-        # Button(ignition_frame, text='Save to file', command=lambda: None).pack(fill=X, pady=2)
-        # Button(ignition_frame, text='Load from file', command=lambda: None).pack(fill=X, pady=2)
-        # Button(ignition_frame, text='AddRow', command=lambda: None).pack(fill=X, pady=2)
-        # Button(ignition_frame, text='DelRow', command=lambda: None).pack(fill=X, pady=2)
-        # Button(ignition_frame, text='Upload to Block', command=lambda: None).pack(fill=X, pady=2)
-        # # Button(ignition_frame, text='Мониторинг', command=lambda: None).pack(fill=X, pady=2)
-        # # Button(ignition_frame, text='Прошивка', command=lambda: None).pack(fill=X, pady=2)
-        # # Button(rc_frame, text='Сохранить', command=SaveModule()).grid(sticky=W+E+S+N, pady=2)
-        # Button(ignition_frame, text='Отмена', command=self._quit).pack(fill=X, pady=2)
-
-        # nb.add(rc_frame, text='Пульт')
-        # nb.add(ignition_frame, text='Розжиг')
 
         # Прикрепление загруженного из модуля виджета
         self.lefttabs.grid(padx=10, row=3, column=0, sticky=N)
@@ -243,6 +200,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         # ------------------------------------
         info = InfoModuleFrame(self.mainframe)
         info.grid(pady=5, row=3, column=1)
+        # TODO привязать здесь, после получения фрейма
         self.scrollwindow.bind_widgets(info.getScrollWidgets())
         WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
@@ -255,6 +213,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         # self.log_window.bind('<Map>', self.on_frame_mapped)
 
     def _make_static_widgets(self):
+        """ 'Шапка' окна работы с модулем (выбор пульта и соединения, краткая информация о модуле)."""
         self.add_underline(self.mainframe, width=2, color='gray').grid(row=0, columnspan=2, sticky='ew')
         self.connection = ConnectionFrame(self.mainframe)
         self.connection.grid(row=1, columnspan=2, sticky='ew')
@@ -268,7 +227,10 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
 
     def _load_module(self):
         """Загружает python-module с дополнительными фреймами модуля отопителя"""
-        path = ConfigRegistry.instance().getManagerConfig().getDatafile('work', 'code')
+        if ModuleWindow.__test:
+            path = ModuleWindow.__testpath
+        else:
+            path = ConfigRegistry.instance().getManagerConfig().getDatafile('work', 'code')
         print(path)
         # Загрузка модуля
         import importlib.util
