@@ -1,4 +1,5 @@
 from .maincommands import (
+    Command,
     ViewLog,
     CommandMixin,
     ViewModule,
@@ -15,6 +16,7 @@ from .maincommands import (
 
 
 __all__ = [
+    'Command',
     'ViewLog',
     'CommandMixin',
     'ViewModule',

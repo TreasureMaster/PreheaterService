@@ -195,16 +195,17 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.lefttabs = self.module.LeftTabs(self.mainframe, self)
 
         # Прикрепление загруженного из модуля виджета
-        self.lefttabs.grid(padx=10, row=3, column=0, sticky=N)
+        self.lefttabs.grid(padx=10, row=3, column=0, sticky=W+E)
 
         # ------------------------------------
-        info = InfoModuleFrame(self.mainframe)
-        info.grid(pady=5, row=3, column=1)
-        # TODO привязать здесь, после получения фрейма
-        self.scrollwindow.bind_widgets(info.getScrollWidgets())
-        WidgetsRegistry.instance().pushWorkInfoFrame(info)
+        # info = InfoModuleFrame(self.mainframe)
+        # info.grid(pady=5, row=3, column=1)
+        # # TODO привязать здесь, после получения фрейма
+        # self.scrollwindow.bind_widgets(info.getScrollWidgets())
+        # WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
-        info.bind('<Map>', self.on_frame_mapped)
+        # info.bind('<Map>', self.on_frame_mapped)
+        self.lefttabs.bind('<Map>', self.on_frame_mapped)
 
         # self.log_window = LoggerWindow(self.mainframe, height=5)
         # self.log_window.grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
