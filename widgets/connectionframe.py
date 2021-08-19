@@ -7,8 +7,8 @@ from tkinter import ttk
 # from connectimages import IndicatorImage
 from registry import AppRegistry
 from widgets import GUIWidgetConfiguration, ModuleImage
+from commands import DeviceConnect
 
-COMPORTS = 7
 BAUDRATES = [
     'Custom',
     '110',
@@ -136,16 +136,6 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.port_description = Label(port_frame, text='', width=28, anchor=W)
         self.port_description.pack()
 
-        # baud_label = Label(port_frame, text='Скорость:', anchor=W)
-        # baud_label.pack(side=TOP, padx=5, fill=X)
-
-        # self.combo_baud = ttk.Combobox(port_frame, values=(['----'] + BAUDRATES))
-        # # Текущее значение - первая таблица
-        # self.combo_baud.current(0)
-        # self.combo_baud.pack(side=TOP, padx=5)
-        # # Сразу же вывод первой таблицы при первом запуске программы
-        # self.combo_baud.bind("<<ComboboxSelected>>", self.setBaudRate)
-
         # метка соединения
         # indicator = IndicatorImage(self.serialframe, image='yes2')
         # indicator.pack(side=LEFT, padx=5)
@@ -157,13 +147,17 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         # Кнопка настройки соединения
         # combtn = Button(btn_frame, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
         # combtn.pack(side=TOP, padx=5, fill=X, pady=2)
+        Label(btn_frame, text='Соединение:').pack(padx=10, pady=2, fill=X)
 
         # Кнопка открытия/закрытия соединения
-        connectbtn = Button(btn_frame, text='Открыть/Закрыть', command=lambda: None)
+        connectbtn = Button(btn_frame, text='Подключить')
+        connectbtn.config(
+            command=DeviceConnect(connectbtn)
+        )
         connectbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # Кнопка считывания блока?
-        readbtn = Button(btn_frame, text='Считать', command=lambda: None)
+        readbtn = Button(btn_frame, text='Сохранить', command=lambda: None)
         readbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # (4) Фрейм с информацией о модуле
@@ -179,13 +173,6 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         numberlabel.pack(side=TOP, padx=5, fill=X)
 
         # (5) Маленькая картинка модуля
-        # image_frame = Frame(self)
-        # image_frame = OnceByHeightMappedImage(self, lastadded=self)
-        # image_frame.pack(side=LEFT, padx=5, expand=NO)
-        # img = HeightResizedImage(image_frame, maxheight=80)
-        # img.pack(expand=NO)
-        # self.bind('<Map>', lambda event, img=img: img.pack(side=LEFT, padx=5, expand=NO))
-        # self.bind('<Map>', lambda event, info=btn_frame: print(info.winfo_reqheight()))
         image_frame = ModuleImage(self, image=self.current_module.getImageLink(), maxheight=80)
         image_frame.pack(side=RIGHT)
 
@@ -194,28 +181,10 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         print(rmc)
 
     def setComPort(self, event):
-        # comport = self.combo_port.get()
-        # print(comport)
-        # print(event.widget.get())
-        # print(event.widget.current())
         self.port_description.config(
             text=(self.comports[event.widget.current()-1].description if event.widget.current() else ''),
             justify=LEFT
         )
-
-    # def setBaudRate(self, event):
-    #     baudrate = self.combo_baud.get()
-    #     print(baudrate)
-
-    # def initComPortList(self, comport_number=None):
-    #     # print(list_ports.comports())
-    #     # self.comports = [port.device for port in list_ports.comports()]
-    #     self.comports = list_ports.comports()
-        # if not comport_number:
-        #     comport_number = COMPORTS
-        # ports = list(map(lambda n: 'COM'+str(n), range(comport_number)))
-        # self.comports[:0] = ('----',)
-        # return ports
 
     def updateComPortList(self):
         self.comports = list_ports.comports()

@@ -13,6 +13,9 @@ from .maincommands import (
     SaveModule,
     StartModule
 )
+from .lincommands import (
+    DeviceConnect
+)
 
 
 __all__ = [
@@ -28,5 +31,7 @@ __all__ = [
     'EditModule',
     'ReplaceImage',
     'SaveModule',
-    'StartModule'
+    'StartModule',
+    # LIN ----------------
+    'DeviceConnect'
 ]

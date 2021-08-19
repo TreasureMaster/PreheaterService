@@ -184,7 +184,12 @@ class LeftTabs(Frame, GUIWidgetConfiguration):
         listbar.listbox.event_generate('<<ListboxSelect>>')
 
     def __select_commands(self, event):
-        current = event.widget.curselection()[0]
+        # print(event.widget.curselection())
+        current = event.widget.curselection()
+        if current:
+            current = current[0]
+        else:
+            return
         # print(current)
         print(event.widget.get(current))
         # print(self.work_frame.winfo_children())
