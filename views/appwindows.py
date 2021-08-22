@@ -192,10 +192,10 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self._load_module()
         # Левая панель управления работой с модулем.
         # TODO изменить в соответствии с ТЗ
-        self.lefttabs = self.module.LeftTabs(self.mainframe, self)
+        self.moduleframe = self.module.WorkModuleFrame(self.mainframe, self)
 
         # Прикрепление загруженного из модуля виджета
-        self.lefttabs.grid(padx=10, row=3, column=0, sticky=W+E)
+        self.moduleframe.grid(padx=10, row=3, column=0, sticky=W+E)
 
         # ------------------------------------
         # info = InfoModuleFrame(self.mainframe)
@@ -205,7 +205,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         # WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
         # info.bind('<Map>', self.on_frame_mapped)
-        self.lefttabs.bind('<Map>', self.on_frame_mapped)
+        self.moduleframe.bind('<Map>', self.on_frame_mapped)
 
         # self.log_window = LoggerWindow(self.mainframe, height=5)
         # self.log_window.grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
@@ -241,7 +241,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         print(self.module)
         # Теперь не запускается, а просто загружается
         # Запуск модуля (исполнение встроенного класса)
-        # self.lefttabs = self.foo.LeftTabs(self.mainframe, self)
+        # self.moduleframe = self.foo.WorkModuleFrame(self.mainframe, self)
 
     def _prepare_commands(self):
         pass

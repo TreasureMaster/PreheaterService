@@ -1,4 +1,10 @@
 """Тестовый модуль, который используется для проработки вида модуля без использования архивов."""
+
+# REVIEW Что расположено в модуле сейчас:
+# 1) Команды обработки кнопок модуля
+# 2) GUI модуля
+# 3) TODO: скрипт связи (команды) для отопителей
+
 from tkinter import *
 from widgets.infolabels import InfoTitleLabel
 # from tkinter import ttk
@@ -104,8 +110,20 @@ class DirectControl:
 
 
 # ----------------------------------- Фрейм ---------------------------------- #
-# class LeftTabs(ttk.Notebook):
-class LeftTabs(Frame, GUIWidgetConfiguration):
+# class WorkModuleFrame(ttk.Notebook):
+class WorkModuleFrame(Frame, GUIWidgetConfiguration):
+    # Список для Listbox
+    __baselist = (
+        'Общее описание',
+        'Прямое управление',
+        'Обновление ПО',
+        'Журнал неисправностей',
+        'Состояние узлов блока',
+        'Коррекция параметров',
+        'График'
+    )
+    # Команды для listbox
+    # TODO нужно унифицировать аргументы, чтобы сделать одинаковый ввод
     __commands_list = [
         ViewInfo(),
         DirectControl()
@@ -141,15 +159,7 @@ class LeftTabs(Frame, GUIWidgetConfiguration):
         listbar = ScrolledListboxFrame(funcselect_frame)
         listbar.pack(pady=10)
         # listbar.grid(padx=10, row=1, column=0, sticky=N)
-        listbar.add_list([
-            'Общее описание',
-            'Прямое управление',
-            'Обновление ПО',
-            'Журнал неисправностей',
-            'Состояние узлов блока',
-            'Коррекция параметров',
-            'График'
-        ])
+        listbar.add_list(WorkModuleFrame.__baselist)
         listbar.set_command(self.__select_commands)
         listbar.listbox.config(width=30)
         listbar.listbox.select_set(0)
@@ -195,9 +205,9 @@ class LeftTabs(Frame, GUIWidgetConfiguration):
         # print(self.work_frame.winfo_children())
         if current == 0:
             # ViewInfo().execute(self.work_frame, self.root.scrollwindow)
-            LeftTabs.__commands_list[0](self.work_frame, self.root.scrollwindow)
+            WorkModuleFrame.__commands_list[0](self.work_frame, self.root.scrollwindow)
         elif current == 1:
-            LeftTabs.__commands_list[1](self.work_frame)
+            WorkModuleFrame.__commands_list[1](self.work_frame)
 
     def view_info(self):
         pass
