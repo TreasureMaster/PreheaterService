@@ -16,10 +16,14 @@ from views import InfoModuleFrame
 
 from commands import Command
 
-class ViewInfo(Command):
 
-    def __call__(self, parent, scroll):
+class ModuleCommand(Command):
+
+    def __call__(self, parent, scroll=None):
         self.execute(parent, scroll)
+
+
+class ViewInfo(ModuleCommand):
 
     def execute(self, parent, scroll):
         # Необходимо очистить фрейм от дочерних элементов
@@ -36,17 +40,14 @@ class ViewInfo(Command):
         WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
 
-class DirectControl:
+class DirectControl(ModuleCommand):
     __commands = [
         'Выключить',
         'Отопление',
         'Вентиляция'
     ]
 
-    def __call__(self, parent):
-        self.execute(parent)
-
-    def execute(self, parent):
+    def execute(self, parent, scroll):
         # Необходимо очистить фрейм от дочерних элементов
         for child in parent.winfo_children():
             # print(child)
@@ -109,7 +110,7 @@ class DirectControl:
         print(self.longanswer.get())
 
 
-# ----------------------------------- Фрейм ---------------------------------- #
+# ------------------------------- Фрейм модуля ------------------------------- #
 # class WorkModuleFrame(ttk.Notebook):
 class WorkModuleFrame(Frame, GUIWidgetConfiguration):
     # Список для Listbox
@@ -130,6 +131,7 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
     ]
 
     def __init__(self, master=None, root=None, **kwargs):
+        # master - к чему крепится фрейм
         super().__init__(master, **kwargs)
         # root - главный виджет (не к которому крепится, а который создан изначально)
         self.root = root
@@ -191,6 +193,7 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
         # self.add_border(work_frame, 2)
         InfoTitleLabel(self.work_frame, text='Здесь будут различные окна работы с модулем').pack(fill=X, pady=2)
 
+        # listbar.listbox.activate(0)
         listbar.listbox.event_generate('<<ListboxSelect>>')
 
     def __select_commands(self, event):
@@ -202,12 +205,11 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
             return
         # print(current)
         print(event.widget.get(current))
-        # print(self.work_frame.winfo_children())
-        if current == 0:
-            # ViewInfo().execute(self.work_frame, self.root.scrollwindow)
-            WorkModuleFrame.__commands_list[0](self.work_frame, self.root.scrollwindow)
-        elif current == 1:
-            WorkModuleFrame.__commands_list[1](self.work_frame)
+
+        if current in {0, 1}:
+            WorkModuleFrame.__commands_list[current](self.work_frame, self.root.scrollwindow)
+        # elif current == 1:
+        #     WorkModuleFrame.__commands_list[1](self.work_frame)
 
     def view_info(self):
         pass

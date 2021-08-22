@@ -232,7 +232,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
             path = ModuleWindow.__testpath
         else:
             path = ConfigRegistry.instance().getManagerConfig().getDatafile('work', 'code')
-        print(path)
+        # print(path)
         # Загрузка модуля
         import importlib.util
         spec = importlib.util.spec_from_file_location("mod", path)

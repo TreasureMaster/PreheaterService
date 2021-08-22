@@ -107,7 +107,7 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         com_label = Label(rmc_frame, text='Пульт:', anchor=W)
         com_label.pack(side=TOP, padx=5, fill=X)
 
-        self.combo_rmc = ttk.Combobox(rmc_frame, values=self.remote_controls)
+        self.combo_rmc = ttk.Combobox(rmc_frame, values=self.remote_controls, exportselection=0)
         # Текущее значение - первая таблица
         self.combo_rmc.current(0)
         self.combo_rmc.pack(side=TOP, padx=5)
@@ -124,7 +124,8 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.combo_port = ttk.Combobox(
             port_frame,
             values=(['----'] + [port.device for port in self.comports]),
-            postcommand=self.updateComPortList
+            postcommand=self.updateComPortList,
+            exportselection=0
         )
         # Текущее значение - первая таблица
         self.combo_port.current(0)

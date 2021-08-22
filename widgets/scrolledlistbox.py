@@ -10,7 +10,9 @@ class ScrolledListboxFrame(Frame):
     def _make_widgets(self):
         # Для прокрутки окна со значениями вводим Scrollbar (если значений больше, чем размер таблицы)
         sbar = Scrollbar(self)
-        self.listbox = Listbox(self, width=64)
+        # WARNING exportselection=0 не отображается информационное окно
+        # при программном вызове события event_generate('<<ListboxSelect>>')
+        self.listbox = Listbox(self, width=64)#, exportselection=0)
         sbar.config(command=self.listbox.yview)
         self.listbox.config(yscrollcommand=sbar.set)
         sbar.pack(side=RIGHT, fill=Y)
