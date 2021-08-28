@@ -13,7 +13,7 @@ from .maincommands import (
     SaveModule,
     StartModule
 )
-from .lincommands import (
+from .buscommands import (
     DeviceConnect
 )
 

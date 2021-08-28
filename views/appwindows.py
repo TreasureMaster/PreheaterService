@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from tkinter import *
 from tkinter import ttk
 
-from registry import WidgetsRegistry, ConfigRegistry, AppRegistry
+from registry import WidgetsRegistry, ConfigRegistry, DeviceRegistry
 from applogger import AppLogger
 
 # from views.infomodule import InfoModuleFrame
@@ -222,7 +222,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
 
     def _quit(self):
         """Собственная обработка выхода."""
-        WidgetsRegistry.instance().popWorkInfoFrame()
+        # WidgetsRegistry.instance().popWorkInfoFrame()
         WidgetsRegistry.instance().getMainWindow().deiconify()
         self.window.destroy()
 
@@ -239,6 +239,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.module)
         print(self.module)
+        DeviceRegistry.instance().setPythonModule(self.module)
         # Теперь не запускается, а просто загружается
         # Запуск модуля (исполнение встроенного класса)
         # self.moduleframe = self.foo.WorkModuleFrame(self.mainframe, self)

@@ -226,10 +226,14 @@ class WidgetsRegistry(Registry):
 
     def setWorkInfoFrame(self, frame):
         """Установить информационный фрейм главного окна менеджера."""
+        # print('set Work Info Frame:', frame)
         self.set('work_info_frame', frame)
 
+    # TODO возможно, push и pop можно будет удалить. Вроде бы работает и без них нормально
+    # (вводились для решения проблемы с инфо-модулем главного окна и рабочего окна модуля)
     def pushWorkInfoFrame(self, frame):
         """Добавить информационный фрейм окна рабочего модуля и сделать его активным."""
+        # print('push Work Info Frame:', frame)
         self.set('save_work_info_frame', self.getWorkInfoFrame())
         self.set('work_info_frame', frame)
 
@@ -239,8 +243,10 @@ class WidgetsRegistry(Registry):
 
     def popWorkInfoFrame(self):
         """Извлечь информационный фрейм окна модуля и сделать активным информационный фрейм главного окна менеджера."""
+        # print('pop Work Info Frame:', end=' ')
         self.set('work_info_frame', self.getSaveWorkInfoFrame())
         self.set('save_work_info_frame', None)
+        # print(self.getWorkInfoFrame())
         return self.getWorkInfoFrame()
 
     # СВОЙСТВО: правый фрейм информации о модуле (окно редактирования модуля)
@@ -330,6 +336,72 @@ class ConfigRegistry(Registry):
         return self.get('manager')
 
     # TODO возможно следует возвращать некоторые ключи менеджера ?
+
+
+# ---------------------- Данные выбора в рабочем модуле ---------------------- #
+class DeviceRegistry(Registry):
+    """Реестр данных выбора в рабочем окне модуля.
+    Например, пульт, тип соединения."""
+    # статические приватные свойства
+    # 1) remote_control - выбранный пульт
+    # 2) connection_port - COM-порт для соединения
+    # 3) python_module - модуль Python, загружаемый из архива рабочего модуля устройства
+    __values = {
+        'remote_control': None,
+        'connection_port': None,
+        'python_module': None
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with DeviceRegistry.__lock:
+            if not DeviceRegistry.__instance:
+                DeviceRegistry.__instance = DeviceRegistry()
+        return DeviceRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: выбранный пульт для работы с модулем
+    def getCurrentRemoteControl(self):
+        """Получить название текущего выбранного пульта."""
+        return self.get('remote_control')
+
+    def setCurrentRemoteControl(self, rmc):
+        """Установить название текущего выбранного пульта."""
+        self.set('remote_control', rmc)
+
+    # СВОЙСТВО: выбранный COM-порт для работы с модулем
+    def getCurrentComPort(self):
+        """Получить название текущего выбранного COM-порта."""
+        return self.get('remote_control')
+
+    def setCurrentComPort(self, port):
+        """Установить название текущего выбранного COM-порта."""
+        self.set('remote_control', port)
+
+    # СВОЙСТВО: загруженный модуль Python
+    def getPythonModule(self):
+        """Получить загруженный из архива модуль."""
+        return self.get('python_module')
+
+    def setPythonModule(self, mod):
+        """Установить загруженный из архива модуль."""
+        self.set('python_module', mod)
 
 
 if __name__ == '__main__':

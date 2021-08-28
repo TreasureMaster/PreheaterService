@@ -5,7 +5,7 @@ from tkinter import *
 from tkinter import ttk
 
 # from connectimages import IndicatorImage
-from registry import AppRegistry
+from registry import AppRegistry, DeviceRegistry
 from widgets import GUIWidgetConfiguration, ModuleImage
 from commands import DeviceConnect
 
@@ -178,26 +178,38 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         image_frame.pack(side=RIGHT)
 
     def setRemoteControl(self, event):
-        rmc = self.combo_rmc.get()
-        print(rmc)
+        """Команда выбора пульта управления."""
+        # rmc = self.combo_rmc.get()
+        DeviceRegistry.instance().setCurrentRemoteControl(self.combo_rmc.get() or None)
+        print(DeviceRegistry.instance().getCurrentRemoteControl())
 
     def setComPort(self, event):
+        """Выбор com-порта из списка."""
+        # Обновляет Label с описанием выбранного порта для соединения
+        current = event.widget.current()
         self.port_description.config(
-            text=(self.comports[event.widget.current()-1].description if event.widget.current() else ''),
+            text=(self.comports[current-1].description if current else ''),
             justify=LEFT
         )
+        DeviceRegistry.instance().setCurrentComPort(self.comports[current-1].name if current else None)
+        print(DeviceRegistry.instance().getCurrentComPort())
 
     def updateComPortList(self):
+        """Обновление списка com-портов.
+        
+        Необходимо, так как устройство может быть физически подключено позже старта программы.
+        Добавление прочерков в список com-портов после формирования последнего."""
         self.comports = list_ports.comports()
         self.combo_port.config(
-            values=(['----'] + [port.device for port in self.comports])
+            values=([''] + [port.device for port in self.comports])
         )
 
     def initRemoteControlList(self, rmc_list=None):
+        """Формирование списка пультов управления."""
         # if rmc_list:
             # TODO список совместимых пультов
             # remotecontrols = list(map(lambda n: 'COM'+str(n), range(rmc_list)))
-        remotecontrols = ['----'] + rmc_list
+        remotecontrols = [''] + rmc_list
         return remotecontrols
 
 

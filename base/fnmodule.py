@@ -41,7 +41,9 @@ class FNModule:
     def config(self):
         return self.__config
 
+# ----------------------- Свойства конфигурации модуля. ---------------------- #
     def getBaseName(self) -> str:
+        """Возвращает базовое имя модуля."""
         return self.__config.getProperty('name')
 
     def getName(self) -> str:
@@ -89,8 +91,8 @@ class FNModule:
         current = self.getMakingManager()
         return any([version == current for version in self.__manager_config.getCompatibleVersions()])
 
-    # Распаковать файлы в папку
     def unpackData(self) -> Optional[bool]:
+        """Распаковывает архив модуля в рабочую папку модуля."""
         # TODO распаковать в память
         try:
             fnmfile = zipfile.ZipFile(self.link, 'r')

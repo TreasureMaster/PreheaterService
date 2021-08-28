@@ -5,17 +5,19 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
+from typing import List
+from dataclasses import dataclass
 from tkinter import *
 from widgets.infolabels import InfoTitleLabel
 # from tkinter import ttk
 
+from appmeta import AbstractSingletonMeta
 from registry import WidgetsRegistry
 from widgets import ScrolledListboxFrame, GUIWidgetConfiguration
 from views import InfoModuleFrame
 
-
+# ------------------------------ Команды модуля ------------------------------ #
 from commands import Command
-
 
 class ModuleCommand(Command):
 
@@ -25,19 +27,26 @@ class ModuleCommand(Command):
 
 class ViewInfo(ModuleCommand):
 
+    # FIXME или нет? Сохранение infomodule не нужно?
     def execute(self, parent, scroll):
         # Необходимо очистить фрейм от дочерних элементов
+        # print(len(parent.winfo_children()))
+        # print(parent)
         for child in parent.winfo_children():
-            if isinstance(child, InfoModuleFrame):
-                WidgetsRegistry.instance().popWorkInfoFrame()
+            # print('---', child)
+            # if isinstance(child, Frame):
+            #     print(child.winfo_children())
+            # if isinstance(child, InfoModuleFrame):
+            #     WidgetsRegistry.instance().popWorkInfoFrame()
             if not isinstance(child, InfoTitleLabel):
                 child.destroy()
+        # print(WidgetsRegistry.instance().getSaveWorkInfoFrame())
         # Основное информационное окно
         info = InfoModuleFrame(parent)
         # info.grid(pady=5, row=1, column=1)
         info.pack()
         scroll.bind_widgets(info.getScrollWidgets())
-        WidgetsRegistry.instance().pushWorkInfoFrame(info)
+        # WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
 
 class DirectControl(ModuleCommand):
@@ -206,10 +215,146 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
         # print(current)
         print(event.widget.get(current))
 
-        if current in {0, 1}:
+        if current in (0, 1):
             WorkModuleFrame.__commands_list[current](self.work_frame, self.root.scrollwindow)
         # elif current == 1:
         #     WorkModuleFrame.__commands_list[1](self.work_frame)
 
     def view_info(self):
         pass
+
+
+# ------------------------- Работа с шиной устройства ------------------------ #
+# Реализация класса работы модуля с шиной LIN.
+
+'''
+Конфигурационные данные протокола LIN.
+Версия в виде класса для того, чтобы можно было переписывать константы.
+Возможно, нужно будет подгружать их из файла модуля.
+'''
+
+# WARNING перенесено сюда для последующего объединения в архиве модуля (требование заказчика)
+class BusConfig:
+    # ACTIVE_MODE_SLEEP = 0.01
+    # loadByte возвращает эхо после каждого получения байта
+    # 0х85 - запрос короткого ответа, 0хС4 - запрос длинного ответа
+    SHORT_ANSWER = 0x85
+    LONG_ANSWER = 0xC4
+    # 0x03 - короткая команда, 0x42 - длинная команда
+    SHORT_COMMAND = 0x03
+    LONG_COMMAND = 0x42
+
+    # Базовая скорость передачи данных
+    BASE_SPEED = 9600
+
+    # Длина команд
+    SHORT_CMD_LENGTH = 2
+    LONG_CMD_LENGTH = 8
+    # Длина ответа
+    # TODO скорее всего нужно будет изменить, т.к. первые байты не будут нужны
+    SHORT_ANS_LENGTH = 6
+    LONG_ANS_LENGTH = 12
+
+    # Пауза (в sec), после которой следует "разбудить" шину LIN
+    # LIN_WAKEUP_TIME = 0.145
+
+
+# Ошибка длины команды
+class LINBusCommandLengthError(Exception):
+    pass
+
+
+# Подключение по шине не существует
+class LINConnectionLookupError(Exception):
+    pass
+
+
+# Данные для подключения в виде dataclass
+@dataclass
+class ConnectionInitData:
+    # TODO оформление в виду dataclass дает возможность в будущем добавлять разные данные
+    port: str
+    baud: int = None
+
+
+# LINConfig - просто имплементация констант, которые потом можно заменить внешними
+class DeviceProtocol(BusConfig):
+
+    __device_bus = None
+
+    def __init__(self, port, baud=None):
+        # if baud is None:
+        #     baud = self.BASE_SPEED
+        # Создает подключение к шине при инициализации
+        # TODO в будущем можно сделать создание соединений по разным шинам (пока только LIN)
+        from modulebus import LIN
+        self.__protocol = LIN
+        self.device_bus = ConnectionInitData(port, baud)
+        # self.__device_bus = LIN(port, baud)
+
+    @property
+    def device_bus(self):
+        if self.__device_bus is None:
+            raise LINConnectionLookupError
+        return self.__device_bus
+
+    # TODO что должно из себя представлять подключение шины ???
+    @device_bus.setter
+    def device_bus(self, connection_data):
+        if connection_data.baud is None:
+            baud = self.BASE_SPEED
+        self.__device_bus = self.__protocol(connection_data.port, baud)
+
+    @device_bus.deleter
+    def device_bus(self):
+        self.__device_bus.close()
+        self.__device_bus = None
+
+    def send_short_command(self, cmd: List[int]) -> None:
+        """Отправка короткой команды отопителю."""
+        if len(cmd) != 2:
+            raise LINBusCommandLengthError
+        self.device_bus.send_command(self.SHORT_COMMAND, cmd)
+
+    def send_long_command(self, cmd: List[int]) -> None:
+        """Отправка длинной команды отопителю."""
+        if len(cmd) != 8:
+            raise LINBusCommandLengthError
+        self.device_bus.send_command(self.LONG_COMMAND, cmd)
+
+    def get_short_answer(self) -> str:
+        """Запрос ответа на короткую команду отопителю."""
+        self.device_bus.get_answer(self.SHORT_ANSWER)
+        return self.device_bus.get_response(self.SHORT_ANS_LENGTH)
+
+    def get_long_answer(self) -> str:
+        """Запрос ответа на длинную команду отопителю."""
+        self.device_bus.get_answer(self.LONG_ANSWER)
+        return self.device_bus.get_response(self.LONG_ANS_LENGTH)
+
+
+    def scheduleDiagMsg2(self, msg):
+        if len(msg) == self.SHORT_CMD_LENGTH:
+            self.send_short_command(msg)
+        else:
+            self.send_long_command(msg)
+        answer = self.device_bus.get_response(16)
+        print('эхо после команды:', answer)
+
+        # self.linbus.getAnswer(0x85)
+        print('запрос короткого ответа:')
+        print (self.get_short_answer())
+        # self.linbus.getAnswer(0xC4)
+        print('запрос длинного ответа:')
+        print (self.get_long_answer())
+
+    def scheduleDiagMsg(self, msg):
+        self.device_bus.send_command(0x03, msg)
+        print('эхо после команды:', self.device_bus.get_response(16))
+
+        self.device_bus.get_answer(0x85)
+        print('запрос короткого ответа:')
+        print (self.device_bus.get_response(26))
+        self.device_bus.get_answer(0xC4)
+        print('запрос длинного ответа:')
+        return self.device_bus.get_response(26)
