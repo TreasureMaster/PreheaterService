@@ -1,5 +1,8 @@
+from memory_profiler import profile
 from .maincommands import Command
 from registry import DeviceRegistry
+
+from connections import LINConnection
 
 
 class DeviceConnect(Command):
@@ -29,9 +32,18 @@ class DeviceConnect(Command):
         # NOTE будет ли у устройства несколько видов подключения ???
         if self.connection_exists:
             self.connection = DeviceRegistry.instance().getPythonModule().DeviceProtocol(
-                port = DeviceRegistry.instance().getCurrentComPort()
+                # port = DeviceRegistry.instance().getCurrentComPort()
+                connection = LINConnection( DeviceRegistry.instance().getCurrentComPort() )
             )
             self.connection.scheduleDiagMsg2([0x01, 0x40])
         # иначе надо отключить, но проверить есть ли соединение
         else:
             del self.connection.device_bus
+        print(self.connection)
+
+
+# Класс тестирования некоторых функций
+class TestConnect(Command):
+    def execute(self):
+        print('test connection attributes:')
+        self.conn = LINConnection('COM3')

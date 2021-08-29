@@ -349,7 +349,8 @@ class DeviceRegistry(Registry):
     __values = {
         'remote_control': None,
         'connection_port': None,
-        'python_module': None
+        'python_module': None,
+        'current_connection': None
     }
     __instance = None
     __lock = Lock()
@@ -402,6 +403,15 @@ class DeviceRegistry(Registry):
     def setPythonModule(self, mod):
         """Установить загруженный из архива модуль."""
         self.set('python_module', mod)
+
+    # СВОЙСТВО: объект соединения (LIN или другие)
+    def getCurrentConnection(self):
+        """Получить текущее соединение."""
+        return self.get('current_connection')
+
+    def setCurrentConnection(self, conn):
+        """Установить текущее соединени."""
+        self.set('current_connection', conn)
 
 
 if __name__ == '__main__':

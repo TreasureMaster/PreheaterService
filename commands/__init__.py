@@ -14,7 +14,8 @@ from .maincommands import (
     StartModule
 )
 from .buscommands import (
-    DeviceConnect
+    DeviceConnect,
+    TestConnect
 )
 
 
@@ -33,5 +34,6 @@ __all__ = [
     'SaveModule',
     'StartModule',
     # LIN ----------------
-    'DeviceConnect'
+    'DeviceConnect',
+    'TestConnect'
 ]

@@ -6,13 +6,12 @@
 # 3) TODO: скрипт связи (команды) для отопителей
 
 from typing import List
-from dataclasses import dataclass
 from tkinter import *
 from widgets.infolabels import InfoTitleLabel
 # from tkinter import ttk
 
 from appmeta import AbstractSingletonMeta
-from registry import WidgetsRegistry
+from registry import DeviceRegistry, WidgetsRegistry
 from widgets import ScrolledListboxFrame, GUIWidgetConfiguration
 from views import InfoModuleFrame
 
@@ -245,7 +244,7 @@ class BusConfig:
     LONG_COMMAND = 0x42
 
     # Базовая скорость передачи данных
-    BASE_SPEED = 9600
+    # BASE_SPEED = 9600
 
     # Длина команд
     SHORT_CMD_LENGTH = 2
@@ -269,46 +268,51 @@ class LINConnectionLookupError(Exception):
     pass
 
 
-# Данные для подключения в виде dataclass
-@dataclass
-class ConnectionInitData:
-    # TODO оформление в виду dataclass дает возможность в будущем добавлять разные данные
-    port: str
-    baud: int = None
-
-
 # LINConfig - просто имплементация констант, которые потом можно заменить внешними
-class DeviceProtocol(BusConfig):
+class DeviceProtocol(BusConfig):#, metaclass=AbstractSingletonMeta):
 
     __device_bus = None
 
-    def __init__(self, port, baud=None):
+    def __init__(self, connection):
+        # pass
+        # self.__protocol = connection
         # if baud is None:
         #     baud = self.BASE_SPEED
         # Создает подключение к шине при инициализации
         # TODO в будущем можно сделать создание соединений по разным шинам (пока только LIN)
-        from modulebus import LIN
-        self.__protocol = LIN
-        self.device_bus = ConnectionInitData(port, baud)
+        # from modulebus import LIN
+        # self.__protocol = LIN
+        # self.device_bus = LINConnectionInitData(port, baud)
         # self.__device_bus = LIN(port, baud)
+        self.__device_bus = connection
+        # self.__device_bus = DeviceRegistry.instance().getCurrentConnection()
 
     @property
     def device_bus(self):
+        """Возвращает соединение (например, LIN). Если его нет, то исключение."""
         if self.__device_bus is None:
-            raise LINConnectionLookupError
+            # Если нет соединения, пробуем извлечь из реестра
+            self.__device_bus = DeviceRegistry.instance().getCurrentConnection()
+            if self.__device_bus is None:
+                # Если соединения нет даже в реестре, исключение
+                raise LINConnectionLookupError
         return self.__device_bus
 
     # TODO что должно из себя представлять подключение шины ???
-    @device_bus.setter
-    def device_bus(self, connection_data):
-        if connection_data.baud is None:
-            baud = self.BASE_SPEED
-        self.__device_bus = self.__protocol(connection_data.port, baud)
+    # @device_bus.setter
+    # def device_bus(self, connection_data):
+    #     if connection_data.baud is None:
+    #         baud = self.BASE_SPEED
+    #     print(connection_data)
+    #     self.__device_bus = self.__protocol(connection_data.port, baud)
 
     @device_bus.deleter
     def device_bus(self):
-        self.__device_bus.close()
-        self.__device_bus = None
+        """Закрывает и удаляет соединение."""
+        if self.__device_bus is not None:
+            self.__device_bus.close()
+            self.__device_bus = None
+        DeviceRegistry.instance().setCurrentConnection(None)
 
     def send_short_command(self, cmd: List[int]) -> None:
         """Отправка короткой команды отопителю."""
@@ -358,3 +362,6 @@ class DeviceProtocol(BusConfig):
         self.device_bus.get_answer(0xC4)
         print('запрос длинного ответа:')
         return self.device_bus.get_response(26)
+
+    def testing(self):
+        print(self.port)

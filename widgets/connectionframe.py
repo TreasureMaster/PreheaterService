@@ -7,7 +7,7 @@ from tkinter import ttk
 # from connectimages import IndicatorImage
 from registry import AppRegistry, DeviceRegistry
 from widgets import GUIWidgetConfiguration, ModuleImage
-from commands import DeviceConnect
+from commands import DeviceConnect, TestConnect
 
 BAUDRATES = [
     'Custom',
@@ -158,7 +158,7 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         connectbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # Кнопка считывания блока?
-        readbtn = Button(btn_frame, text='Сохранить', command=lambda: None)
+        readbtn = Button(btn_frame, text='Сохранить', command=TestConnect())
         readbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # (4) Фрейм с информацией о модуле

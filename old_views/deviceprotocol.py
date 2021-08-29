@@ -1,7 +1,7 @@
 '''
 Реализация класса работы модуля с шиной LIN.
 '''
-from modulebus import LIN
+from connections import LIN
 
 from typing import List
 # from .config import LINConfig
