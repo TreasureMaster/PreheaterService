@@ -107,6 +107,8 @@ class DirectControl(ModuleCommand):
         # )
         # scroll.bind_widgets(info.getScrollWidgets())
         # WidgetsRegistry.instance().pushWorkInfoFrame(info)
+        # print(self.maincommand.get(), self.extracommand.get(), self.longanswer.get())
+        Button(direct, text='Отправить', command=lambda: None).pack()
 
     def check_commands(self):
         print(self.maincommand.get())
@@ -269,21 +271,11 @@ class LINConnectionLookupError(Exception):
 
 
 # LINConfig - просто имплементация констант, которые потом можно заменить внешними
-class DeviceProtocol(BusConfig):#, metaclass=AbstractSingletonMeta):
+class DeviceProtocol(BusConfig):
 
     __device_bus = None
 
     def __init__(self, connection):
-        # pass
-        # self.__protocol = connection
-        # if baud is None:
-        #     baud = self.BASE_SPEED
-        # Создает подключение к шине при инициализации
-        # TODO в будущем можно сделать создание соединений по разным шинам (пока только LIN)
-        # from modulebus import LIN
-        # self.__protocol = LIN
-        # self.device_bus = LINConnectionInitData(port, baud)
-        # self.__device_bus = LIN(port, baud)
         self.__device_bus = connection
         # self.__device_bus = DeviceRegistry.instance().getCurrentConnection()
 
