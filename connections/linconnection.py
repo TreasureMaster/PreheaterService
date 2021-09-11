@@ -14,4 +14,5 @@ class LINConnection:
 
     def __post_init__(self):
         self.protocol = LIN(self.port, self.baud)
+        # TODO возможно, нет необходимости сохранять
         DeviceRegistry.instance().setCurrentConnection(self.protocol)

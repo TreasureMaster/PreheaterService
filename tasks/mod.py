@@ -108,7 +108,7 @@ class DirectControl(ModuleCommand):
         # scroll.bind_widgets(info.getScrollWidgets())
         # WidgetsRegistry.instance().pushWorkInfoFrame(info)
         # print(self.maincommand.get(), self.extracommand.get(), self.longanswer.get())
-        Button(direct, text='Отправить', command=lambda: None).pack()
+        Button(direct, text='Отправить', command=self.do_command).pack()
 
     def check_commands(self):
         print(self.maincommand.get())
@@ -118,6 +118,33 @@ class DirectControl(ModuleCommand):
 
     def extra_answer(self):
         print(self.longanswer.get())
+
+    def do_command(self):
+        print('full answer:', self.maincommand.get(), ', ', self.extracommand.get(), ', ', self.longanswer.get())
+        DeviceRegistry.instance().getDeviceProtocol().direct_request(
+            command = self.maincommand.get(),
+            is_long_query = self.longanswer.get(),
+            data = [self.extracommand.get()]
+        )
+
+
+class FirmwareUpdate(ModuleCommand):
+    """Создает окно виджета для прошивки микроконтроллера."""
+
+    def execute(self, parent, scroll):
+        for child in parent.winfo_children():
+            if not isinstance(child, InfoTitleLabel):
+                child.destroy()
+
+        # Основное окно
+        firmware_frame = Frame(parent)
+        firmware_frame.pack()
+        # scroll.bind_widgets(info.getScrollWidgets())
+
+        cmdbutton_frame = Frame(firmware_frame)
+        cmdbutton_frame.pack(fill=X)
+        Button(cmdbutton_frame, text='Загрузить прошивку', command=lambda: None).pack(side=LEFT)
+        Button(cmdbutton_frame, text='Обновить прошивку', command=lambda: None).pack(side=LEFT)
 
 
 # ------------------------------- Фрейм модуля ------------------------------- #
@@ -137,7 +164,8 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
     # TODO нужно унифицировать аргументы, чтобы сделать одинаковый ввод
     __commands_list = [
         ViewInfo(),
-        DirectControl()
+        DirectControl(),
+        FirmwareUpdate()
     ]
 
     def __init__(self, master=None, root=None, **kwargs):
@@ -216,7 +244,7 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
         # print(current)
         print(event.widget.get(current))
 
-        if current in (0, 1):
+        if current in range(3):
             WorkModuleFrame.__commands_list[current](self.work_frame, self.root.scrollwindow)
         # elif current == 1:
         #     WorkModuleFrame.__commands_list[1](self.work_frame)
@@ -306,27 +334,56 @@ class DeviceProtocol(BusConfig):
             self.__device_bus = None
         DeviceRegistry.instance().setCurrentConnection(None)
 
+    @property
+    def protocol(self):
+        return self.device_bus.protocol
+
+    # ------------------------------ Базовые команды ----------------------------- #
     def send_short_command(self, cmd: List[int]) -> None:
         """Отправка короткой команды отопителю."""
         if len(cmd) != 2:
             raise LINBusCommandLengthError
-        self.device_bus.send_command(self.SHORT_COMMAND, cmd)
+        self.protocol.send_command(self.SHORT_COMMAND, cmd)
 
     def send_long_command(self, cmd: List[int]) -> None:
         """Отправка длинной команды отопителю."""
         if len(cmd) != 8:
             raise LINBusCommandLengthError
-        self.device_bus.send_command(self.LONG_COMMAND, cmd)
+        self.protocol.send_command(self.LONG_COMMAND, cmd)
 
     def get_short_answer(self) -> str:
         """Запрос ответа на короткую команду отопителю."""
-        self.device_bus.get_answer(self.SHORT_ANSWER)
-        return self.device_bus.get_response(self.SHORT_ANS_LENGTH)
+        self.protocol.get_answer(self.SHORT_ANSWER)
+        return self.protocol.get_response(self.SHORT_ANS_LENGTH)
 
     def get_long_answer(self) -> str:
         """Запрос ответа на длинную команду отопителю."""
-        self.device_bus.get_answer(self.LONG_ANSWER)
-        return self.device_bus.get_response(self.LONG_ANS_LENGTH)
+        self.protocol.get_answer(self.LONG_ANSWER)
+        return self.protocol.get_response(self.LONG_ANS_LENGTH)
+
+    # ----------------------------- Составные команды ---------------------------- #
+    def direct_request(self, command, is_long_query, data):
+        """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
+        msg = [command, *data] + [0] * (
+            (self.LONG_CMD_LENGTH if is_long_query else self.SHORT_CMD_LENGTH) - len(data) - 1
+        )
+        if is_long_query:
+            self.send_long_command(msg)
+        else:
+            self.send_short_command(msg)
+        echo = self.protocol.get_response(16)
+        print('эхо после команды:', echo)
+
+        if is_long_query:
+            print('запрос длинного ответа:')
+            print (self.get_long_answer())
+        else:
+            print('запрос короткого ответа:')
+            print (self.get_short_answer())
+
+    def do_firmware(self):
+        """Прошивка микроконтроллера."""
+        pass
 
 
     def scheduleDiagMsg2(self, msg):

@@ -377,21 +377,21 @@ class DeviceRegistry(Registry):
     def set(self, key, value):
         self.__values[key] = value
 
-    # СВОЙСТВО: выбранный пульт для работы с модулем
+    # СВОЙСТВО: выбранный пульт для работы с модулем (строка)
     def getCurrentRemoteControl(self):
         """Получить название текущего выбранного пульта."""
         return self.get('remote_control')
 
-    def setCurrentRemoteControl(self, rmc):
+    def setCurrentRemoteControl(self, rmc: str):
         """Установить название текущего выбранного пульта."""
         self.set('remote_control', rmc)
 
-    # СВОЙСТВО: выбранный COM-порт для работы с модулем
+    # СВОЙСТВО: выбранный COM-порт для работы с модулем (строка)
     def getCurrentComPort(self):
         """Получить название текущего выбранного COM-порта."""
         return self.get('remote_control')
 
-    def setCurrentComPort(self, port):
+    def setCurrentComPort(self, port: str):
         """Установить название текущего выбранного COM-порта."""
         self.set('remote_control', port)
 
@@ -412,6 +412,15 @@ class DeviceRegistry(Registry):
     def setCurrentConnection(self, conn):
         """Установить текущее соединени."""
         self.set('current_connection', conn)
+
+    # СВОЙСТВО: объект конкретного соединения устройства со всеми командами (из архива модуля)
+    def getDeviceProtocol(self):
+        """Получить текущее соединение."""
+        return self.get('current_connection')
+
+    def setDeviceProtocol(self, device):
+        """Установить текущее соединени."""
+        self.set('current_connection', device)
 
 
 if __name__ == '__main__':

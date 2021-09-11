@@ -35,11 +35,12 @@ class DeviceConnect(Command):
                 # port = DeviceRegistry.instance().getCurrentComPort()
                 connection = LINConnection( DeviceRegistry.instance().getCurrentComPort() )
             )
-            self.connection.scheduleDiagMsg2([0x01, 0x40])
+            # self.connection.scheduleDiagMsg2([0x01, 0x40])
         # иначе надо отключить, но проверить есть ли соединение
         else:
             del self.connection.device_bus
         print(self.connection)
+        DeviceRegistry.instance().setDeviceProtocol(self.connection)
 
 
 # Класс тестирования некоторых функций

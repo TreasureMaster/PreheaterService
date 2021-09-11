@@ -74,6 +74,7 @@ tasks/*.docx
 !tasks/catalog_tree.txt
 !tasks/todo_list.txt
 !tasks/mod.py
+!tasks/test_as_xml.xml
 
 # Temp data
 # controller.py
