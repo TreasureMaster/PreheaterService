@@ -37,12 +37,16 @@ class LIN:
         """Закрывает соединение LIN."""
         self.__portInstance.close()
  
-    def byte2hex(self, byte_line) -> str:
+    def byte2hex_text(self, byte_line: bytes) -> str:
         '''Преобразует байтовую строку в шестнадцатеричное строковое представление,
         например для вывода.
         '''
         # DEPRECATED будет удалено, т.к. используется вспомогательно.
         return ''.join([ "%02X " % x for x in byte_line ]).strip()
+
+    def byte2hex_list(self, byte_line: bytes) -> str:
+        '''Преобразует байтовую строку в шестнадцатеричный список.'''
+        return list(map(int, byte_line))
 
     def send_start(self) -> None:
         """Стартовая пауза для начала работы с шиной LIN."""
@@ -67,7 +71,7 @@ class LIN:
         # (0x00-0x1F - 2 байта, 0x20-0x2F - 4 байта, 0x30-0x3F - 8 байт)
         self.__portInstance.write(chr(PID).encode('latin-1'))
 
-    def get_response(self, readlen: int) -> str:
+    def get_response(self, readlen: int, view_text: bool = False) -> str:
         # Очистить все входные буферы
         self.__portInstance.flushInput()
         '''
@@ -80,8 +84,12 @@ class LIN:
         
         Для фактического сообщения мы читаем эти 2 байта и отбрасываем их.
         '''
-        # self.__portInstance.read(2)
-        return self.byte2hex(self.__portInstance.read(readlen))
+        # Удалить байт синхронизации 0x55
+        # self.__portInstance.read(1)
+        if view_text:
+            return self.byte2hex_text(self.__portInstance.read(readlen))
+        else:
+            return self.byte2hex_list(self.__portInstance.read(readlen))
 
     def send_data(self, message: List[int]) -> None:
         tmpBuffer = bytearray(i for i in message)

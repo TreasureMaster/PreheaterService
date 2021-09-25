@@ -5,10 +5,19 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
+import os
+from tkinter import messagebox
+import tkinter.font as tkFont
+
 from typing import List
+from dataclasses import dataclass, field
 from tkinter import *
+from tkinter.filedialog import askopenfilename
+from tkinter.messagebox import showwarning
+import typing
+from widgets import infolabels
 from widgets.infolabels import InfoTitleLabel
-# from tkinter import ttk
+from lxml import objectify
 
 from appmeta import AbstractSingletonMeta
 from registry import DeviceRegistry, WidgetsRegistry
@@ -17,6 +26,10 @@ from views import InfoModuleFrame
 
 # ------------------------------ Команды модуля ------------------------------ #
 from commands import Command
+
+LINE_DIVIDER = '  |  '
+# WARNING Определяется в 2 местах! Нужно подобрать одно место!
+REPEAT_REQUESTS_COUNT = 3
 
 class ModuleCommand(Command):
 
@@ -132,19 +145,87 @@ class FirmwareUpdate(ModuleCommand):
     """Создает окно виджета для прошивки микроконтроллера."""
 
     def execute(self, parent, scroll):
+        self.firmware = None
+        self.scroll = scroll
         for child in parent.winfo_children():
             if not isinstance(child, InfoTitleLabel):
                 child.destroy()
 
         # Основное окно
-        firmware_frame = Frame(parent)
-        firmware_frame.pack()
+        self.firmware_frame = Frame(parent)
+        self.firmware_frame.pack()
         # scroll.bind_widgets(info.getScrollWidgets())
 
-        cmdbutton_frame = Frame(firmware_frame)
+        cmdbutton_frame = Frame(self.firmware_frame)
         cmdbutton_frame.pack(fill=X)
-        Button(cmdbutton_frame, text='Загрузить прошивку', command=lambda: None).pack(side=LEFT)
-        Button(cmdbutton_frame, text='Обновить прошивку', command=lambda: None).pack(side=LEFT)
+        Button(cmdbutton_frame, text='Загрузить прошивку', command=self.load_module_data).pack(side=LEFT)
+        Button(cmdbutton_frame, text='Обновить прошивку', command=self.do_firmware_update).pack(side=LEFT)
+
+    def load_module_data(self):
+        data_filename = askopenfilename(initialdir=os.getcwd(), filetypes=(('xml files', '*.xml'),))
+        if data_filename:
+            with open(data_filename, encoding='utf-8') as f:
+                device = objectify.XML(f.read())
+            # print(type(device.firmware))
+            # for line in str(device.firmware).split('\n'):
+            #     print(line.strip())
+            # firmware = [[int(line.strip()[i:i+2], 16) for i in range(0, len(line.strip()), 2)]
+            self.firmware = [LINE_DIVIDER.join([line.strip()[i:i+2] for i in range(0, len(line.strip()), 2)])
+                        for line in str(device.firmware).strip().split('\n') if line]
+            # firmware = [line for line in str(device.firmware).strip().split('\n')]
+            # print(len(firmware))
+            # print(f"'{firmware[0]}'", f"'{firmware[-1]}'")
+            # firmware = [line for line in firmware if line]
+            # print(len(self.firmware))
+            print(self.firmware[:5])
+        # else:
+        #     # self.logger.error('Не выбрана папка или модуль для работы.')
+        #     showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+        grid_frame = ScrolledListboxFrame(self.firmware_frame)
+        grid_frame.pack(padx=10, pady=10)
+        self.scroll.bind_widgets((grid_frame,))
+        # grid_frame.add_list(firmware)
+        # print(grid_frame.listbox.cget('font'))
+        # print(tkFont.Font(font='TkDefaultFont').configure())
+        grid_frame.listbox.config(font=('courier 10'), justify='center', width=43)
+        grid_frame.add_list(self.firmware)
+        info_labels = Frame(self.firmware_frame)
+        info_labels.pack(pady=10, padx=10)
+        Label(info_labels, text=f'Количество пакетов: {len(self.firmware)}').pack(side=LEFT)
+        # self.progress_exec = StringVar(value='Отправлено: 0%')
+        # self.progress_exec.set('Отправлено: 0%')
+        # Label(info_labels, textvariable=self.progress_exec).pack(side=LEFT, padx=10)
+        self.progress_exec = Label(info_labels, text='Отправлено: 0%')
+        self.progress_exec.pack(side=LEFT, padx=10)
+
+    def do_firmware_update(self):
+        if self.firmware is None:
+            showwarning(title='Предупреждение безопасности', message='Прошивка еще не выбрана!')
+            return
+        device = DeviceRegistry.instance().getDeviceProtocol()
+        if device is not None:
+            for _ in range(REPEAT_REQUESTS_COUNT):
+        #     self.send_long_command(message)
+        #     if self.is_echo_correct(message):
+        #         break
+        # else:
+        #     raise FirmwareUpdateError('Пакет отправлен с ошибкой')
+            # if device is not None:
+                try:
+                    device.firmware_update(self.firmware, self.progress_exec)
+                except FirmwareUpdateError:
+                    pass
+                    # TODO Надо определить первая прошивка или повторная, чтобы отправить 0xB0 = 0001 0000 (начало записи данных)
+                    # обнулить счетчик при этом ??? что-то слать при этом или нули ???
+                else:
+                    break
+            else:
+                showwarning(title='Предупреждение безопасности', message='Ошибка прошивки!')
+                return
+        else:
+            showwarning(title='Предупреждение безопасности', message='Соединение еще не установлено!')
+            return
+
 
 
 # ------------------------------- Фрейм модуля ------------------------------- #
@@ -266,12 +347,28 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
 class BusConfig:
     # ACTIVE_MODE_SLEEP = 0.01
     # loadByte возвращает эхо после каждого получения байта
+
+    # ----------------------------- Базовые ID команд ---------------------------- #
     # 0х85 - запрос короткого ответа, 0хС4 - запрос длинного ответа
     SHORT_ANSWER = 0x85
     LONG_ANSWER = 0xC4
     # 0x03 - короткая команда, 0x42 - длинная команда
     SHORT_COMMAND = 0x03
     LONG_COMMAND = 0x42
+
+    # ------------------------- Непосредственные команды ------------------------- #
+    # Команды управления загрузкой:
+    # Прошивка блока (байт 0xB0)
+    FIRMWARE_UPDATE = 0x07
+    # Команды прошивки (байт 0xB1, но используются только старшие 4 бита, младшие - это счетчик)
+    # Данные для записи блока управления отопителем
+    DATA_UPDATE_CMD = 0x00
+    # Начало записи данных
+    DATA_BEGIN_UPDATE_CMD = 0x10
+    # Начало записи управляющей программы блока управления отопителем
+    FIRMWARE_BEGIN_UPDATE_CMD = 0x20
+    # Окончание записи
+    END_UPDATE_CMD = 0x30
 
     # Базовая скорость передачи данных
     # BASE_SPEED = 9600
@@ -284,10 +381,38 @@ class BusConfig:
     SHORT_ANS_LENGTH = 6
     LONG_ANS_LENGTH = 12
 
+    # Количество раз, которое менеджер пытается отправить отопителю пакет,
+    # прежде чем сообщить об ошибке.
+    REPEAT_REQUESTS_COUNT = 3
+
     # Пауза (в sec), после которой следует "разбудить" шину LIN
     # LIN_WAKEUP_TIME = 0.145
 
 
+@dataclass
+class FirmwareUpdateCount:
+    """Счетчик отправленных в прошивку записей."""
+    count: int = 0x00
+    COUNT_END: int = field(default=0x0F, init=False)
+
+    @property
+    def start(self):
+        self.count = 0x00
+        return self.count
+
+    @property
+    def next(self):
+        self.inc()
+        return self.count
+
+    def inc(self):
+        if self.count == self.COUNT_END:
+            self.count = 0x00
+        else:
+            self.count += 1
+
+
+# ---------------------------------- Ошибки ---------------------------------- #
 # Ошибка длины команды
 class LINBusCommandLengthError(Exception):
     pass
@@ -296,6 +421,13 @@ class LINBusCommandLengthError(Exception):
 # Подключение по шине не существует
 class LINConnectionLookupError(Exception):
     pass
+
+
+# Ошибка отправки прошивки
+class FirmwareUpdateError(Exception):
+    pass
+
+# ---------------------------------------------------------------------------- #
 
 
 # LINConfig - просто имплементация констант, которые потом можно заменить внешними
@@ -381,11 +513,69 @@ class DeviceProtocol(BusConfig):
             print('запрос короткого ответа:')
             print (self.get_short_answer())
 
-    def do_firmware(self):
+    def firmware_update(self, firmware, progress):
         """Прошивка микроконтроллера."""
-        pass
+        # TODO проверить firmware ???
+        # Инициализация счетчика отправленных строк данных
+        count = FirmwareUpdateCount()
+        # Отправить заголовок
+        header = [self.FIRMWARE_UPDATE, self.DATA_BEGIN_UPDATE_CMD + count.start] + [0]*6
+        try:
+            self.send_line(header)
+        except FirmwareUpdateError:
+            raise
+        # if not self.send_line(header):
+        #     showwarning(title='Предупреждение безопасности', message='Ошибка при отправке заголовка прошивки.')
+        #     return
+        print('Заголовок отправлен и принят правильно.')
+        # print(progress._root)
+        # print(progress._tk)
+        # print(progress.get())
+        # return
 
+        length = len(firmware)
+        for num, line in enumerate(firmware[:20], start=1):
+            message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
+            message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
+            print(f'Посылка {num}:', message)
+            try:
+                self.send_line(message)
+            except FirmwareUpdateError:
+                raise
+            # if not self.send_line(message):
+            #     showwarning(title='Предупреждение безопасности', message='Ошибка при отправке заголовка прошивки.')
+            #     return
+            # if not num % 50:
+            #     print(num)
+            # TODO поменять на format с контролем пробелов, чтобы текст не дергался
+            progress.config(text=f'Отправлено: {round(num/length, 2)}%')
+            progress.update()
+            # progress._tk.update()
+        print('Прошивка отправлена.')
 
+    # -------------------------- Вспомогательные функции ------------------------- #
+    def is_echo_correct(self, message, cmd_type='long'):
+        """Проверяет совпадение отправленного менеджером и принятого отопителем пакета."""
+        crc = self.protocol.calc_CRC(message)
+        package = [0x55, self.LONG_COMMAND if cmd_type == 'long' else self.SHORT_COMMAND] + message + [crc]
+        echo = e[e.index(0x55):] if (e := self.protocol.get_response(16)) else e
+        if echo != package:
+            print(package)
+            print(echo)
+        return echo == package
+
+    def send_line(self, message):
+        for _ in range(self.REPEAT_REQUESTS_COUNT):
+            self.send_long_command(message)
+            if self.is_echo_correct(message):
+                break
+        else:
+            raise FirmwareUpdateError('Пакет отправлен с ошибкой')
+            # showwarning(title='Предупреждение безопасности', message='Ошибка при отправке прошивки.')
+            # return
+        # return True
+
+    # ------------------------ Пробные (тестовые) команды ------------------------ #
     def scheduleDiagMsg2(self, msg):
         if len(msg) == self.SHORT_CMD_LENGTH:
             self.send_short_command(msg)
