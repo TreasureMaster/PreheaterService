@@ -127,7 +127,8 @@ class DirectControl(ModuleCommand):
         print(self.maincommand.get())
 
     def extra_command(self, value):
-        print(value)
+        # print(value)
+        pass
 
     def extra_answer(self):
         print(self.longanswer.get())
@@ -483,15 +484,15 @@ class DeviceProtocol(BusConfig):
             raise LINBusCommandLengthError
         self.protocol.send_command(self.LONG_COMMAND, cmd)
 
-    def get_short_answer(self) -> str:
+    def get_short_answer(self, view_text: bool=False) -> str:
         """Запрос ответа на короткую команду отопителю."""
         self.protocol.get_answer(self.SHORT_ANSWER)
-        return self.protocol.get_response(self.SHORT_ANS_LENGTH)
+        return self.protocol.get_response(self.SHORT_ANS_LENGTH, view_text)
 
-    def get_long_answer(self) -> str:
+    def get_long_answer(self, view_text: bool=False) -> str:
         """Запрос ответа на длинную команду отопителю."""
         self.protocol.get_answer(self.LONG_ANSWER)
-        return self.protocol.get_response(self.LONG_ANS_LENGTH)
+        return self.protocol.get_response(self.LONG_ANS_LENGTH, view_text)
 
     # ----------------------------- Составные команды ---------------------------- #
     def direct_request(self, command, is_long_query, data):
@@ -503,15 +504,15 @@ class DeviceProtocol(BusConfig):
             self.send_long_command(msg)
         else:
             self.send_short_command(msg)
-        echo = self.protocol.get_response(16)
+        echo = self.protocol.get_response(16, view_text=True)
         print('эхо после команды:', echo)
 
         if is_long_query:
             print('запрос длинного ответа:')
-            print (self.get_long_answer())
+            print (self.get_long_answer(view_text=True))
         else:
             print('запрос короткого ответа:')
-            print (self.get_short_answer())
+            print (self.get_short_answer(view_text=True))
 
     def firmware_update(self, firmware, progress):
         """Прошивка микроконтроллера."""
@@ -534,7 +535,7 @@ class DeviceProtocol(BusConfig):
         # return
 
         length = len(firmware)
-        for num, line in enumerate(firmware[:20], start=1):
+        for num, line in enumerate(firmware, start=1):
             message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
             print(f'Посылка {num}:', message)
@@ -548,7 +549,7 @@ class DeviceProtocol(BusConfig):
             # if not num % 50:
             #     print(num)
             # TODO поменять на format с контролем пробелов, чтобы текст не дергался
-            progress.config(text=f'Отправлено: {round(num/length, 2)}%')
+            progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}%')
             progress.update()
             # progress._tk.update()
         print('Прошивка отправлена.')
