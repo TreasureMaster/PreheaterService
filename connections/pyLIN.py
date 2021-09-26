@@ -30,8 +30,11 @@ class LIN:
 
     def is_start_needed(self) -> bool:
         """Проверят, нужно ли посылать стартовый фрейм (будить шину LIN)."""
-        return (self.__initLIN or
-                (time.time() - self.__time_marker) > self.__breakSignal * self.LIN_WAKEUP_RATIO)
+        # DEPRECATED возможно, не будет использоваться,
+        # т.к. по условию заказчика BREAK нужно отправлять всегда
+        # return (self.__initLIN or
+        #         (time.time() - self.__time_marker) > self.__breakSignal * self.LIN_WAKEUP_RATIO)
+        return True
 
     def close(self) -> None:
         """Закрывает соединение LIN."""
@@ -55,11 +58,13 @@ class LIN:
         # (чтобы не было начальных 0х00 при получении ответа)
         if self.is_start_needed():
             self.__portInstance.send_break(self.__breakSignal)
+            # По условию заказчика, нужно ждать чуть больше длины 1 байта
+            time.sleep(0.7 * self.__breakSignal)
             if self.__initLIN:
                 # пауза ожидания "пробуждения" LIN (чтобы не ловить начальные пустые ответы)
                 time.sleep(self.__breakSignal * self.LIN_START_RATIO)
                 self.__initLIN = False
-            print('wake up LIN bus !!!')
+            # print('wake up LIN bus !!!')
 
     def send_header(self, PID: int) -> None:
         # Стартовый фрейм BREAK (начальная пауза)
