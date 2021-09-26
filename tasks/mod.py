@@ -206,7 +206,7 @@ class FirmwareUpdate(ModuleCommand):
         if device is not None:
             for _ in range(REPEAT_REQUESTS_COUNT):
         #     self.send_long_command(message)
-        #     if self.is_echo_correct(message):
+        #     if self.is_response_correct(message):
         #         break
         # else:
         #     raise FirmwareUpdateError('Пакет отправлен с ошибкой')
@@ -554,20 +554,21 @@ class DeviceProtocol(BusConfig):
         print('Прошивка отправлена.')
 
     # -------------------------- Вспомогательные функции ------------------------- #
-    def is_echo_correct(self, message, cmd_type='long'):
+    def is_response_correct(self, message, cmd_type='long'):
         """Проверяет совпадение отправленного менеджером и принятого отопителем пакета."""
         crc = self.protocol.calc_CRC(message)
         package = [0x55, self.LONG_COMMAND if cmd_type == 'long' else self.SHORT_COMMAND] + message + [crc]
-        echo = e[e.index(0x55):] if (e := self.protocol.get_response(16)) else e
-        if echo != package:
+        response = self.protocol.get_response(16)
+        response = response[response.index(0x55):] if response else response
+        if response != package:
             print(package)
-            print(echo)
-        return echo == package
+            print(response)
+        return response == package
 
     def send_line(self, message):
         for _ in range(self.REPEAT_REQUESTS_COUNT):
             self.send_long_command(message)
-            if self.is_echo_correct(message):
+            if self.is_response_correct(message):
                 break
         else:
             raise FirmwareUpdateError('Пакет отправлен с ошибкой')
