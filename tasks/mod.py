@@ -5,7 +5,7 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
-import os
+import os, time
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -205,7 +205,7 @@ class FirmwareUpdate(ModuleCommand):
             return
         device = DeviceRegistry.instance().getDeviceProtocol()
         if device is not None:
-            for _ in range(REPEAT_REQUESTS_COUNT):
+            for firmware_update_attempt in range(REPEAT_REQUESTS_COUNT):
         #     self.send_long_command(message)
         #     if self.is_response_correct(message):
         #         break
@@ -213,7 +213,7 @@ class FirmwareUpdate(ModuleCommand):
         #     raise FirmwareUpdateError('Пакет отправлен с ошибкой')
             # if device is not None:
                 try:
-                    device.firmware_update(self.firmware, self.progress_exec)
+                    device.firmware_update(self.firmware, self.progress_exec, firmware_update_attempt)
                 except FirmwareUpdateError:
                     pass
                     # TODO Надо определить первая прошивка или повторная, чтобы отправить 0xB0 = 0001 0000 (начало записи данных)
@@ -365,11 +365,11 @@ class BusConfig:
     # Данные для записи блока управления отопителем
     DATA_UPDATE_CMD = 0x00
     # Начало записи данных
-    DATA_BEGIN_UPDATE_CMD = 0x10
+    DATA_UPDATE_BEGIN_CMD = 0x10
     # Начало записи управляющей программы блока управления отопителем
-    FIRMWARE_BEGIN_UPDATE_CMD = 0x20
+    FIRMWARE_UPDATE_BEGIN_CMD = 0x20
     # Окончание записи
-    END_UPDATE_CMD = 0x30
+    FIRMWARE_UPDATE_END_CMD = 0x30
 
     # Базовая скорость передачи данных
     # BASE_SPEED = 9600
@@ -388,6 +388,10 @@ class BusConfig:
 
     # Пауза (в sec), после которой следует "разбудить" шину LIN
     # LIN_WAKEUP_TIME = 0.145
+
+    # ----------------------------- Заготовки команд ----------------------------- #
+    # Выключить блок
+    TURN_OFF_BLOCK = [0x00, 0x00]
 
 
 @dataclass
@@ -514,13 +518,16 @@ class DeviceProtocol(BusConfig):
             print('запрос короткого ответа:')
             print (self.get_short_answer(view_text=True))
 
-    def firmware_update(self, firmware, progress):
+    def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""
         # TODO проверить firmware ???
         # Инициализация счетчика отправленных строк данных
         count = FirmwareUpdateCount()
         # Отправить заголовок
-        header = [self.FIRMWARE_UPDATE, self.DATA_BEGIN_UPDATE_CMD + count.start] + [0]*6
+        if not attempt:
+            header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start] + [0]*6
+        else:
+            header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start] + [0]*6
         try:
             self.send_line(header)
         except FirmwareUpdateError:
@@ -535,7 +542,8 @@ class DeviceProtocol(BusConfig):
         # return
 
         length = len(firmware)
-        for num, line in enumerate(firmware, start=1):
+        time_marker = int(time.time())
+        for num, line in enumerate(firmware[:20], start=1):
             message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
             print(f'Посылка {num}:', message)
@@ -549,21 +557,42 @@ class DeviceProtocol(BusConfig):
             # if not num % 50:
             #     print(num)
             # TODO поменять на format с контролем пробелов, чтобы текст не дергался
-            progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}%')
+            diff_time = int(time.time() - time_marker)
+            minutes = int(diff_time/60)
+            seconds = diff_time - minutes * 60
+            progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}% Время: {minutes} мин {seconds} сек')
             progress.update()
             # progress._tk.update()
         print('Прошивка отправлена.')
+
+        # TODO что происходит, если при данной отправке ошибка? Действия те же, что и при всех остальных?
+        firmware_end = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_END_CMD + count.start] + [0]*6
+        try:
+            print('Окончание:', firmware_end)
+            self.send_line(firmware_end)
+        except FirmwareUpdateError:
+            raise
+        print('Прошивка окончена, но не проверено отключение.')
+
+        # Отключить, проверить отключение.
+        # NOTE вроде команду "выключить" не надо отсылать. Режим "выключено" должен устанавливаться по команде "окончание прошивки"
+        # self.send_short_command(self.TURN_OFF_BLOCK)
+        # print(self.get_short_answer(view_text=True))
+        # print(self.get_short_answer(view_text=True))
 
     # -------------------------- Вспомогательные функции ------------------------- #
     def is_response_correct(self, message, cmd_type='long'):
         """Проверяет совпадение отправленного менеджером и принятого отопителем пакета."""
         crc = self.protocol.calc_CRC(message)
         package = [0x55, self.LONG_COMMAND if cmd_type == 'long' else self.SHORT_COMMAND] + message + [crc]
+        # NOTE вероятно нужно отсылать get_long_answer, а не get_response
         response = self.protocol.get_response(16)
         response = response[response.index(0x55):] if response else response
-        if response != package:
+        if response != package or (package[3] & 240) == self.FIRMWARE_UPDATE_END_CMD:
             print(package)
             print(response)
+        # print('Ответ:', self.get_long_answer(view_text=True))
+            # print('16:', self.protocol.byte2hex_text(response))
         return response == package
 
     def send_line(self, message):
