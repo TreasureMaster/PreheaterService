@@ -1,4 +1,4 @@
-from memory_profiler import profile
+# from memory_profiler import profile
 from .maincommands import Command
 from registry import DeviceRegistry
 

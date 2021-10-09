@@ -42,6 +42,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Venv files
+venv/
+
 # Python files
 __pycache__/
 
