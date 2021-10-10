@@ -97,10 +97,11 @@ class LIN:
         else:
             return self.byte2hex_list(self.__portInstance.read(readlen))
 
-    def send_data(self, message: List[int]) -> None:
+    def send_data(self, message: List[int], PID: int) -> None:
         tmpBuffer = bytearray(i for i in message)
+        if self.__enhanced:
+            tmpBuffer = bytearray((PID,)) + tmpBuffer
         tmpBuffer.append(self.calc_CRC(tmpBuffer))
-        # print('отправлено:', tmpBuffer)
         self.__portInstance.write(tmpBuffer)
 
     def calc_CRC(self, message: List[int]) -> int:
@@ -113,7 +114,7 @@ class LIN:
         """Команда для LIN-устройства."""
         self.send_header(PID)
         # time.sleep(.001)
-        self.send_data(message)
+        self.send_data(message, PID)
         self.__updateTimeMarker()
 
     def get_answer(self, PID: int) -> None:
