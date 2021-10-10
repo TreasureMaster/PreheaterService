@@ -15,8 +15,9 @@ class LIN:
     LIN_WAKEUP_RATIO = 100
     LIN_START_RATIO = 10 * LIN_WAKEUP_RATIO
 
-    def __init__(self, portnum: str, baud: int=9600):
+    def __init__(self, portnum: str, baud: int=9600, enhanced=False):
         self.__portNumber = portnum
+        self.__enhanced = enhanced
         self.__breakSignal = LIN.BREAK_LENGTH / baud
         try:
             self.__portInstance = serial.Serial(self.__portNumber, baud, timeout=0.1)

@@ -137,6 +137,15 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.port_description = Label(port_frame, text='', width=28, anchor=W)
         self.port_description.pack()
 
+        # Выбор версии LIN
+        self.CRCtype = BooleanVar()
+        Checkbutton(
+            port_frame,
+            text = 'Расширенный CRC LIN 2.x',
+            variable = self.CRCtype,
+            command = self.setCRCType
+        ).pack(anchor=W)
+
         # метка соединения
         # indicator = IndicatorImage(self.serialframe, image='yes2')
         # indicator.pack(side=LEFT, padx=5)
@@ -148,7 +157,7 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         # Кнопка настройки соединения
         # combtn = Button(btn_frame, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
         # combtn.pack(side=TOP, padx=5, fill=X, pady=2)
-        Label(btn_frame, text='Соединение:').pack(padx=10, pady=2, fill=X)
+        # Label(btn_frame, text='Соединение:').pack(padx=10, pady=2, fill=X)
 
         # Кнопка открытия/закрытия соединения
         connectbtn = Button(btn_frame, text='Подключить')
@@ -157,21 +166,21 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         )
         connectbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
-        # Кнопка считывания блока?
-        readbtn = Button(btn_frame, text='Сохранить', command=TestConnect())
+        # Кнопка вызова окна редактирования блока
+        readbtn = Button(btn_frame, text='Редактировать', command=TestConnect())
         readbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # (4) Фрейм с информацией о модуле
-        info_frame = Frame(self)
-        info_frame.pack(side=LEFT, fill=Y)
-        self.add_border(info_frame, width=1)
-        # self.add_border(info_frame, width=2, color='red')
-        # Информация о блоке
-        versionlabel = Label(info_frame, text=f'Версия:     {self.current_module.getBaseRevision()}', anchor=W)
-        versionlabel.pack(side=TOP, padx=5, fill=X)
-        # self.add_border(versionlabel, width=2, color='blue', relief=SOLID)
-        numberlabel = Label(info_frame, text=f'Редакция: {self.current_module.getEdition()}', anchor=W)
-        numberlabel.pack(side=TOP, padx=5, fill=X)
+        # info_frame = Frame(self)
+        # info_frame.pack(side=LEFT, fill=Y)
+        # self.add_border(info_frame, width=1)
+        # # self.add_border(info_frame, width=2, color='red')
+        # # Информация о блоке
+        # versionlabel = Label(info_frame, text=f'Версия:     {self.current_module.getBaseRevision()}', anchor=W)
+        # versionlabel.pack(side=TOP, padx=5, fill=X)
+        # # self.add_border(versionlabel, width=2, color='blue', relief=SOLID)
+        # numberlabel = Label(info_frame, text=f'Редакция: {self.current_module.getEdition()}', anchor=W)
+        # numberlabel.pack(side=TOP, padx=5, fill=X)
 
         # (5) Маленькая картинка модуля
         image_frame = ModuleImage(self, image=self.current_module.getImageLink(), maxheight=80)
@@ -192,7 +201,7 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
             justify=LEFT
         )
         DeviceRegistry.instance().setCurrentComPort(self.comports[current-1].name if current else None)
-        print(DeviceRegistry.instance().getCurrentComPort())
+        # print(DeviceRegistry.instance().getCurrentComPort())
 
     def updateComPortList(self):
         """Обновление списка com-портов.
@@ -212,6 +221,9 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         remotecontrols = [''] + rmc_list
         return remotecontrols
 
+    def setCRCType(self):
+        """Выбор типа расчета CRC в зависимости от версии LIN."""
+        DeviceRegistry.instance().setChecksumType(self.CRCtype.get())
 
 if __name__ == '__main__':
     root = Tk()

@@ -11,8 +11,9 @@ class LINConnection:
     # NOTE оформление в виду dataclass дает возможность в будущем добавлять разные данные
     port: str
     baud: int = 9600
+    enhanced: bool = False
 
     def __post_init__(self):
-        self.protocol = LIN(self.port, self.baud)
+        self.protocol = LIN(self.port, self.baud, self.enhanced)
         # TODO возможно, нет необходимости сохранять
         DeviceRegistry.instance().setCurrentConnection(self.protocol)

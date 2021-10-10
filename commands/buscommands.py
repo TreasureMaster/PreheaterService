@@ -33,7 +33,10 @@ class DeviceConnect(Command):
         if self.connection_exists:
             self.connection = DeviceRegistry.instance().getPythonModule().DeviceProtocol(
                 # port = DeviceRegistry.instance().getCurrentComPort()
-                connection = LINConnection( DeviceRegistry.instance().getCurrentComPort() )
+                connection = LINConnection(
+                    port=DeviceRegistry.instance().getCurrentComPort(),
+                    enhanced=DeviceRegistry.instance().getChecksumType()
+                )
             )
             # self.connection.scheduleDiagMsg2([0x01, 0x40])
         # иначе надо отключить, но проверить есть ли соединение

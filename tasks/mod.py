@@ -543,7 +543,7 @@ class DeviceProtocol(BusConfig):
 
         length = len(firmware)
         time_marker = int(time.time())
-        for num, line in enumerate(firmware[:20], start=1):
+        for num, line in enumerate(firmware, start=1):
             message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
             print(f'Посылка {num}:', message)
@@ -577,8 +577,8 @@ class DeviceProtocol(BusConfig):
         # Отключить, проверить отключение.
         # NOTE вроде команду "выключить" не надо отсылать. Режим "выключено" должен устанавливаться по команде "окончание прошивки"
         # self.send_short_command(self.TURN_OFF_BLOCK)
-        # print(self.get_short_answer(view_text=True))
-        # print(self.get_short_answer(view_text=True))
+        print(self.get_long_answer(view_text=True))
+        print(self.get_short_answer(view_text=True))
 
     # -------------------------- Вспомогательные функции ------------------------- #
     def is_response_correct(self, message, cmd_type='long'):
