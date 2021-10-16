@@ -15,9 +15,9 @@ class LIN:
     LIN_WAKEUP_RATIO = 100
     LIN_START_RATIO = 10 * LIN_WAKEUP_RATIO
 
-    def __init__(self, portnum: str, baud: int=9600, enhanced=False):
+    def __init__(self, portnum: str, baud: int=9600):
         self.__portNumber = portnum
-        self.__enhanced = enhanced
+        # self.__enhanced = enhanced
         self.__breakSignal = LIN.BREAK_LENGTH / baud
         try:
             self.__portInstance = serial.Serial(self.__portNumber, baud, timeout=0.1)
@@ -99,9 +99,10 @@ class LIN:
 
     def send_data(self, message: List[int], PID: int) -> None:
         tmpBuffer = bytearray(i for i in message)
-        if self.__enhanced:
-            tmpBuffer = bytearray((PID,)) + tmpBuffer
+        # if self.__enhanced:
+        #     tmpBuffer = bytearray((PID,)) + tmpBuffer
         tmpBuffer.append(self.calc_CRC(tmpBuffer))
+        # print(tmpBuffer)
         self.__portInstance.write(tmpBuffer)
 
     def calc_CRC(self, message: List[int]) -> int:
@@ -120,6 +121,7 @@ class LIN:
     def get_answer(self, PID: int) -> None:
         """Запрос ответа у LIN-устройства."""
         self.send_header(PID)
+        self.send_data([0x00, 0x00], PID)
         self.__updateTimeMarker()
 
     def __updateTimeMarker(self) -> None:
@@ -127,11 +129,48 @@ class LIN:
         self.__time_marker = time.time()
 
 
+class LIN2(LIN):
+    """Реализация шины LIN 2.xx"""
+
+    def __init__(self, portnum: str, baud: int=9600):
+        super().__init__(portnum, baud)
+
+    def send_data(self, message: List[int], PID: int) -> None:
+        """Вариант отправки LIN 2.xx"""
+        tmpBuffer = bytearray(i for i in message)
+        # tmpBuffer = bytearray((PID,)) + tmpBuffer
+        tmpBuffer.append(self.calc_CRC(bytearray((PID,)) + tmpBuffer))
+        # print(tmpBuffer)
+        self._LIN__portInstance.write(tmpBuffer)
+
+
+# Общее описание вариантов LIN
+LIN_REVISIONS = {
+    'LIN 1.x': LIN,
+    'LIN 2.x': LIN2
+}
+
+LIN_REVISIONS_NAMES = list(LIN_REVISIONS.keys())
+LIN_REVISIONS_BUSES = list(LIN_REVISIONS.values())
+
+
 if __name__ == '__main__':
-    nano = LIN('COM3', 9600)
-    data = (nano.calc_CRC([0x01, 0x40]))
+    nano1 = LIN('COM3', 9600)
+    data = (nano1.calc_CRC([0x01, 0x40]))
+    print(nano1.byte2hex_text([data]))
+    nano1.send_data([0x01, 0x40], 0x03)
+    nano1.close()
+    time.sleep(.5)
+
+    print('-'*30)
+    nano2 = LIN2('COM3', 9600)
+    data = (nano2.calc_CRC([0x03, 0x01, 0x40]))
     # print(hex(data & (2**32 - 1)))
-    print(data)
+    print(nano2.byte2hex_text([data]))
+    print(nano2.BREAK_LENGTH)
+    nano2.send_data([0x01, 0x40], 0x03)
+    # nano2.get_all()
+    nano2.close()
     # nano.sendHeader(0xC4)
     # mark = True
     # while mark:
@@ -142,3 +181,6 @@ if __name__ == '__main__':
     #         print('nothing')
     # print(text)
     # print(len(text))
+    print('-'*30)
+    print(LIN_REVISIONS_NAMES)
+    print(LIN_REVISIONS_BUSES)

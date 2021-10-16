@@ -346,13 +346,13 @@ class DeviceRegistry(Registry):
     # 1) remote_control - выбранный пульт
     # 2) connection_port - COM-порт для соединения
     # 3) python_module - модуль Python, загружаемый из архива рабочего модуля устройства
-    # 4) checksum_type - тип расчета контрольной суммы CRC (классически LIN 1.x или расширенный LIN 2.x)
+    # 4) lin_revision - версия шины LIN (классическая LIN 1.x или расширенная LIN 2.x)
     __values = {
         'remote_control': None,
         'connection_port': None,
         'python_module': None,
         'current_connection': None,
-        'checksum_type': None
+        'lin_revision': None
     }
     __instance = None
     __lock = Lock()
@@ -398,14 +398,14 @@ class DeviceRegistry(Registry):
         self.set('remote_control', port)
 
     # СВОЙСТВО: выбранный тип работы с контрольной суммой в зависимости от версии LIN
-    def getChecksumType(self) -> bool:
+    def getLINRevision(self) -> int:
         """Получить вариант работы с CRC."""
-        enhanced = self.get('checksum_type')
-        return enhanced if enhanced is not None else False
+        revision = self.get('lin_revision')
+        return revision if revision is not None else 0
 
-    def setChecksumType(self, enhanced: bool):
+    def setLINRevision(self, revision: int):
         """Установить вариант работы с CRC."""
-        self.set('checksum_type', enhanced)
+        self.set('lin_revision', revision)
 
     # СВОЙСТВО: загруженный модуль Python
     def getPythonModule(self):

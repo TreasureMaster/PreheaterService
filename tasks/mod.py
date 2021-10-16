@@ -517,6 +517,7 @@ class DeviceProtocol(BusConfig):
         else:
             print('запрос короткого ответа:')
             print (self.get_short_answer(view_text=True))
+            print(self.protocol.get_response(16, view_text=True))
 
     def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""

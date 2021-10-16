@@ -138,13 +138,19 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.port_description.pack()
 
         # Выбор версии LIN
-        self.CRCtype = BooleanVar()
-        Checkbutton(
-            port_frame,
-            text = 'Расширенный CRC LIN 2.x',
-            variable = self.CRCtype,
-            command = self.setCRCType
-        ).pack(anchor=W)
+        from connections import LIN_REVISIONS_NAMES
+        self.LINrevision = IntVar()
+        rb_frame = Frame(port_frame)
+        rb_frame.pack(fill=X)
+        for key, lin_name in enumerate(LIN_REVISIONS_NAMES):
+            Radiobutton(
+                rb_frame,
+                text = lin_name,
+                variable = self.LINrevision,
+                value=key,
+                command = self.setLINRev
+            ).pack(side=LEFT, anchor=W)
+        self.LINrevision.set(0)
 
         # метка соединения
         # indicator = IndicatorImage(self.serialframe, image='yes2')
@@ -221,9 +227,9 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         remotecontrols = [''] + rmc_list
         return remotecontrols
 
-    def setCRCType(self):
+    def setLINRev(self):
         """Выбор типа расчета CRC в зависимости от версии LIN."""
-        DeviceRegistry.instance().setChecksumType(self.CRCtype.get())
+        DeviceRegistry.instance().setLINRevision(self.LINrevision.get())
 
 if __name__ == '__main__':
     root = Tk()

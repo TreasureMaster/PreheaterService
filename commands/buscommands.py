@@ -35,7 +35,7 @@ class DeviceConnect(Command):
                 # port = DeviceRegistry.instance().getCurrentComPort()
                 connection = LINConnection(
                     port=DeviceRegistry.instance().getCurrentComPort(),
-                    enhanced=DeviceRegistry.instance().getChecksumType()
+                    lin_revision=DeviceRegistry.instance().getLINRevision()
                 )
             )
             # self.connection.scheduleDiagMsg2([0x01, 0x40])
