@@ -121,7 +121,7 @@ class LIN:
     def get_answer(self, PID: int) -> None:
         """Запрос ответа у LIN-устройства."""
         self.send_header(PID)
-        self.send_data([0x00, 0x00], PID)
+        # self.send_data([0x00, 0x00], PID)
         self.__updateTimeMarker()
 
     def __updateTimeMarker(self) -> None:
