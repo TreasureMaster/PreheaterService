@@ -135,11 +135,13 @@ class DirectControl(ModuleCommand):
 
     def do_command(self):
         print('full answer:', self.maincommand.get(), ', ', self.extracommand.get(), ', ', self.longanswer.get())
-        DeviceRegistry.instance().getDeviceProtocol().direct_request(
-            command = self.maincommand.get(),
-            is_long_query = self.longanswer.get(),
-            data = [self.extracommand.get()]
-        )
+        protocol = DeviceRegistry.instance().getDeviceProtocol()
+        if protocol:
+            DeviceRegistry.instance().getDeviceProtocol().direct_request(
+                command = self.maincommand.get(),
+                is_long_query = self.longanswer.get(),
+                data = [self.extracommand.get()]
+            )
 
 
 class FirmwareUpdate(ModuleCommand):
@@ -467,7 +469,7 @@ class DeviceProtocol(BusConfig):
     def device_bus(self):
         """Закрывает и удаляет соединение."""
         if self.__device_bus is not None:
-            self.__device_bus.close()
+            self.__device_bus.protocol.close()
             self.__device_bus = None
         DeviceRegistry.instance().setCurrentConnection(None)
 

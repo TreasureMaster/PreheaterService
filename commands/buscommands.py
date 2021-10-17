@@ -5,6 +5,11 @@ from registry import DeviceRegistry
 from connections import LINConnection
 
 
+# TODO DeviceConnect должен создавать соединение и подкючаться в отдельном потоке,
+# который будет работать бесконечно.
+# Т.е. отправка пакета будет происходить бесконечно, по циклу.
+# Соответственно, в DeviceProtocol какой-то метод должен крутиться постоянно.
+# А данные будут изменяться вне этого потока.
 class DeviceConnect(Command):
     __commands = [
         'Подключить',
@@ -42,6 +47,7 @@ class DeviceConnect(Command):
         # иначе надо отключить, но проверить есть ли соединение
         else:
             del self.connection.device_bus
+            self.connection = None
         print(self.connection)
         DeviceRegistry.instance().setDeviceProtocol(self.connection)
 
