@@ -519,7 +519,7 @@ class DeviceProtocol(BusConfig):
                     echo = self.protocol.get_response(16, view_text=True)
                     print('эхо после команды:', echo)
 
-            time.sleep(0.02)
+            time.sleep(0.002)
 
             if self.__disconnect_event.is_set():
                 break
@@ -533,7 +533,7 @@ class DeviceProtocol(BusConfig):
                         print (self.get_short_answer(view_text=True))
                         print(self.protocol.get_response(16, view_text=True))
 
-            time.sleep(0.04)
+            time.sleep(0.005)
 
     def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""

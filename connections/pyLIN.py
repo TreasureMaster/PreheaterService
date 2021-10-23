@@ -7,7 +7,7 @@ from typing import List
 class LIN:
 
     # Поле BREAK - это 13 или более нулевых битов подряд
-    BREAK_LENGTH = 14
+    BREAK_LENGTH = 13
     # Поле синхронизации. Позволяет устройствам настроиться на скорость приема/передачи.
     SYNC_BYTE = 0x55
     # Старт/стоп биты и т.п. формируются автоматически pyserial (стандартная настройка 8N1)
@@ -20,7 +20,7 @@ class LIN:
         # self.__enhanced = enhanced
         self.__breakSignal = LIN.BREAK_LENGTH / baud
         try:
-            self.__portInstance = serial.Serial(self.__portNumber, baud, timeout=0.1)
+            self.__portInstance = serial.Serial(self.__portNumber, baud, timeout=0.028)
         except IOError as e:
             print(e)
             raise
@@ -60,7 +60,7 @@ class LIN:
         if self.is_start_needed():
             self.__portInstance.send_break(self.__breakSignal)
             # По условию заказчика, нужно ждать чуть больше длины 1 байта
-            time.sleep(0.7 * self.__breakSignal)
+            time.sleep(0.4 * self.__breakSignal)
             if self.__initLIN:
                 # пауза ожидания "пробуждения" LIN (чтобы не ловить начальные пустые ответы)
                 time.sleep(self.__breakSignal * self.LIN_START_RATIO)
@@ -116,13 +116,13 @@ class LIN:
         self.send_header(PID)
         # time.sleep(.001)
         self.send_data(message, PID)
-        self.__updateTimeMarker()
+        # self.__updateTimeMarker()
 
     def get_answer(self, PID: int) -> None:
         """Запрос ответа у LIN-устройства."""
         self.send_header(PID)
         # self.send_data([0x00, 0x00], PID)
-        self.__updateTimeMarker()
+        # self.__updateTimeMarker()
 
     def __updateTimeMarker(self) -> None:
         """Помечает время для контроля паузы между запросами."""
