@@ -1,3 +1,4 @@
+import threading
 # from memory_profiler import profile
 from .maincommands import Command
 from registry import DeviceRegistry
@@ -43,6 +44,10 @@ class DeviceConnect(Command):
                     lin_revision=DeviceRegistry.instance().getLINRevision()
                 )
             )
+            threading.Thread(
+                target=self.connection.direct_request,
+                daemon=False
+            ).start()
             # self.connection.scheduleDiagMsg2([0x01, 0x40])
         # иначе надо отключить, но проверить есть ли соединение
         else:

@@ -5,7 +5,7 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
-import os, time
+import os, time, threading
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -20,7 +20,7 @@ from widgets.infolabels import InfoTitleLabel
 from lxml import objectify
 
 from appmeta import AbstractSingletonMeta
-from registry import DeviceRegistry, WidgetsRegistry
+from registry import DeviceRegistry, PackageRegistry
 from widgets import ScrolledListboxFrame, GUIWidgetConfiguration
 from views import InfoModuleFrame
 
@@ -83,18 +83,16 @@ class DirectControl(ModuleCommand):
             Radiobutton(
                 direct,
                 text = text,
-                command = self.check_commands,
+                command = self.set_commands,
                 variable = self.maincommand,
                 value = key
             ).pack(anchor=NW)
         self.maincommand.set(0)
 
-        self.extracommand = IntVar()
         Scale(
             direct,
             label = 'Дополнительно',
-            command = self.extra_command,
-            variable = self.extracommand,
+            command = self.set_extracommand,
             from_ = 0, to = 255,
             orient = 'horizontal'
         ).pack()
@@ -104,44 +102,34 @@ class DirectControl(ModuleCommand):
             direct,
             text = 'Расширенный запрос',
             variable = self.longanswer,
-            command = self.extra_answer
+            command = self.set_package_type
         ).pack()
-        # Button(direct, text='Выключить', command=lambda: None).grid(sticky=W+E, pady=2)
-        # Button(direct, text='Отопление', command=lambda: None).grid(sticky=W+E, pady=2)
-        # Button(direct, text='Вентиляция', command=lambda: None).grid(sticky=W+E, pady=2)
-        # Button(direct, text='Расширенный запрос', command=lambda: None).grid(sticky=W+E, pady=2)
-        # info.grid(pady=5, row=1, column=1)
         direct.pack()
-        # direct.config(
-        #     borderwidth=2,
-        #     highlightthickness=2,
-        #     highlightbackground='gray',
-        #     relief=FLAT
-        # )
         # scroll.bind_widgets(info.getScrollWidgets())
         # WidgetsRegistry.instance().pushWorkInfoFrame(info)
-        # print(self.maincommand.get(), self.extracommand.get(), self.longanswer.get())
-        Button(direct, text='Отправить', command=self.do_command).pack()
+        # Button(direct, text='Отправить', command=self.do_command).pack()
 
-    def check_commands(self):
+    def set_commands(self):
+        """Установка в реестр байта 0xB0."""
+        PackageRegistry.instance().set0xB0(self.maincommand.get())
         print(self.maincommand.get())
 
-    def extra_command(self, value):
-        # print(value)
-        pass
+    def set_extracommand(self, value):
+        """Установка в реестр байта 0xB1."""
+        PackageRegistry.instance().set0xB1(int(value))
 
-    def extra_answer(self):
+    def set_package_type(self):
+        """Установка в реестр типа пакета - короткий или расширенный."""
+        PackageRegistry.instance().setPackageType(self.longanswer.get())
         print(self.longanswer.get())
 
-    def do_command(self):
-        print('full answer:', self.maincommand.get(), ', ', self.extracommand.get(), ', ', self.longanswer.get())
-        protocol = DeviceRegistry.instance().getDeviceProtocol()
-        if protocol:
-            DeviceRegistry.instance().getDeviceProtocol().direct_request(
-                command = self.maincommand.get(),
-                is_long_query = self.longanswer.get(),
-                data = [self.extracommand.get()]
-            )
+    # NOTE Это не сюда, а в "Подключить"
+    # def do_command(self):
+    #     """Начинает непрерывную передачу команд."""
+    #     # print('full answer:', self.maincommand.get(), ', ', self.extracommand.get(), ', ', self.longanswer.get())
+    #     protocol = DeviceRegistry.instance().getDeviceProtocol()
+    #     if protocol:
+    #         DeviceRegistry.instance().getDeviceProtocol().direct_request()
 
 
 class FirmwareUpdate(ModuleCommand):
@@ -444,6 +432,7 @@ class DeviceProtocol(BusConfig):
 
     def __init__(self, connection):
         self.__device_bus = connection
+        self.__disconnect_event = threading.Event()
         # self.__device_bus = DeviceRegistry.instance().getCurrentConnection()
 
     @property
@@ -468,6 +457,7 @@ class DeviceProtocol(BusConfig):
     @device_bus.deleter
     def device_bus(self):
         """Закрывает и удаляет соединение."""
+        self.__disconnect_event.set()
         if self.__device_bus is not None:
             self.__device_bus.protocol.close()
             self.__device_bus = None
@@ -501,25 +491,49 @@ class DeviceProtocol(BusConfig):
         return self.protocol.get_response(self.LONG_ANS_LENGTH, view_text)
 
     # ----------------------------- Составные команды ---------------------------- #
-    def direct_request(self, command, is_long_query, data):
+    def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
-        msg = [command, *data] + [0] * (
-            (self.LONG_CMD_LENGTH if is_long_query else self.SHORT_CMD_LENGTH) - len(data) - 1
-        )
-        if is_long_query:
-            self.send_long_command(msg)
-        else:
-            self.send_short_command(msg)
-        echo = self.protocol.get_response(16, view_text=True)
-        print('эхо после команды:', echo)
+        while True:
+            package = PackageRegistry.instance().getPackage()
+            is_long_query = PackageRegistry.instance().getPackageType()
+            # if is_long_query:
+            #     package += [0]*6
+            # msg = package + [0] * (
+            #     (self.LONG_CMD_LENGTH if is_long_query else self.SHORT_CMD_LENGTH) - len(data) - 1
+            # )
 
-        if is_long_query:
-            print('запрос длинного ответа:')
-            print (self.get_long_answer(view_text=True))
-        else:
-            print('запрос короткого ответа:')
-            print (self.get_short_answer(view_text=True))
-            print(self.protocol.get_response(16, view_text=True))
+            if self.__disconnect_event.is_set():
+                break
+            else:
+                print('package:', package)
+                with threading.Lock():
+                    if is_long_query:
+                        self.send_long_command(package)
+                    else:
+                        self.send_short_command(package)
+
+            if self.__disconnect_event.is_set():
+                break
+            else:
+                with threading.Lock():
+                    echo = self.protocol.get_response(16, view_text=True)
+                    print('эхо после команды:', echo)
+
+            time.sleep(0.02)
+
+            if self.__disconnect_event.is_set():
+                break
+            else:
+                with threading.Lock():
+                    if is_long_query:
+                        print('запрос длинного ответа:')
+                        print (self.get_long_answer(view_text=True))
+                    else:
+                        print('запрос короткого ответа:')
+                        print (self.get_short_answer(view_text=True))
+                        print(self.protocol.get_response(16, view_text=True))
+
+            time.sleep(0.04)
 
     def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""

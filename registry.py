@@ -435,32 +435,114 @@ class DeviceRegistry(Registry):
         self.set('current_connection', device)
 
 
+# -------------------------- Данные пакета отправки -------------------------- #
+class PackageRegistry(Registry):
+    """Реестр пакета отправки данных в блок и доп.условий отправки."""
+    # статические приватные свойства
+    # 1) 0xB0 - байт 0x01 пакета отправки
+    # 2) 0xB1 - байт 0x01 пакета отправки
+    # 3) extended - тип пакета - короткий или длинный
+    __values = {
+        '0xB0': 0x00,
+        '0xB1': 0x00,
+        'extended': False,
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with PackageRegistry.__lock:
+            if not PackageRegistry.__instance:
+                PackageRegistry.__instance = PackageRegistry()
+        return PackageRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: байт пакета 0xB0
+    # def get0xB0(self):
+    #     """Получить байт 0xB0."""
+    #     return self.get('0xB0')
+
+    def set0xB0(self, b0: str):
+        """Установить байт 0xB0."""
+        self.set('0xB0', b0)
+
+    # СВОЙСТВО: байт пакета 0xB1
+    # def get0xB1(self):
+    #     """Получить байт 0xB1."""
+    #     return self.get('0xB1')
+
+    def set0xB1(self, b1: str):
+        """Установить байт 0xB1."""
+        self.set('0xB1', b1)
+
+    # СВОЙСТВО: Тип пакета - короткий или расширенный (длинный)
+    def getPackageType(self):
+        """Получить тип пакета - короткий или длинный."""
+        return self.get('extended')
+
+    def setPackageType(self, package_type: str):
+        """Установить тип пакета - короткий или длинный."""
+        self.set('extended', package_type)
+
+    # СВОЙСТВО: Пакет для отправки (собирается здесь, поэтому доступно только свойство get)
+    def getPackage(self):
+        """Получить пакет для отправки."""
+        package = [
+            self.get('0xB0'),
+            self.get('0xB1')
+        ]
+        if self.get('extended'):
+            package += [0x00]*6
+
+        return package
+
+
 if __name__ == '__main__':
-    print('Создать объект напрямую невозможно:')
-    try:
-        app = AppRegistry('test value')
-    except Exception as exc:
-        print('ERROR (test passed):', exc)
-    print('При обращении к реестру получаем один и тот же объект:')
-    app = AppRegistry.instance()
-    print(app)
-    app2 = AppRegistry.instance()
-    print(app2)
-    print('Получить значение напрямую:')
-    try:
-        print(app.get('value'))
-    except Exception as exc:
-        print('ERROR (test passed):', exc)
-    print('Установить значение напрямую:')
-    try:
-        app.set('value', 'direct access')
-    except Exception as exc:
-        print('ERROR (test passed):', exc)
-    print('Установить значение с помощью разрешенного доступа и проверить:')
-    app.setValue('allowed access')
-    print(app.getValue())
-    print('Проверяем вторую ссылку на объект реестра:')
-    print(app2.getValue())
+    package = PackageRegistry.instance()
+    print(package.getPackage())
+    package.setPackageType(True)
+    print(package.getPackage())
+# ---------------------------------------------------------------------------- #
+    # print('Создать объект напрямую невозможно:')
+    # try:
+    #     app = AppRegistry('test value')
+    # except Exception as exc:
+    #     print('ERROR (test passed):', exc)
+    # print('При обращении к реестру получаем один и тот же объект:')
+    # app = AppRegistry.instance()
+    # print(app)
+    # app2 = AppRegistry.instance()
+    # print(app2)
+    # print('Получить значение напрямую:')
+    # try:
+    #     print(app.get('value'))
+    # except Exception as exc:
+    #     print('ERROR (test passed):', exc)
+    # print('Установить значение напрямую:')
+    # try:
+    #     app.set('value', 'direct access')
+    # except Exception as exc:
+    #     print('ERROR (test passed):', exc)
+    # print('Установить значение с помощью разрешенного доступа и проверить:')
+    # app.setValue('allowed access')
+    # print(app.getValue())
+    # print('Проверяем вторую ссылку на объект реестра:')
+    # print(app2.getValue())
 # ---------------------------------------------------------------------------- #
     # print('Проверка в потоках:')
     # def test_singleton(value, result, i):
