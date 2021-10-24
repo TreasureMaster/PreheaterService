@@ -1,8 +1,8 @@
 """Это модуль связи LIN, совместимый с чипом FTDI. (первая версия)"""
 
-import serial, time
-
 from typing import List
+
+from connections import microserial, microsleep
 
 class LIN:
 
@@ -20,14 +20,14 @@ class LIN:
         # self.__enhanced = enhanced
         self.__breakSignal = LIN.BREAK_LENGTH / baud
         try:
-            self.__portInstance = serial.Serial(self.__portNumber, baud, timeout=0.028)
+            self.__portInstance = microserial.MicroSerial(self.__portNumber, baud, timeout=0.028)
         except IOError as e:
             print(e)
             raise
         # Маркер старта шины LIN (только что запущена или уже работает)
         self.__initLIN = True
         # Отметка времени определения паузы
-        self.__time_marker = time.time()
+        # self.__time_marker = time.time()
 
     def is_start_needed(self) -> bool:
         """Проверят, нужно ли посылать стартовый фрейм (будить шину LIN)."""
@@ -60,10 +60,10 @@ class LIN:
         if self.is_start_needed():
             self.__portInstance.send_break(self.__breakSignal)
             # По условию заказчика, нужно ждать чуть больше длины 1 байта
-            time.sleep(0.4 * self.__breakSignal)
+            microsleep.sleep(0.4 * self.__breakSignal)
             if self.__initLIN:
                 # пауза ожидания "пробуждения" LIN (чтобы не ловить начальные пустые ответы)
-                time.sleep(self.__breakSignal * self.LIN_START_RATIO)
+                microsleep.sleep(self.__breakSignal * self.LIN_START_RATIO)
                 self.__initLIN = False
             # print('wake up LIN bus !!!')
 
@@ -124,9 +124,9 @@ class LIN:
         # self.send_data([0x00, 0x00], PID)
         # self.__updateTimeMarker()
 
-    def __updateTimeMarker(self) -> None:
-        """Помечает время для контроля паузы между запросами."""
-        self.__time_marker = time.time()
+    # def __updateTimeMarker(self) -> None:
+    #     """Помечает время для контроля паузы между запросами."""
+    #     self.__time_marker = time.time()
 
 
 class LIN2(LIN):
@@ -155,6 +155,7 @@ LIN_REVISIONS_BUSES = list(LIN_REVISIONS.values())
 
 
 if __name__ == '__main__':
+    import time
     nano1 = LIN('COM3', 9600)
     data = (nano1.calc_CRC([0x01, 0x40]))
     print(nano1.byte2hex_text([data]))
