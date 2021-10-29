@@ -5,10 +5,10 @@ from tkinter import *
 from tkinter import ttk
 
 # from connectimages import IndicatorImage
-from registry import AppRegistry
+from registry import AppRegistry, DeviceRegistry
 from widgets import GUIWidgetConfiguration, ModuleImage
+from commands import DeviceConnect, TestConnect
 
-COMPORTS = 7
 BAUDRATES = [
     'Custom',
     '110',
@@ -107,7 +107,7 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         com_label = Label(rmc_frame, text='Пульт:', anchor=W)
         com_label.pack(side=TOP, padx=5, fill=X)
 
-        self.combo_rmc = ttk.Combobox(rmc_frame, values=self.remote_controls)
+        self.combo_rmc = ttk.Combobox(rmc_frame, values=self.remote_controls, exportselection=0)
         # Текущее значение - первая таблица
         self.combo_rmc.current(0)
         self.combo_rmc.pack(side=TOP, padx=5)
@@ -124,7 +124,8 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.combo_port = ttk.Combobox(
             port_frame,
             values=(['----'] + [port.device for port in self.comports]),
-            postcommand=self.updateComPortList
+            postcommand=self.updateComPortList,
+            exportselection=0
         )
         # Текущее значение - первая таблица
         self.combo_port.current(0)
@@ -136,15 +137,20 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         self.port_description = Label(port_frame, text='', width=28, anchor=W)
         self.port_description.pack()
 
-        # baud_label = Label(port_frame, text='Скорость:', anchor=W)
-        # baud_label.pack(side=TOP, padx=5, fill=X)
-
-        # self.combo_baud = ttk.Combobox(port_frame, values=(['----'] + BAUDRATES))
-        # # Текущее значение - первая таблица
-        # self.combo_baud.current(0)
-        # self.combo_baud.pack(side=TOP, padx=5)
-        # # Сразу же вывод первой таблицы при первом запуске программы
-        # self.combo_baud.bind("<<ComboboxSelected>>", self.setBaudRate)
+        # Выбор версии LIN
+        from connections import LIN_REVISIONS_NAMES
+        self.LINrevision = IntVar()
+        rb_frame = Frame(port_frame)
+        rb_frame.pack(fill=X)
+        for key, lin_name in enumerate(LIN_REVISIONS_NAMES):
+            Radiobutton(
+                rb_frame,
+                text = lin_name,
+                variable = self.LINrevision,
+                value=key,
+                command = self.setLINRev
+            ).pack(side=LEFT, anchor=W)
+        self.LINrevision.set(0)
 
         # метка соединения
         # indicator = IndicatorImage(self.serialframe, image='yes2')
@@ -157,79 +163,73 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         # Кнопка настройки соединения
         # combtn = Button(btn_frame, text='Настройки', command=lambda: ComportWindow(comports=self.comports))
         # combtn.pack(side=TOP, padx=5, fill=X, pady=2)
+        # Label(btn_frame, text='Соединение:').pack(padx=10, pady=2, fill=X)
 
         # Кнопка открытия/закрытия соединения
-        connectbtn = Button(btn_frame, text='Открыть/Закрыть', command=lambda: None)
+        connectbtn = Button(btn_frame, text='Подключить')
+        connectbtn.config(
+            command=DeviceConnect(connectbtn)
+        )
         connectbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
-        # Кнопка считывания блока?
-        readbtn = Button(btn_frame, text='Считать', command=lambda: None)
+        # Кнопка вызова окна редактирования блока
+        readbtn = Button(btn_frame, text='Редактировать', command=TestConnect())
         readbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
         # (4) Фрейм с информацией о модуле
-        info_frame = Frame(self)
-        info_frame.pack(side=LEFT, fill=Y)
-        self.add_border(info_frame, width=1)
-        # self.add_border(info_frame, width=2, color='red')
-        # Информация о блоке
-        versionlabel = Label(info_frame, text=f'Версия:     {self.current_module.getBaseRevision()}', anchor=W)
-        versionlabel.pack(side=TOP, padx=5, fill=X)
-        # self.add_border(versionlabel, width=2, color='blue', relief=SOLID)
-        numberlabel = Label(info_frame, text=f'Редакция: {self.current_module.getEdition()}', anchor=W)
-        numberlabel.pack(side=TOP, padx=5, fill=X)
+        # info_frame = Frame(self)
+        # info_frame.pack(side=LEFT, fill=Y)
+        # self.add_border(info_frame, width=1)
+        # # self.add_border(info_frame, width=2, color='red')
+        # # Информация о блоке
+        # versionlabel = Label(info_frame, text=f'Версия:     {self.current_module.getBaseRevision()}', anchor=W)
+        # versionlabel.pack(side=TOP, padx=5, fill=X)
+        # # self.add_border(versionlabel, width=2, color='blue', relief=SOLID)
+        # numberlabel = Label(info_frame, text=f'Редакция: {self.current_module.getEdition()}', anchor=W)
+        # numberlabel.pack(side=TOP, padx=5, fill=X)
 
         # (5) Маленькая картинка модуля
-        # image_frame = Frame(self)
-        # image_frame = OnceByHeightMappedImage(self, lastadded=self)
-        # image_frame.pack(side=LEFT, padx=5, expand=NO)
-        # img = HeightResizedImage(image_frame, maxheight=80)
-        # img.pack(expand=NO)
-        # self.bind('<Map>', lambda event, img=img: img.pack(side=LEFT, padx=5, expand=NO))
-        # self.bind('<Map>', lambda event, info=btn_frame: print(info.winfo_reqheight()))
         image_frame = ModuleImage(self, image=self.current_module.getImageLink(), maxheight=80)
         image_frame.pack(side=RIGHT)
 
     def setRemoteControl(self, event):
-        rmc = self.combo_rmc.get()
-        print(rmc)
+        """Команда выбора пульта управления."""
+        # rmc = self.combo_rmc.get()
+        DeviceRegistry.instance().setCurrentRemoteControl(self.combo_rmc.get() or None)
+        print(DeviceRegistry.instance().getCurrentRemoteControl())
 
     def setComPort(self, event):
-        # comport = self.combo_port.get()
-        # print(comport)
-        # print(event.widget.get())
-        # print(event.widget.current())
+        """Выбор com-порта из списка."""
+        # Обновляет Label с описанием выбранного порта для соединения
+        current = event.widget.current()
         self.port_description.config(
-            text=(self.comports[event.widget.current()-1].description if event.widget.current() else ''),
+            text=(self.comports[current-1].description if current else ''),
             justify=LEFT
         )
-
-    # def setBaudRate(self, event):
-    #     baudrate = self.combo_baud.get()
-    #     print(baudrate)
-
-    # def initComPortList(self, comport_number=None):
-    #     # print(list_ports.comports())
-    #     # self.comports = [port.device for port in list_ports.comports()]
-    #     self.comports = list_ports.comports()
-        # if not comport_number:
-        #     comport_number = COMPORTS
-        # ports = list(map(lambda n: 'COM'+str(n), range(comport_number)))
-        # self.comports[:0] = ('----',)
-        # return ports
+        DeviceRegistry.instance().setCurrentComPort(self.comports[current-1].name if current else None)
+        # print(DeviceRegistry.instance().getCurrentComPort())
 
     def updateComPortList(self):
+        """Обновление списка com-портов.
+        
+        Необходимо, так как устройство может быть физически подключено позже старта программы.
+        Добавление прочерков в список com-портов после формирования последнего."""
         self.comports = list_ports.comports()
         self.combo_port.config(
-            values=(['----'] + [port.device for port in self.comports])
+            values=([''] + [port.device for port in self.comports])
         )
 
     def initRemoteControlList(self, rmc_list=None):
+        """Формирование списка пультов управления."""
         # if rmc_list:
             # TODO список совместимых пультов
             # remotecontrols = list(map(lambda n: 'COM'+str(n), range(rmc_list)))
-        remotecontrols = ['----'] + rmc_list
+        remotecontrols = [''] + rmc_list
         return remotecontrols
 
+    def setLINRev(self):
+        """Выбор типа расчета CRC в зависимости от версии LIN."""
+        DeviceRegistry.instance().setLINRevision(self.LINrevision.get())
 
 if __name__ == '__main__':
     root = Tk()

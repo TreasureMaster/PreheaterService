@@ -226,10 +226,14 @@ class WidgetsRegistry(Registry):
 
     def setWorkInfoFrame(self, frame):
         """Установить информационный фрейм главного окна менеджера."""
+        # print('set Work Info Frame:', frame)
         self.set('work_info_frame', frame)
 
+    # TODO возможно, push и pop можно будет удалить. Вроде бы работает и без них нормально
+    # (вводились для решения проблемы с инфо-модулем главного окна и рабочего окна модуля)
     def pushWorkInfoFrame(self, frame):
         """Добавить информационный фрейм окна рабочего модуля и сделать его активным."""
+        # print('push Work Info Frame:', frame)
         self.set('save_work_info_frame', self.getWorkInfoFrame())
         self.set('work_info_frame', frame)
 
@@ -239,8 +243,10 @@ class WidgetsRegistry(Registry):
 
     def popWorkInfoFrame(self):
         """Извлечь информационный фрейм окна модуля и сделать активным информационный фрейм главного окна менеджера."""
+        # print('pop Work Info Frame:', end=' ')
         self.set('work_info_frame', self.getSaveWorkInfoFrame())
         self.set('save_work_info_frame', None)
+        # print(self.getWorkInfoFrame())
         return self.getWorkInfoFrame()
 
     # СВОЙСТВО: правый фрейм информации о модуле (окно редактирования модуля)
@@ -332,32 +338,211 @@ class ConfigRegistry(Registry):
     # TODO возможно следует возвращать некоторые ключи менеджера ?
 
 
+# ---------------------- Данные выбора в рабочем модуле ---------------------- #
+class DeviceRegistry(Registry):
+    """Реестр данных выбора в рабочем окне модуля.
+    Например, пульт, тип соединения."""
+    # статические приватные свойства
+    # 1) remote_control - выбранный пульт
+    # 2) connection_port - COM-порт для соединения
+    # 3) python_module - модуль Python, загружаемый из архива рабочего модуля устройства
+    # 4) lin_revision - версия шины LIN (классическая LIN 1.x или расширенная LIN 2.x)
+    __values = {
+        'remote_control': None,
+        'connection_port': None,
+        'python_module': None,
+        'current_connection': None,
+        'lin_revision': None
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with DeviceRegistry.__lock:
+            if not DeviceRegistry.__instance:
+                DeviceRegistry.__instance = DeviceRegistry()
+        return DeviceRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: выбранный пульт для работы с модулем (строка)
+    def getCurrentRemoteControl(self):
+        """Получить название текущего выбранного пульта."""
+        return self.get('remote_control')
+
+    def setCurrentRemoteControl(self, rmc: str):
+        """Установить название текущего выбранного пульта."""
+        self.set('remote_control', rmc)
+
+    # СВОЙСТВО: выбранный COM-порт для работы с модулем (строка)
+    def getCurrentComPort(self):
+        """Получить название текущего выбранного COM-порта."""
+        return self.get('remote_control')
+
+    def setCurrentComPort(self, port: str):
+        """Установить название текущего выбранного COM-порта."""
+        self.set('remote_control', port)
+
+    # СВОЙСТВО: выбранный тип работы с контрольной суммой в зависимости от версии LIN
+    def getLINRevision(self) -> int:
+        """Получить вариант работы с CRC."""
+        revision = self.get('lin_revision')
+        return revision if revision is not None else 0
+
+    def setLINRevision(self, revision: int):
+        """Установить вариант работы с CRC."""
+        self.set('lin_revision', revision)
+
+    # СВОЙСТВО: загруженный модуль Python
+    def getPythonModule(self):
+        """Получить загруженный из архива модуль."""
+        return self.get('python_module')
+
+    def setPythonModule(self, mod):
+        """Установить загруженный из архива модуль."""
+        self.set('python_module', mod)
+
+    # СВОЙСТВО: объект соединения (LIN или другие)
+    def getCurrentConnection(self):
+        """Получить текущее соединение."""
+        return self.get('current_connection')
+
+    def setCurrentConnection(self, conn):
+        """Установить текущее соединени."""
+        self.set('current_connection', conn)
+
+    # СВОЙСТВО: объект конкретного соединения устройства со всеми командами (из архива модуля)
+    def getDeviceProtocol(self):
+        """Получить текущее соединение."""
+        return self.get('current_connection')
+
+    def setDeviceProtocol(self, device):
+        """Установить текущее соединени."""
+        self.set('current_connection', device)
+
+
+# -------------------------- Данные пакета отправки -------------------------- #
+class PackageRegistry(Registry):
+    """Реестр пакета отправки данных в блок и доп.условий отправки."""
+    # статические приватные свойства
+    # 1) 0xB0 - байт 0x01 пакета отправки
+    # 2) 0xB1 - байт 0x01 пакета отправки
+    # 3) extended - тип пакета - короткий или длинный
+    __values = {
+        '0xB0': 0x00,
+        '0xB1': 0x00,
+        'extended': False,
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with PackageRegistry.__lock:
+            if not PackageRegistry.__instance:
+                PackageRegistry.__instance = PackageRegistry()
+        return PackageRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: байт пакета 0xB0
+    # def get0xB0(self):
+    #     """Получить байт 0xB0."""
+    #     return self.get('0xB0')
+
+    def set0xB0(self, b0: str):
+        """Установить байт 0xB0."""
+        self.set('0xB0', b0)
+
+    # СВОЙСТВО: байт пакета 0xB1
+    # def get0xB1(self):
+    #     """Получить байт 0xB1."""
+    #     return self.get('0xB1')
+
+    def set0xB1(self, b1: str):
+        """Установить байт 0xB1."""
+        self.set('0xB1', b1)
+
+    # СВОЙСТВО: Тип пакета - короткий или расширенный (длинный)
+    def getPackageType(self):
+        """Получить тип пакета - короткий или длинный."""
+        return self.get('extended')
+
+    def setPackageType(self, package_type: str):
+        """Установить тип пакета - короткий или длинный."""
+        self.set('extended', package_type)
+
+    # СВОЙСТВО: Пакет для отправки (собирается здесь, поэтому доступно только свойство get)
+    def getPackage(self):
+        """Получить пакет для отправки."""
+        package = [
+            self.get('0xB0'),
+            self.get('0xB1')
+        ]
+        if self.get('extended'):
+            package += [0x00]*6
+
+        return package
+
+
 if __name__ == '__main__':
-    print('Создать объект напрямую невозможно:')
-    try:
-        app = AppRegistry('test value')
-    except Exception as exc:
-        print('ERROR (test passed):', exc)
-    print('При обращении к реестру получаем один и тот же объект:')
-    app = AppRegistry.instance()
-    print(app)
-    app2 = AppRegistry.instance()
-    print(app2)
-    print('Получить значение напрямую:')
-    try:
-        print(app.get('value'))
-    except Exception as exc:
-        print('ERROR (test passed):', exc)
-    print('Установить значение напрямую:')
-    try:
-        app.set('value', 'direct access')
-    except Exception as exc:
-        print('ERROR (test passed):', exc)
-    print('Установить значение с помощью разрешенного доступа и проверить:')
-    app.setValue('allowed access')
-    print(app.getValue())
-    print('Проверяем вторую ссылку на объект реестра:')
-    print(app2.getValue())
+    package = PackageRegistry.instance()
+    print(package.getPackage())
+    package.setPackageType(True)
+    print(package.getPackage())
+# ---------------------------------------------------------------------------- #
+    # print('Создать объект напрямую невозможно:')
+    # try:
+    #     app = AppRegistry('test value')
+    # except Exception as exc:
+    #     print('ERROR (test passed):', exc)
+    # print('При обращении к реестру получаем один и тот же объект:')
+    # app = AppRegistry.instance()
+    # print(app)
+    # app2 = AppRegistry.instance()
+    # print(app2)
+    # print('Получить значение напрямую:')
+    # try:
+    #     print(app.get('value'))
+    # except Exception as exc:
+    #     print('ERROR (test passed):', exc)
+    # print('Установить значение напрямую:')
+    # try:
+    #     app.set('value', 'direct access')
+    # except Exception as exc:
+    #     print('ERROR (test passed):', exc)
+    # print('Установить значение с помощью разрешенного доступа и проверить:')
+    # app.setValue('allowed access')
+    # print(app.getValue())
+    # print('Проверяем вторую ссылку на объект реестра:')
+    # print(app2.getValue())
 # ---------------------------------------------------------------------------- #
     # print('Проверка в потоках:')
     # def test_singleton(value, result, i):

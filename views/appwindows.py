@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from tkinter import *
 from tkinter import ttk
 
-from registry import WidgetsRegistry, ConfigRegistry, AppRegistry
+from registry import WidgetsRegistry, ConfigRegistry, DeviceRegistry
 from applogger import AppLogger
 
 # from views.infomodule import InfoModuleFrame
@@ -192,19 +192,20 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self._load_module()
         # Левая панель управления работой с модулем.
         # TODO изменить в соответствии с ТЗ
-        self.lefttabs = self.module.LeftTabs(self.mainframe, self)
+        self.moduleframe = self.module.WorkModuleFrame(self.mainframe, self)
 
         # Прикрепление загруженного из модуля виджета
-        self.lefttabs.grid(padx=10, row=3, column=0, sticky=N)
+        self.moduleframe.grid(padx=10, row=3, column=0, sticky=W+E)
 
         # ------------------------------------
-        info = InfoModuleFrame(self.mainframe)
-        info.grid(pady=5, row=3, column=1)
-        # TODO привязать здесь, после получения фрейма
-        self.scrollwindow.bind_widgets(info.getScrollWidgets())
-        WidgetsRegistry.instance().pushWorkInfoFrame(info)
+        # info = InfoModuleFrame(self.mainframe)
+        # info.grid(pady=5, row=3, column=1)
+        # # TODO привязать здесь, после получения фрейма
+        # self.scrollwindow.bind_widgets(info.getScrollWidgets())
+        # WidgetsRegistry.instance().pushWorkInfoFrame(info)
 
-        info.bind('<Map>', self.on_frame_mapped)
+        # info.bind('<Map>', self.on_frame_mapped)
+        self.moduleframe.bind('<Map>', self.on_frame_mapped)
 
         # self.log_window = LoggerWindow(self.mainframe, height=5)
         # self.log_window.grid(row=3, columnspan=2, sticky=E+W, padx=10, pady=10)
@@ -221,7 +222,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
 
     def _quit(self):
         """Собственная обработка выхода."""
-        WidgetsRegistry.instance().popWorkInfoFrame()
+        # WidgetsRegistry.instance().popWorkInfoFrame()
         WidgetsRegistry.instance().getMainWindow().deiconify()
         self.window.destroy()
 
@@ -231,16 +232,17 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
             path = ModuleWindow.__testpath
         else:
             path = ConfigRegistry.instance().getManagerConfig().getDatafile('work', 'code')
-        print(path)
+        # print(path)
         # Загрузка модуля
         import importlib.util
         spec = importlib.util.spec_from_file_location("mod", path)
         self.module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.module)
         print(self.module)
+        DeviceRegistry.instance().setPythonModule(self.module)
         # Теперь не запускается, а просто загружается
         # Запуск модуля (исполнение встроенного класса)
-        # self.lefttabs = self.foo.LeftTabs(self.mainframe, self)
+        # self.moduleframe = self.foo.WorkModuleFrame(self.mainframe, self)
 
     def _prepare_commands(self):
         pass

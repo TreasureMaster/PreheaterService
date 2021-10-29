@@ -7,7 +7,11 @@ from registry import ModListRegistry
 
 
 class ModuleRevision:
-    """Класс, описывающий версию модуля."""
+    """Класс, описывающий версию модуля.
+    
+    На основе информации из ModuleConfig (распарсенного xml)
+    выдает информацию о ревизии модуля.
+    """
 
     # TODO нужна ли проверка версий всех модулей из текущего списка модулей,
     # чтобы избежать совпадающих версий ???
@@ -15,50 +19,61 @@ class ModuleRevision:
         self.__config = cfg
 
     @property
-    def name(self):
+    def name(self) -> str:
+        """Свойство: Базовое имя модуля."""
         return self.__config.getProperty('name')
 
     @property
-    def major(self):
+    def major(self) -> int:
+        """Свойство: Старшая версия модуля."""
         return int(self.__config.getProperty('majorrevision'))
 
     @property
-    def minor(self):
+    def minor(self) -> int:
+        """Свойство: Младшая версия модуля."""
         return int(self.__config.getProperty('minorrevision'))
 
     @property
-    def editrev(self):
+    def editrev(self) -> int:
+        """Свойство: Версия редакции модуля."""
         return int(self.__config.getProperty('editrevision'))
 
     @property
-    def lastupd(self):
+    def lastupd(self) -> int:
+        """Свойство: Дата последней редакции модуля."""
         return int(self.__config.getProperty('lastupdated'))
 
     @property
-    def baserevision(self):
+    def baserevision(self) -> str:
+        """Свойство: Базовая версия модуля."""
         return self.getBaseRevision()
 
     @property
-    def edition(self):
+    def edition(self) -> str:
+        """Свойство: Версия редации модуля."""
         return self.getEdition()
 
     @property
-    def revision(self):
+    def revision(self) -> str:
+        """Свойство: Полная версия модуля."""
         return self.getRevision()
 
     def getBaseRevision(self) -> str:
+        """Возвращает базовую версию модуля."""
         return '{}.{}'.format(
             self.__config.getProperty('majorrevision'),
             self.__config.getProperty('minorrevision')
         )
 
     def getEdition(self) -> str:
+        """Возвращает версию редации модуля."""
         return '{}-{}'.format(
             self.__config.getProperty('editrevision'),
             time.strftime('%d%m%y', time.localtime(self.__config.getProperty('lastupdated')))
         )
 
     def getRevision(self) -> str:
+        """Возвращает полную версию модуля."""
         return '{}.{}'.format(
             self.getBaseRevision(),
             self.getEdition()

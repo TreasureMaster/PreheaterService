@@ -1,4 +1,5 @@
 from .maincommands import (
+    Command,
     ViewLog,
     CommandMixin,
     ViewModule,
@@ -12,9 +13,14 @@ from .maincommands import (
     SaveModule,
     StartModule
 )
+from .buscommands import (
+    DeviceConnect,
+    TestConnect
+)
 
 
 __all__ = [
+    'Command',
     'ViewLog',
     'CommandMixin',
     'ViewModule',
@@ -26,5 +32,8 @@ __all__ = [
     'EditModule',
     'ReplaceImage',
     'SaveModule',
-    'StartModule'
+    'StartModule',
+    # LIN ----------------
+    'DeviceConnect',
+    'TestConnect'
 ]
