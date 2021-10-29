@@ -7,6 +7,7 @@ from accessify import private
 class AppLogger:
 
     DEBUG_LEVELV_NUM = 11
+    # DEBUG_THREAD_NUM = 22
     __instance = None
     __logger = None
     __stream = None
@@ -15,6 +16,7 @@ class AppLogger:
     @private
     def __init__(self):
         self.__addLoggingLevel('DEBUGV', AppLogger.DEBUG_LEVELV_NUM)
+        # self.__addLoggingLevel('THREAD', AppLogger.DEBUG_THREAD_NUM)
         AppLogger.__logger = logging.getLogger('app')
         AppLogger.__logger.setLevel(logging.DEBUG)
         # AppLogger.__logger.debugv = self.debugv
@@ -76,8 +78,10 @@ class AppLogger:
         self.handler.setFormatter(self.__make_formatter())
         fh = logging.FileHandler('tmplog/test.log', 'w', encoding='utf-8')
         fh.setLevel(logging.ERROR)
+        # fh.setLevel(logging.THREAD)
         fh.setFormatter(self.__get_formatter())
         fh.addFilter(self.MyFilter(logging.ERROR))
+        # fh.addFilter(self.MyFilter(logging.THREAD))
         AppLogger.__logger.addHandler(self.handler)
         AppLogger.__logger.addHandler(fh)
 

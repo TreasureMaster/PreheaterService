@@ -24,6 +24,7 @@ from registry import DeviceRegistry, PackageRegistry
 from widgets import ScrolledListboxFrame, GUIWidgetConfiguration
 from views import InfoModuleFrame
 from connections import microsleep
+from applogger import AppLogger
 
 # ------------------------------ Команды модуля ------------------------------ #
 from commands import Command
@@ -434,6 +435,9 @@ class DeviceProtocol(BusConfig):
     def __init__(self, connection):
         self.__device_bus = connection
         self.__disconnect_event = threading.Event()
+        # self.logger = AppLogger.instance()
+        # self.logger.thread('------ Включение ------')
+        # self.logger.thread(f"Инициализация DeviceProtocol. Event: {self.__disconnect_event.is_set()}")
         # self.__device_bus = DeviceRegistry.instance().getCurrentConnection()
 
     @property
@@ -458,11 +462,14 @@ class DeviceProtocol(BusConfig):
     @device_bus.deleter
     def device_bus(self):
         """Закрывает и удаляет соединение."""
+        # self.logger.thread(f"Перед отключением DeviceProtocol. Event: {self.__disconnect_event.is_set()}")
         self.__disconnect_event.set()
+        microsleep.sleep(0.2)
         if self.__device_bus is not None:
             self.__device_bus.protocol.close()
             self.__device_bus = None
         DeviceRegistry.instance().setCurrentConnection(None)
+        # self.logger.thread(f"После отключения DeviceProtocol. Event: {self.__disconnect_event.is_set()}")
 
     @property
     def protocol(self):
@@ -503,29 +510,29 @@ class DeviceProtocol(BusConfig):
             #     (self.LONG_CMD_LENGTH if is_long_query else self.SHORT_CMD_LENGTH) - len(data) - 1
             # )
 
-            if self.__disconnect_event.is_set():
-                break
-            else:
-                print('package:', package)
-                with threading.Lock():
+            with threading.Lock():
+                if self.__disconnect_event.is_set():
+                    # self.logger.thread(f"Отключить. Event: {self.__disconnect_event.is_set()}")
+                    break
+                else:
+                    # self.logger.thread(f"Отправка команды. Event: {self.__disconnect_event.is_set()}")
+                    print('package:', package)
                     if is_long_query:
                         self.send_long_command(package)
                     else:
                         self.send_short_command(package)
 
-            if self.__disconnect_event.is_set():
-                break
-            else:
-                with threading.Lock():
                     echo = self.protocol.get_response(16, view_text=True)
                     print('эхо после команды:', echo)
 
             microsleep.sleep(0.02)
 
-            if self.__disconnect_event.is_set():
-                break
-            else:
-                with threading.Lock():
+            with threading.Lock():
+                if self.__disconnect_event.is_set():
+                    # self.logger.thread(f"Отключить. Event: {self.__disconnect_event.is_set()}")
+                    break
+                else:
+                    # self.logger.thread(f"Запрос ответа. Event: {self.__disconnect_event.is_set()}")
                     if is_long_query:
                         print('запрос длинного ответа:')
                         print (self.get_long_answer(view_text=True))
