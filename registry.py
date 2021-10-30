@@ -185,6 +185,8 @@ class WidgetsRegistry(Registry):
     # 4) list_modules - переменная StringVar списка модулей (левое окно)
     # 5) log_frame - фрейм отображения логов
     # 6) edit_info_frame - информационный фрейм окна редактирования с параметрами модуля (правый)
+    # 7) listbox - отображение списка модулей
+    # 8) send_frame - фрейм окна модуля с данными пакетов отправки
     __values = {
         'work_info_frame': None,
         'save_work_info_frame': None,
@@ -192,7 +194,8 @@ class WidgetsRegistry(Registry):
         'main_window': None,
         'list_modules': None,
         'log_frame': None,
-        'listbox': None
+        'listbox': None,
+        'send_frame': None
     }
     __instance = None
     __lock = Lock()
@@ -296,6 +299,13 @@ class WidgetsRegistry(Registry):
 
     def setModulesListbox(self, listbox):
         self.set('listbox', listbox)
+
+    # СВОЙСТВО: фрейм с информацией об отправке пакетов (окно модуля)
+    def getSendingFrame(self):
+        return self.get('send_frame')
+
+    def setSendingFrame(self, send_frame):
+        self.set('send_frame', send_frame)
 
 # ----------------------- Реестр конфигурации менеджера ---------------------- #
 

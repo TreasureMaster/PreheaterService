@@ -8,6 +8,7 @@ from .mainmenu import MainMenu
 from .modulemenu import ModuleMenu
 from .connectionframe import ConnectionFrame
 from .scrolledlistbox import ScrolledListboxFrame
+from .sendingframe import SendingFrame
 
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     'OnceByHeightMappedImage',
     'OnceResizedImage',
     'HeightResizedImage',
-    'ScrolledListboxFrame'
+    'ScrolledListboxFrame',
+    'SendingFrame'
 ]
