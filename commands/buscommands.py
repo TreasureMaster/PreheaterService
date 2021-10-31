@@ -37,20 +37,26 @@ class DeviceConnect(Command):
         # TODO необходимо сделать DeviceProtocol синглтоном, но предусмотреть возможность переподключения
         # NOTE будет ли у устройства несколько видов подключения ???
         if self.connection_exists:
-            self.connection = DeviceRegistry.instance().getPythonModule().DeviceProtocol(
-                # port = DeviceRegistry.instance().getCurrentComPort()
-                connection = LINConnection(
-                    port=DeviceRegistry.instance().getCurrentComPort(),
-                    lin_revision=DeviceRegistry.instance().getLINRevision()
+            with threading.Lock():
+                self.connection = DeviceRegistry.instance().getPythonModule().DeviceProtocol(
+                    connection = LINConnection(
+                        port=DeviceRegistry.instance().getCurrentComPort(),
+                        lin_revision=DeviceRegistry.instance().getLINRevision()
+                    )
                 )
-            )
-            threading.Thread(
-                target=self.connection.direct_request,
-                daemon=False
-            ).start()
-            # self.connection.scheduleDiagMsg2([0x01, 0x40])
+                DeviceRegistry.instance().setDisconnectEvent(
+                    threading.Event()
+                )
+                self.packages_thread = threading.Thread(
+                    target=self.connection.direct_request,
+                    daemon=False
+                )
+                self.packages_thread.start()
         # иначе надо отключить, но проверить есть ли соединение
         else:
+            with threading.Lock():
+                DeviceRegistry.instance().getDisconnectEvent().set()
+            self.packages_thread.join()
             del self.connection.device_bus
             self.connection = None
         print(self.connection)

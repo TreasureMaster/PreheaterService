@@ -356,13 +356,17 @@ class DeviceRegistry(Registry):
     # 1) remote_control - выбранный пульт
     # 2) connection_port - COM-порт для соединения
     # 3) python_module - модуль Python, загружаемый из архива рабочего модуля устройства
-    # 4) lin_revision - версия шины LIN (классическая LIN 1.x или расширенная LIN 2.x)
+    # 4) current_connection - объект текущего соединения с ШИНОЙ (LIN или других - CAN, Bluetooth)
+    # 5) lin_revision - версия шины LIN (классическая LIN 1.x или расширенная LIN 2.x)
+    # 6) device_protocol - объект текущего соединение с УСТРОЙСТВОМ (без учета его типа)
     __values = {
         'remote_control': None,
         'connection_port': None,
         'python_module': None,
         'current_connection': None,
-        'lin_revision': None
+        'lin_revision': None,
+        'device_protocol': None,
+        'disconnect_event': None
     }
     __instance = None
     __lock = Lock()
@@ -426,23 +430,32 @@ class DeviceRegistry(Registry):
         """Установить загруженный из архива модуль."""
         self.set('python_module', mod)
 
-    # СВОЙСТВО: объект соединения (LIN или другие)
+    # СВОЙСТВО: объект соединения с шиной (LIN или другие)
     def getCurrentConnection(self):
-        """Получить текущее соединение."""
+        """Получить вид соединения с шиной."""
         return self.get('current_connection')
 
     def setCurrentConnection(self, conn):
-        """Установить текущее соединени."""
+        """Сохранить вид соединения с шиной."""
         self.set('current_connection', conn)
 
     # СВОЙСТВО: объект конкретного соединения устройства со всеми командами (из архива модуля)
     def getDeviceProtocol(self):
-        """Получить текущее соединение."""
-        return self.get('current_connection')
+        """Получить текущее соединение с устройством."""
+        return self.get('device_protocol')
 
     def setDeviceProtocol(self, device):
-        """Установить текущее соединени."""
-        self.set('current_connection', device)
+        """Сохранить текущее соединение с устройством."""
+        self.set('device_protocol', device)
+
+    # СВОЙСТВО: объект конкретного соединения устройства со всеми командами (из архива модуля)
+    def getDisconnectEvent(self):
+        """Получить текущее соединение с устройством."""
+        return self.get('disconnect_event')
+
+    def setDisconnectEvent(self, device):
+        """Сохранить текущее соединение с устройством."""
+        self.set('disconnect_event', device)
 
 
 # -------------------------- Данные пакета отправки -------------------------- #
