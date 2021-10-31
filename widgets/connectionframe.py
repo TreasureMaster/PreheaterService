@@ -176,7 +176,7 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         readbtn = Button(btn_frame, text='Редактировать', command=TestConnect())
         readbtn.pack(side=TOP, padx=5, fill=X, pady=2)
 
-        # (4) Фрейм с информацией о модуле
+        # (4) Фрейм с информацией о модуле (WARN: Здесь будет логгер)
         # info_frame = Frame(self)
         # info_frame.pack(side=LEFT, fill=Y)
         # self.add_border(info_frame, width=1)
@@ -191,6 +191,14 @@ class ConnectionFrame(Frame, GUIWidgetConfiguration):
         # (5) Маленькая картинка модуля
         image_frame = ModuleImage(self, image=self.current_module.getImageLink(), maxheight=80)
         image_frame.pack(side=RIGHT)
+
+        # (6+) Вывод информации об отправке пакетов (нижняя часть)
+        # pkginfo_frame = Frame(self)
+        # pkginfo_frame.pack(side=BOTTOM, fill=Y)
+
+        # Label(pkginfo_frame, text='Отправлено:').pack(side=LEFT)
+        # Label(pkginfo_frame, text='Эхо:').pack(side=LEFT)
+        # Label(pkginfo_frame, text='Ответ:').pack(side=LEFT)
 
     def setRemoteControl(self, event):
         """Команда выбора пульта управления."""

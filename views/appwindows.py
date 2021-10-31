@@ -8,7 +8,7 @@ from applogger import AppLogger
 # from views.infomodule import InfoModuleFrame
 from .listmodules import ListModulesFrame
 from .infomodule import InfoModuleFrame, EditableModuleFrame
-from widgets import LoggerWindow, ScrolledWindow, GUIWidgetConfiguration, ConnectionFrame, ScrolledListboxFrame
+from widgets import LoggerWindow, ScrolledWindow, GUIWidgetConfiguration, ConnectionFrame, SendingFrame
 # Здесь размещать подготовку команды?
 from commands import ViewLog
 
@@ -195,7 +195,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.moduleframe = self.module.WorkModuleFrame(self.mainframe, self)
 
         # Прикрепление загруженного из модуля виджета
-        self.moduleframe.grid(padx=10, row=3, column=0, sticky=W+E)
+        self.moduleframe.grid(padx=10, row=5, column=0, sticky=W+E)
 
         # ------------------------------------
         # info = InfoModuleFrame(self.mainframe)
@@ -219,6 +219,10 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.connection = ConnectionFrame(self.mainframe)
         self.connection.grid(row=1, columnspan=2, sticky='ew')
         self.add_underline(self.mainframe, width=2, color='gray').grid(row=2, columnspan=2, sticky='ew')
+        sending_info = SendingFrame(self.mainframe)
+        sending_info.grid(row=3, columnspan=2, sticky='ew')
+        WidgetsRegistry.instance().setSendingFrame(sending_info)
+        self.add_underline(self.mainframe, width=2, color='gray').grid(row=4, columnspan=2, sticky='ew')
 
     def _quit(self):
         """Собственная обработка выхода."""
