@@ -45,18 +45,20 @@ class DeviceConnect(Command):
                     )
                 )
                 DeviceRegistry.instance().setDisconnectEvent(
-                    threading.Event()
+                    # threading.Event()
+                    event=False
                 )
-                self.packages_thread = threading.Thread(
-                    target=self.connection.direct_request,
-                    daemon=False
-                )
-                self.packages_thread.start()
+                # self.packages_thread = threading.Thread(
+                #     target=self.connection.direct_request,
+                #     daemon=False
+                # )
+                self.connection.direct_request()
+                # self.packages_thread.start()
         # иначе надо отключить, но проверить есть ли соединение
         else:
             with threading.Lock():
-                DeviceRegistry.instance().getDisconnectEvent().set()
-            self.packages_thread.join()
+                DeviceRegistry.instance().setDisconnectEvent(event=True)
+            # self.packages_thread.join()
             del self.connection.device_bus
             self.connection = None
         print(self.connection)

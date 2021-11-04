@@ -498,62 +498,96 @@ class DeviceProtocol(BusConfig):
     # ----------------------------- Составные команды ---------------------------- #
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
-        exit = False
-        while True:
+        # exit = False
+        # while True:
+        with threading.Lock():
             package = PackageRegistry.instance().getPackage()
             is_long_query = PackageRegistry.instance().getPackageType()
-            disconnect_event = DeviceRegistry.instance().getDisconnectEvent()
+            disconnect_event = DeviceRegistry.instance().is_DisconnectEvent()
             # if is_long_query:
             #     package += [0]*6
             # msg = package + [0] * (
             #     (self.LONG_CMD_LENGTH if is_long_query else self.SHORT_CMD_LENGTH) - len(data) - 1
             # )
 
-            with threading.Lock():
-                if disconnect_event.is_set():
-                    exit = True
+        # with threading.Lock():
+            # if disconnect_event.is_set():
+            #     exit = True
+            #     # break
+            # else:
+            if not disconnect_event:
+                print('package:', package)
+            # self.__sending_frame.labels['send']['var'].set(
+            #     self.__sending_frame.labels['send']['text'] +\
+            #     self.protocol.byte2hex_text(package)
+            # )
+                self.__sending_frame.labels['send']['label'].configure(
+                    # self.__sending_frame.labels['send']['text'] +\
+                    text=self.protocol.byte2hex_text(package)
+                )
+                if is_long_query:
+                    self.send_long_command(package)
                 else:
-                    print('package:', package)
-                    # self.__sending_frame.labels['send']['var'].set(
-                    #     self.__sending_frame.labels['send']['text'] +\
-                    #     self.protocol.byte2hex_text(package)
-                    # )
-                    if is_long_query:
-                        self.send_long_command(package)
-                    else:
-                        self.send_short_command(package)
+                    self.send_short_command(package)
 
-                    echo = self.protocol.get_response(16, view_text=True)
-                    print('эхо после команды:', echo)
-                    # self.__sending_frame.labels['echo']['var'].set(
-                    #     self.__sending_frame.labels['echo']['text'] + echo
-                    # )
+                echo = self.protocol.get_response(16, view_text=True)
+                print('эхо после команды:', echo)
+            # self.__sending_frame.labels['echo']['var'].set(
+            #     self.__sending_frame.labels['echo']['text'] + echo
+            # )
+                self.__sending_frame.labels['echo']['label'].configure(
+                    # self.__sending_frame.labels['echo']['text'] +\
+                    text=echo
+                )
 
-            if exit:
-                break
+            # if exit:
+            #     break
 
-            microsleep.sleep(0.02)
+            # microsleep.sleep(0.02)
 
-            with threading.Lock():
-                if disconnect_event.is_set():
-                    exit = True
+            # with threading.Lock():
+            # if disconnect_event.is_set():
+            #     exit = True
+            #     # break
+            # else:
+                if is_long_query:
+                    print('запрос длинного ответа:')
+                    answer = self.get_long_answer(view_text=True)
                 else:
-                    if is_long_query:
-                        print('запрос длинного ответа:')
-                        answer = self.get_long_answer(view_text=True)
-                    else:
-                        print('запрос короткого ответа:')
-                        answer = self.get_short_answer(view_text=True)
-                        print(self.protocol.get_response(16, view_text=True))
-                    print(answer)
-                    # self.__sending_frame.labels['answer']['var'].set(
-                    #     self.__sending_frame.labels['answer']['text'] + answer
-                    # )
+                    print('запрос короткого ответа:')
+                    answer = self.get_short_answer(view_text=True)
+                # print(self.protocol.get_response(16, view_text=True))
+                print(answer)
+            # self.__sending_frame.labels['answer']['var'].set(
+            #     self.__sending_frame.labels['answer']['text'] + answer
+            # )
+                self.__sending_frame.labels['answer']['label'].configure(
+                    # self.__sending_frame.labels['answer']['text'] +\
+                    text=answer
+                )
+            # if exit:
+            #     break
+            # # Пробуем вывод за пределами блокировки
+            # self.__sending_frame.labels['send']['label'].configure(
+            #             # self.__sending_frame.labels['send']['text'] +\
+            #             text=self.protocol.byte2hex_text(package)
+            #         )
+            # self.__sending_frame.labels['echo']['label'].configure(
+            #             # self.__sending_frame.labels['echo']['text'] +\
+            #             text=echo
+            #         )
+            # self.__sending_frame.labels['answer']['label'].configure(
+            #             # self.__sending_frame.labels['answer']['text'] +\
+            #             text=answer
+            #         )
 
-            if exit:
-                break
+            if not disconnect_event:
+                WidgetsRegistry.instance().getCurrentModuleWindow().after(
+                    256,
+                    self.direct_request
+                )
 
-            microsleep.sleep(0.04)
+                # microsleep.sleep(0.04)
 
     def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""

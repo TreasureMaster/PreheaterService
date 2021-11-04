@@ -19,31 +19,43 @@ class SendingFrame(Frame, GUIWidgetConfiguration):
         pkginfo_frame.pack(side=TOP, fill=X)
         # self.add_border(pkginfo_frame, width=2)
 
-        for column, key in enumerate(self._get_labels()):
-            self.labels[key]['var'].set(self.labels[key]['text'])
+        for column, key in zip(
+            range(0, len(list(self._get_labels())) * 2, 2),
+            self._get_labels()
+        ):
+            # self.labels[key]['var'].set(self.labels[key]['text'])
+            Label(
+                pkginfo_frame,
+                text=self.labels[key]['text'],
+                width=len(self.labels[key]['text']),
+                anchor=W
+            ).grid(row=0, column=column, pady=2, padx=10)
             lbl = Label(
                 pkginfo_frame,
-                # text=package['text'],
-                textvariable=self.labels[key]['var'],
-                width=30,
+                text=self.labels[key]['var'],
+                # textvariable=self.labels[key]['var'],
+                width=20,
                 anchor=W
             )
-            lbl.grid(row=0, column=column, padx=10, pady=2)
+            lbl.grid(row=0, column=column+1, padx=5, pady=2)
             self.labels[key]['label'] = lbl
 
     def _get_labels(self):
         self.labels = {
             'send': {
                 'text': 'Отправлено: ',
-                'var': StringVar()
+                # 'var': StringVar()
+                'var': ''
             },
             'echo': {
                 'text': 'Эхо: ',
-                'var': StringVar()
+                # 'var': StringVar()
+                'var': ''
             },
             'answer': {
                 'text': 'Ответ: ',
-                'var': StringVar()
+                # 'var': StringVar()
+                'var': ''
             },
         }
 
