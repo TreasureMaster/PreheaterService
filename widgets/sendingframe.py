@@ -16,46 +16,77 @@ class SendingFrame(Frame, GUIWidgetConfiguration):
     def _make_widgets(self):
         # (6+) Вывод информации об отправке пакетов (нижняя часть)
         pkginfo_frame = Frame(self)
-        pkginfo_frame.pack(side=TOP, fill=X)
+        pkginfo_frame.pack(side=TOP, fill=X, padx=10, pady=2)
         # self.add_border(pkginfo_frame, width=2)
 
-        for column, key in zip(
-            range(0, len(list(self._get_labels())) * 2, 2),
-            self._get_labels()
-        ):
+        # for column, key in zip(
+        #     range(0, len(list(self._get_labels())) * 2, 2),
+        #     self._get_labels()
+        # ):
+        for column, key in enumerate(self._get_labels()):
             # self.labels[key]['var'].set(self.labels[key]['text'])
             Label(
                 pkginfo_frame,
                 text=self.labels[key]['text'],
-                width=len(self.labels[key]['text']),
+                # width=len(self.labels[key]['text']),
+                width=30 if column < 3 else 10,
                 anchor=W
-            ).grid(row=0, column=column, pady=2, padx=10)
+            ).grid(row=0, column=column)
             lbl = Label(
                 pkginfo_frame,
                 text=self.labels[key]['var'],
                 # textvariable=self.labels[key]['var'],
-                width=20,
+                width=30 if column < 3 else 10,
                 anchor=W
             )
-            lbl.grid(row=0, column=column+1, padx=5, pady=2)
+            lbl.grid(row=1, column=column)
             self.labels[key]['label'] = lbl
+
+        # Label(pkginfo_frame, text='Хорошие:', anchor=W, width=10).grid(row=0, column=3)
+        # Label(pkginfo_frame, text='Нет эха:', anchor=W, width=10).grid(row=0, column=4)
+        # Label(pkginfo_frame, text='Нет ответа:', anchor=W, width=12).grid(row=0, column=5)
+
+        # # self.labels['good']['var'] = ''
+        # lbl = Label(pkginfo_frame, text='', anchor=W)
+        # lbl.grid(row=1, column=3)
+        # self.labels['good']['label'] = lbl
 
     def _get_labels(self):
         self.labels = {
             'send': {
-                'text': 'Отправлено: ',
+                'text': 'Отправлено:',
                 # 'var': StringVar()
                 'var': ''
             },
             'echo': {
-                'text': 'Эхо: ',
+                'text': 'Эхо:',
                 # 'var': StringVar()
                 'var': ''
             },
             'answer': {
-                'text': 'Ответ: ',
+                'text': 'Ответ:',
                 # 'var': StringVar()
                 'var': ''
+            },
+            'all': {
+                'text': 'Все:',
+                # 'var': StringVar()
+                'var': '0'
+            },
+            'good': {
+                'text': 'Хорошие:',
+                # 'var': StringVar()
+                'var': '0'
+            },
+            'bad_echo': {
+                'text': 'Нет эха:',
+                # 'var': StringVar()
+                'var': '0'
+            },
+            'bad_answer': {
+                'text': 'Нет ответа',
+                # 'var': StringVar()
+                'var': '0'
             },
         }
 

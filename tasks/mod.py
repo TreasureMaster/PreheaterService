@@ -5,7 +5,7 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
-import os, time, threading
+import os, time, threading, collections
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -435,6 +435,12 @@ class DeviceProtocol(BusConfig):
     def __init__(self, connection):
         self.__device_bus = connection
         self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
+        self.__counter = collections.Counter({
+            'all': 0,
+            'good': 0,
+            'echo': 0,
+            'answer': 0
+        })
         # self.logger = AppLogger.instance()
         # self.logger.thread('------ Включение ------')
         # self.logger.thread(f"Инициализация DeviceProtocol. Event: {self.__disconnect_event.is_set()}")
@@ -462,6 +468,7 @@ class DeviceProtocol(BusConfig):
     @device_bus.deleter
     def device_bus(self):
         """Закрывает и удаляет соединение."""
+        self.__counter.clear()
         with threading.Lock():
             if self.__device_bus is not None:
                 self.__device_bus.protocol.close()
@@ -498,94 +505,100 @@ class DeviceProtocol(BusConfig):
     # ----------------------------- Составные команды ---------------------------- #
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
-        # exit = False
-        # while True:
         with threading.Lock():
+            # print('-'*30)
             package = PackageRegistry.instance().getPackage()
             is_long_query = PackageRegistry.instance().getPackageType()
             disconnect_event = DeviceRegistry.instance().is_DisconnectEvent()
-            # if is_long_query:
-            #     package += [0]*6
-            # msg = package + [0] * (
-            #     (self.LONG_CMD_LENGTH if is_long_query else self.SHORT_CMD_LENGTH) - len(data) - 1
-            # )
 
-        # with threading.Lock():
-            # if disconnect_event.is_set():
-            #     exit = True
-            #     # break
-            # else:
             if not disconnect_event:
-                print('package:', package)
-            # self.__sending_frame.labels['send']['var'].set(
-            #     self.__sending_frame.labels['send']['text'] +\
-            #     self.protocol.byte2hex_text(package)
-            # )
+                # print('package:', package)
                 self.__sending_frame.labels['send']['label'].configure(
                     # self.__sending_frame.labels['send']['text'] +\
                     text=self.protocol.byte2hex_text(package)
+                )
+                self.__counter['all'] += 1
+                self.__sending_frame.labels['all']['label'].configure(
+                    text=self.__counter['all']
                 )
                 if is_long_query:
                     self.send_long_command(package)
                 else:
                     self.send_short_command(package)
 
+                microsleep.sleep(0.02)
                 echo = self.protocol.get_response(16, view_text=True)
-                print('эхо после команды:', echo)
-            # self.__sending_frame.labels['echo']['var'].set(
-            #     self.__sending_frame.labels['echo']['text'] + echo
-            # )
+                # print('эхо после команды:', echo)
                 self.__sending_frame.labels['echo']['label'].configure(
                     # self.__sending_frame.labels['echo']['text'] +\
                     text=echo
                 )
+                print('echo:', echo)
+                if not echo:
+                    # print('echo:', echo)
+                    self.__counter['echo'] += 1
+                    self.__sending_frame.labels['bad_echo']['label'].configure(
+                    text=self.__counter['echo']
+                )
 
-            # if exit:
-            #     break
+                # microsleep.sleep(0.02)
 
-            # microsleep.sleep(0.02)
-
-            # with threading.Lock():
-            # if disconnect_event.is_set():
-            #     exit = True
-            #     # break
-            # else:
                 if is_long_query:
-                    print('запрос длинного ответа:')
+                    # print('запрос длинного ответа:')
                     answer = self.get_long_answer(view_text=True)
                 else:
-                    print('запрос короткого ответа:')
+                    # print('запрос короткого ответа:')
                     answer = self.get_short_answer(view_text=True)
                 # print(self.protocol.get_response(16, view_text=True))
-                print(answer)
-            # self.__sending_frame.labels['answer']['var'].set(
-            #     self.__sending_frame.labels['answer']['text'] + answer
-            # )
+                # print(answer)
                 self.__sending_frame.labels['answer']['label'].configure(
                     # self.__sending_frame.labels['answer']['text'] +\
                     text=answer
                 )
-            # if exit:
-            #     break
-            # # Пробуем вывод за пределами блокировки
-            # self.__sending_frame.labels['send']['label'].configure(
-            #             # self.__sending_frame.labels['send']['text'] +\
-            #             text=self.protocol.byte2hex_text(package)
-            #         )
-            # self.__sending_frame.labels['echo']['label'].configure(
-            #             # self.__sending_frame.labels['echo']['text'] +\
-            #             text=echo
-            #         )
-            # self.__sending_frame.labels['answer']['label'].configure(
-            #             # self.__sending_frame.labels['answer']['text'] +\
-            #             text=answer
-            #         )
-
-            if not disconnect_event:
-                WidgetsRegistry.instance().getCurrentModuleWindow().after(
-                    256,
-                    self.direct_request
+                print('answer:', answer)
+                if echo and not answer:
+                    self.__counter['answer'] += 1
+                    self.__sending_frame.labels['bad_answer']['label'].configure(
+                    text=self.__counter['answer']
                 )
+                self.__counter['good'] = (
+                    self.__counter['all'] -\
+                    self.__counter['echo'] -\
+                    self.__counter['answer']
+                )
+                self.__sending_frame.labels['good']['label'].configure(
+                    text=self.__counter['good']
+                )
+
+            # # Пробуем вывод за пределами блокировки
+        # self.__sending_frame.labels['send']['label'].configure(
+        #             # self.__sending_frame.labels['send']['text'] +\
+        #             text=self.protocol.byte2hex_text(package)
+        #             # text=str(package)
+        #         )
+        # if not echo:
+        #     print('Нет эха!')
+        # else:
+        #     print('Есть эхо...')
+        # self.__sending_frame.labels['echo']['label'].configure(
+        #             # self.__sending_frame.labels['echo']['text'] +\
+        #             text=echo
+        #         )
+        # if not answer:
+        #     print('Нет ответа!')
+        # else:
+        #     print('Есть ответ...')
+        # self.__sending_frame.labels['answer']['label'].configure(
+        #             # self.__sending_frame.labels['answer']['text'] +\
+        #             text=answer
+        #         )
+                # self.__sending_frame.update()
+
+        if not disconnect_event:
+            WidgetsRegistry.instance().getCurrentModuleWindow().after(
+                256,
+                self.direct_request
+            )
 
                 # microsleep.sleep(0.04)
 
