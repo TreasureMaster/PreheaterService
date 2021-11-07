@@ -176,6 +176,7 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.window = Toplevel(self.mainwindow)
         self.window.title(ModuleWindow.__APPTITLE)
         self.window.protocol('WM_DELETE_WINDOW', self._quit)
+        WidgetsRegistry.instance().setCurrentModuleWindow(self.window)
         # self.__current_module = AppRegistry.instance().getCurrentModule()
         super().__init__()
 

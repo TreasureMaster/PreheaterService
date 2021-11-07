@@ -187,6 +187,7 @@ class WidgetsRegistry(Registry):
     # 6) edit_info_frame - информационный фрейм окна редактирования с параметрами модуля (правый)
     # 7) listbox - отображение списка модулей
     # 8) send_frame - фрейм окна модуля с данными пакетов отправки
+    # 9) current_module_window - текущее рабочее окно модуля
     __values = {
         'work_info_frame': None,
         'save_work_info_frame': None,
@@ -195,7 +196,8 @@ class WidgetsRegistry(Registry):
         'list_modules': None,
         'log_frame': None,
         'listbox': None,
-        'send_frame': None
+        'send_frame': None,
+        'current_module_window': None
     }
     __instance = None
     __lock = Lock()
@@ -307,6 +309,13 @@ class WidgetsRegistry(Registry):
     def setSendingFrame(self, send_frame):
         self.set('send_frame', send_frame)
 
+    # СВОЙСТВО: Текущее рабочее окно модуля
+    def getCurrentModuleWindow(self):
+        return self.get('current_module_window')
+
+    def setCurrentModuleWindow(self, module_window):
+        self.set('current_module_window', module_window)
+
 # ----------------------- Реестр конфигурации менеджера ---------------------- #
 
 class ConfigRegistry(Registry):
@@ -366,7 +375,7 @@ class DeviceRegistry(Registry):
         'current_connection': None,
         'lin_revision': None,
         'device_protocol': None,
-        'disconnect_event': None
+        # 'disconnect_event': None
     }
     __instance = None
     __lock = Lock()
@@ -448,14 +457,14 @@ class DeviceRegistry(Registry):
         """Сохранить текущее соединение с устройством."""
         self.set('device_protocol', device)
 
-    # СВОЙСТВО: объект конкретного соединения устройства со всеми командами (из архива модуля)
-    def getDisconnectEvent(self):
-        """Получить текущее соединение с устройством."""
-        return self.get('disconnect_event')
+    # СВОЙСТВО: Событие отключения прямого управления (непрерывной отправки пакетов)
+    # def getDisconnectEvent(self):
+    #     """Получить ссылку на событие отключения."""
+    #     return self.get('disconnect_event')
 
-    def setDisconnectEvent(self, device):
-        """Сохранить текущее соединение с устройством."""
-        self.set('disconnect_event', device)
+    # def setDisconnectEvent(self, event):
+    #     """Инициализировать событие отключения."""
+    #     self.set('disconnect_event', event)
 
 
 # -------------------------- Данные пакета отправки -------------------------- #

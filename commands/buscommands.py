@@ -44,18 +44,22 @@ class DeviceConnect(Command):
                         lin_revision=DeviceRegistry.instance().getLINRevision()
                     )
                 )
-                DeviceRegistry.instance().setDisconnectEvent(
-                    threading.Event()
-                )
+                # DeviceRegistry.instance().setDisconnectEvent(
+                #     threading.Event()
+                #     # event=False
+                # )
                 self.packages_thread = threading.Thread(
                     target=self.connection.direct_request,
                     daemon=False
                 )
+                # self.connection.direct_request()
                 self.packages_thread.start()
+                self.connection.update_labels()
         # иначе надо отключить, но проверить есть ли соединение
         else:
             with threading.Lock():
-                DeviceRegistry.instance().getDisconnectEvent().set()
+                # DeviceRegistry.instance().getDisconnectEvent().set()
+                self.connection.disconnect_event.set()
             self.packages_thread.join()
             del self.connection.device_bus
             self.connection = None
