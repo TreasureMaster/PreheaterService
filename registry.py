@@ -375,7 +375,7 @@ class DeviceRegistry(Registry):
         'current_connection': None,
         'lin_revision': None,
         'device_protocol': None,
-        'disconnect_event': None
+        # 'disconnect_event': None
     }
     __instance = None
     __lock = Lock()
@@ -457,14 +457,14 @@ class DeviceRegistry(Registry):
         """Сохранить текущее соединение с устройством."""
         self.set('device_protocol', device)
 
-    # СВОЙСТВО: Флаг отключения прямого управления (непрерывной отправки пакетов)
-    def is_DisconnectEvent(self):
-        """Событие отключения произошло ?"""
-        return self.get('disconnect_event')
+    # СВОЙСТВО: Событие отключения прямого управления (непрерывной отправки пакетов)
+    # def getDisconnectEvent(self):
+    #     """Получить ссылку на событие отключения."""
+    #     return self.get('disconnect_event')
 
-    def setDisconnectEvent(self, event):
-        """Установить флаг события отключения."""
-        self.set('disconnect_event', event)
+    # def setDisconnectEvent(self, event):
+    #     """Инициализировать событие отключения."""
+    #     self.set('disconnect_event', event)
 
 
 # -------------------------- Данные пакета отправки -------------------------- #

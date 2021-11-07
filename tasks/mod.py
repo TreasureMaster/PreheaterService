@@ -5,7 +5,7 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
-import os, time, threading, collections
+import os, time, threading, collections, queue
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -23,6 +23,7 @@ from appmeta import AbstractSingletonMeta
 from registry import DeviceRegistry, PackageRegistry, WidgetsRegistry
 from widgets import ScrolledListboxFrame, GUIWidgetConfiguration
 from views import InfoModuleFrame
+from config import LabelsConfig
 from connections import microsleep
 from applogger import AppLogger
 
@@ -428,19 +429,18 @@ class FirmwareUpdateError(Exception):
 
 
 # LINConfig - просто имплементация констант, которые потом можно заменить внешними
-class DeviceProtocol(BusConfig):
+class DeviceProtocol(BusConfig, LabelsConfig):
 
     __device_bus = None
 
     def __init__(self, connection):
         self.__device_bus = connection
+        self.disconnect_event = threading.Event()
+        self.__queue = queue.Queue()
         self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
-        self.__counter = collections.Counter({
-            'all': 0,
-            'good': 0,
-            'echo': 0,
-            'answer': 0
-        })
+        self.__counter = collections.Counter(
+            dict.fromkeys(self._COUNTER_LABELS.keys(), 0)
+        )
         # self.logger = AppLogger.instance()
         # self.logger.thread('------ Включение ------')
         # self.logger.thread(f"Инициализация DeviceProtocol. Event: {self.__disconnect_event.is_set()}")
@@ -505,100 +505,57 @@ class DeviceProtocol(BusConfig):
     # ----------------------------- Составные команды ---------------------------- #
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
-        with threading.Lock():
-            # print('-'*30)
-            package = PackageRegistry.instance().getPackage()
-            is_long_query = PackageRegistry.instance().getPackageType()
-            disconnect_event = DeviceRegistry.instance().is_DisconnectEvent()
+        exit_marker = False
+        while True:
+            with threading.Lock():
+                package = PackageRegistry.instance().getPackage()
+                is_long_query = PackageRegistry.instance().getPackageType()
+                # disconnect_event = DeviceRegistry.instance().getDisconnectEvent()
 
-            if not disconnect_event:
-                # print('package:', package)
-                self.__sending_frame.labels['send']['label'].configure(
-                    # self.__sending_frame.labels['send']['text'] +\
-                    text=self.protocol.byte2hex_text(package)
-                )
-                self.__counter['all'] += 1
-                self.__sending_frame.labels['all']['label'].configure(
-                    text=self.__counter['all']
-                )
-                if is_long_query:
-                    self.send_long_command(package)
+                if self.disconnect_event.is_set():
+                    exit_marker = True
+                    self.__queue.put(None)
                 else:
-                    self.send_short_command(package)
+                    # print('package:', package)
+                    self.__counter['all'] += 1
 
-                microsleep.sleep(0.02)
-                echo = self.protocol.get_response(16, view_text=True)
-                # print('эхо после команды:', echo)
-                self.__sending_frame.labels['echo']['label'].configure(
-                    # self.__sending_frame.labels['echo']['text'] +\
-                    text=echo
-                )
-                print('echo:', echo)
-                if not echo:
-                    # print('echo:', echo)
-                    self.__counter['echo'] += 1
-                    self.__sending_frame.labels['bad_echo']['label'].configure(
-                    text=self.__counter['echo']
-                )
+                    if is_long_query:
+                        self.send_long_command(package)
+                    else:
+                        self.send_short_command(package)
 
-                # microsleep.sleep(0.02)
+                    # microsleep.sleep(0.02)
+                    echo = self.protocol.get_response(16, view_text=True)
+                    # print('эхо после команды:', echo)
+                    if not echo:
+                        self.__counter['bad_echo'] += 1
 
-                if is_long_query:
-                    # print('запрос длинного ответа:')
-                    answer = self.get_long_answer(view_text=True)
-                else:
-                    # print('запрос короткого ответа:')
-                    answer = self.get_short_answer(view_text=True)
-                # print(self.protocol.get_response(16, view_text=True))
-                # print(answer)
-                self.__sending_frame.labels['answer']['label'].configure(
-                    # self.__sending_frame.labels['answer']['text'] +\
-                    text=answer
-                )
-                print('answer:', answer)
-                if echo and not answer:
-                    self.__counter['answer'] += 1
-                    self.__sending_frame.labels['bad_answer']['label'].configure(
-                    text=self.__counter['answer']
-                )
-                self.__counter['good'] = (
-                    self.__counter['all'] -\
-                    self.__counter['echo'] -\
-                    self.__counter['answer']
-                )
-                self.__sending_frame.labels['good']['label'].configure(
-                    text=self.__counter['good']
-                )
+                    # microsleep.sleep(0.02)
 
-            # # Пробуем вывод за пределами блокировки
-        # self.__sending_frame.labels['send']['label'].configure(
-        #             # self.__sending_frame.labels['send']['text'] +\
-        #             text=self.protocol.byte2hex_text(package)
-        #             # text=str(package)
-        #         )
-        # if not echo:
-        #     print('Нет эха!')
-        # else:
-        #     print('Есть эхо...')
-        # self.__sending_frame.labels['echo']['label'].configure(
-        #             # self.__sending_frame.labels['echo']['text'] +\
-        #             text=echo
-        #         )
-        # if not answer:
-        #     print('Нет ответа!')
-        # else:
-        #     print('Есть ответ...')
-        # self.__sending_frame.labels['answer']['label'].configure(
-        #             # self.__sending_frame.labels['answer']['text'] +\
-        #             text=answer
-        #         )
-                # self.__sending_frame.update()
+                    if is_long_query:
+                        # print('запрос длинного ответа:')
+                        answer = self.get_long_answer(view_text=True)
+                    else:
+                        # print('запрос короткого ответа:')
+                        answer = self.get_short_answer(view_text=True)
+                    # print('answer:', answer)
+                    if echo and not answer:
+                        self.__counter['bad_answer'] += 1
+                    self.__counter['good'] = (
+                        self.__counter['all'] -\
+                        self.__counter['bad_echo'] -\
+                        self.__counter['bad_answer']
+                    )
 
-        if not disconnect_event:
-            WidgetsRegistry.instance().getCurrentModuleWindow().after(
-                256,
-                self.direct_request
-            )
+                    self.__queue.put({
+                        'send': package,
+                        'echo': echo,
+                        'answer': answer,
+                        **self.__counter
+                    })
+
+            if exit_marker:
+                break
 
                 # microsleep.sleep(0.04)
 
@@ -689,6 +646,23 @@ class DeviceProtocol(BusConfig):
             # showwarning(title='Предупреждение безопасности', message='Ошибка при отправке прошивки.')
             # return
         # return True
+
+    def update_labels(self):
+        """Обновление меток с данными отправленных и полученных пакетов."""
+        resp = None
+        try:
+            resp = self.__queue.get_nowait()
+        except queue.Empty:
+            resp = ''
+        else:
+            self.__queue.task_done()
+            if resp is not None:
+                for title, text in resp.items():
+                    self.__sending_frame.labels[title]['label'].configure(
+                        text=text
+                    )
+        if resp is not None:
+            WidgetsRegistry.instance().getCurrentModuleWindow().after(32, self.update_labels)
 
     # ------------------------ Пробные (тестовые) команды ------------------------ #
     def scheduleDiagMsg2(self, msg):
