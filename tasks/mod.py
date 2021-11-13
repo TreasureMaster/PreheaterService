@@ -484,13 +484,13 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         """Отправка короткой команды отопителю."""
         if len(cmd) != 2:
             raise LINBusCommandLengthError
-        self.protocol.send_command(self.SHORT_COMMAND, cmd)
+        return self.protocol.send_command(self.SHORT_COMMAND, cmd)
 
     def send_long_command(self, cmd: List[int]) -> None:
         """Отправка длинной команды отопителю."""
         if len(cmd) != 8:
             raise LINBusCommandLengthError
-        self.protocol.send_command(self.LONG_COMMAND, cmd)
+        return self.protocol.send_command(self.LONG_COMMAND, cmd)
 
     def get_short_answer(self, view_text: bool=False) -> str:
         """Запрос ответа на короткую команду отопителю."""
@@ -520,10 +520,14 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     self.__counter['all'] += 1
 
                     if is_long_query:
-                        self.send_long_command(package)
+                        command = self.send_long_command(package)
                     else:
-                        self.send_short_command(package)
-
+                        command = self.send_short_command(package)
+                    # TODO что-то сделать с Exception ?
+                    # try:
+                    #     crc = int(command[-2:], 16)
+                    # except Exception:
+                    #     crc = -1
                     # microsleep.sleep(0.02)
                     echo = self.protocol.get_response(16, view_text=True)
                     # print('эхо после команды:', echo)
@@ -541,14 +545,33 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # print('answer:', answer)
                     if echo and not answer:
                         self.__counter['bad_answer'] += 1
+                    if answer:
+                        try:
+                            answer_package = tuple(map(lambda i: int(i, 16), answer.split(' ')[2:]))
+                            must_crc = self.protocol.calc_CRC(answer_package[:-1])
+                            # if must_crc != answer_package[-1]:
+                            #     self.__counter['bad_crc'] += 1
+                            # crc = int(answer[-2:], 16)
+                        except Exception:
+                            # crc = -1
+                            self.__counter['bad_crc'] += 1
+                        else:
+                            if must_crc != answer_package[-1]:
+                                self.__counter['bad_crc'] += 1
+
                     self.__counter['good'] = (
                         self.__counter['all'] -\
                         self.__counter['bad_echo'] -\
-                        self.__counter['bad_answer']
+                        self.__counter['bad_answer'] -\
+                        self.__counter['bad_crc']
+                        # 0
                     )
+                    self.__counter['bad'] = self.__counter['all'] - self.__counter['good']
+
+                    # self.__counter['bad_crc'] = crc
 
                     self.__queue.put({
-                        'send': package,
+                        'send': command,
                         'echo': echo,
                         'answer': answer,
                         **self.__counter
