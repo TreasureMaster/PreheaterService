@@ -6,6 +6,7 @@
 # 3) TODO: скрипт связи (команды) для отопителей
 
 import os, time, threading, collections, queue
+from collections import namedtuple
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -115,7 +116,7 @@ class DirectControl(ModuleCommand):
     def set_commands(self):
         """Установка в реестр байта 0xB0."""
         PackageRegistry.instance().set0xB0(self.maincommand.get())
-        print(self.maincommand.get())
+        # print(self.maincommand.get())
 
     def set_extracommand(self, value):
         """Установка в реестр байта 0xB1."""
@@ -124,7 +125,7 @@ class DirectControl(ModuleCommand):
     def set_package_type(self):
         """Установка в реестр типа пакета - короткий или расширенный."""
         PackageRegistry.instance().setPackageType(self.longanswer.get())
-        print(self.longanswer.get())
+        # print(self.longanswer.get())
 
     # NOTE Это не сюда, а в "Подключить"
     # def do_command(self):
@@ -432,11 +433,16 @@ class FirmwareUpdateError(Exception):
 class DeviceProtocol(BusConfig, LabelsConfig):
 
     __device_bus = None
+    # Package = namedtuple('Package', 'time_marker package_data stop')
+    @dataclass(order=True)
+    class PriorityPackage:
+        time_marker: float
+        data: typing.Optional[dict]=field(compare=False)
 
     def __init__(self, connection):
         self.__device_bus = connection
         self.disconnect_event = threading.Event()
-        self.__queue = queue.Queue()
+        self.__queue = queue.PriorityQueue()
         self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
         self.__counter = collections.Counter(
             dict.fromkeys(self._COUNTER_LABELS.keys(), 0)
@@ -502,6 +508,19 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         self.protocol.get_answer(self.LONG_ANSWER)
         return self.protocol.get_response(self.LONG_ANS_LENGTH, view_text)
 
+    def is_correct_CRC(self, answer: str) -> bool:
+        """Проверка контрольной суммы ответа."""
+        bad_answer = False
+        try:
+            answer_package = tuple(map(lambda i: int(i, 16), answer.split(' ')[2:]))
+            must_crc = self.protocol.calc_CRC(answer_package[:-1])
+        except Exception:
+            pass
+        else:
+            if must_crc == answer_package[-1]:
+                bad_answer = True
+        return bad_answer
+
     # ----------------------------- Составные команды ---------------------------- #
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
@@ -514,7 +533,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
                 if self.disconnect_event.is_set():
                     exit_marker = True
-                    self.__queue.put(None)
+                    self.__queue.put(
+                        DeviceProtocol.PriorityPackage(time.time(), None)
+                    )
                 else:
                     # print('package:', package)
                     self.__counter['all'] += 1
@@ -523,11 +544,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         command = self.send_long_command(package)
                     else:
                         command = self.send_short_command(package)
-                    # TODO что-то сделать с Exception ?
-                    # try:
-                    #     crc = int(command[-2:], 16)
-                    # except Exception:
-                    #     crc = -1
+
                     # microsleep.sleep(0.02)
                     echo = self.protocol.get_response(16, view_text=True)
                     # print('эхо после команды:', echo)
@@ -545,37 +562,28 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # print('answer:', answer)
                     if echo and not answer:
                         self.__counter['bad_answer'] += 1
-                    if answer:
-                        try:
-                            answer_package = tuple(map(lambda i: int(i, 16), answer.split(' ')[2:]))
-                            must_crc = self.protocol.calc_CRC(answer_package[:-1])
-                            # if must_crc != answer_package[-1]:
-                            #     self.__counter['bad_crc'] += 1
-                            # crc = int(answer[-2:], 16)
-                        except Exception:
-                            # crc = -1
+                    if answer and not self.is_correct_CRC(answer):
                             self.__counter['bad_crc'] += 1
-                        else:
-                            if must_crc != answer_package[-1]:
-                                self.__counter['bad_crc'] += 1
 
                     self.__counter['good'] = (
                         self.__counter['all'] -\
                         self.__counter['bad_echo'] -\
                         self.__counter['bad_answer'] -\
                         self.__counter['bad_crc']
-                        # 0
                     )
                     self.__counter['bad'] = self.__counter['all'] - self.__counter['good']
 
-                    # self.__counter['bad_crc'] = crc
-
-                    self.__queue.put({
-                        'send': command,
-                        'echo': echo,
-                        'answer': answer,
-                        **self.__counter
-                    })
+                    self.__queue.put(
+                        DeviceProtocol.PriorityPackage(
+                            time.time(),
+                            {
+                                'send': command,
+                                'echo': echo,
+                                'answer': answer,
+                                **self.__counter
+                            }
+                        )
+                    )
 
             if exit_marker:
                 break
@@ -674,17 +682,20 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         """Обновление меток с данными отправленных и полученных пакетов."""
         resp = None
         try:
-            resp = self.__queue.get_nowait()
+            package = self.__queue.get_nowait()
+            resp = package.data
         except queue.Empty:
             resp = ''
         else:
-            self.__queue.task_done()
+            # self.__queue.task_done()
             if resp is not None:
+            # if not stop:
                 for title, text in resp.items():
                     self.__sending_frame.labels[title]['label'].configure(
                         text=text
                     )
         if resp is not None:
+        # if not stop:
             WidgetsRegistry.instance().getCurrentModuleWindow().after(32, self.update_labels)
 
     # ------------------------ Пробные (тестовые) команды ------------------------ #
