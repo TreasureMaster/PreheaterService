@@ -70,12 +70,16 @@ class LIN:
     def send_header(self, PID: int) -> None:
         # Стартовый фрейм BREAK (начальная пауза)
         self.send_start()
+        # Создать заголовок
+        header = bytearray((self.SYNC_BYTE, PID))
         # Отправить байт 0x55 (поле синхронизации для настройки скорости)
-        self.__portInstance.write(chr(self.SYNC_BYTE).encode('latin-1'))
+        # self.__portInstance.write(chr(self.SYNC_BYTE).encode('latin-1'))
         # Поле PID (поле идентификатора устройства). Номер устройства (6 бит). Кроме служебных (0x3C, 0x3F).
         # Также здесь передается количество передаваемых байт Frame Data
         # (0x00-0x1F - 2 байта, 0x20-0x2F - 4 байта, 0x30-0x3F - 8 байт)
-        self.__portInstance.write(chr(PID).encode('latin-1'))
+        # self.__portInstance.write(chr(PID).encode('latin-1'))
+        self.__portInstance.write(header)
+        return header
 
     def get_response(self, readlen: int, view_text: bool = False) -> str:
         # Очистить все входные буферы
@@ -90,20 +94,28 @@ class LIN:
         
         Для фактического сообщения мы читаем эти 2 байта и отбрасываем их.
         '''
-        # Удалить байт синхронизации 0x55
-        # self.__portInstance.read(1)
+        # Ожидать синхро-байт 0x55 или конца длины запрашиваемого количества байт
+        for _ in range(readlen):
+            start_byte = self.__portInstance.read(1)
+            # print('type first:', start_byte, type(start_byte))
+            if int.from_bytes(start_byte, 'big') == 0x55:
+                break
+
         if view_text:
-            return self.byte2hex_text(self.__portInstance.read(readlen))
+            # b = self.__portInstance.read(readlen)
+            # print('type package:', b, type(b))
+            return self.byte2hex_text(start_byte + self.__portInstance.read(readlen))
+            # return self.byte2hex_text(start_byte + b)
         else:
-            return self.byte2hex_list(self.__portInstance.read(readlen))
+            return self.byte2hex_list(start_byte + self.__portInstance.read(readlen))
 
     def send_data(self, message: List[int], PID: int) -> None:
         tmpBuffer = bytearray(i for i in message)
         # if self.__enhanced:
         #     tmpBuffer = bytearray((PID,)) + tmpBuffer
         tmpBuffer.append(self.calc_CRC(tmpBuffer))
-        # print(tmpBuffer)
         self.__portInstance.write(tmpBuffer)
+        return self._view_package(PID, tmpBuffer)
 
     def calc_CRC(self, message: List[int]) -> int:
         """Расчет контрольной суммы.
@@ -114,15 +126,17 @@ class LIN:
     def send_command(self, PID: int, message: List[int]) -> None:
         """Команда для LIN-устройства."""
         self.send_header(PID)
-        # time.sleep(.001)
-        self.send_data(message, PID)
+        return self.byte2hex_text(self.send_data(message, PID))
         # self.__updateTimeMarker()
 
     def get_answer(self, PID: int) -> None:
         """Запрос ответа у LIN-устройства."""
         self.send_header(PID)
-        # self.send_data([0x00, 0x00], PID)
         # self.__updateTimeMarker()
+
+    def _view_package(self, PID, tmpBuffer):
+        """Возвращаемое значение пакета для отображения в окне менеджера."""
+        return bytearray((self.SYNC_BYTE, PID)) + tmpBuffer
 
     # def __updateTimeMarker(self) -> None:
     #     """Помечает время для контроля паузы между запросами."""
@@ -142,6 +156,7 @@ class LIN2(LIN):
         tmpBuffer.append(self.calc_CRC(bytearray((PID,)) + tmpBuffer))
         # print(tmpBuffer)
         self._LIN__portInstance.write(tmpBuffer)
+        return self._view_package(PID, tmpBuffer)
 
 
 # Общее описание вариантов LIN
