@@ -6,7 +6,6 @@
 # 3) TODO: скрипт связи (команды) для отопителей
 
 import os, time, threading, collections, queue
-from collections import namedtuple
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -27,6 +26,7 @@ from views import InfoModuleFrame
 from config import LabelsConfig
 from connections import microsleep
 from applogger import AppLogger
+from extra import StopWatch
 
 # ------------------------------ Команды модуля ------------------------------ #
 from commands import Command
@@ -197,17 +197,17 @@ class FirmwareUpdate(ModuleCommand):
         if self.firmware is None:
             showwarning(title='Предупреждение безопасности', message='Прошивка еще не выбрана!')
             return
-        device = DeviceRegistry.instance().getDeviceProtocol()
-        if device is not None:
+        protocol = DeviceRegistry.instance().getDeviceProtocol()
+        if protocol is not None:
             for firmware_update_attempt in range(REPEAT_REQUESTS_COUNT):
         #     self.send_long_command(message)
         #     if self.is_response_correct(message):
         #         break
         # else:
         #     raise FirmwareUpdateError('Пакет отправлен с ошибкой')
-            # if device is not None:
+            # if protocol is not None:
                 try:
-                    device.firmware_update(self.firmware, self.progress_exec, firmware_update_attempt)
+                    protocol.firmware_update(self.firmware, self.progress_exec, firmware_update_attempt)
                 except FirmwareUpdateError:
                     pass
                     # TODO Надо определить первая прошивка или повторная, чтобы отправить 0xB0 = 0001 0000 (начало записи данных)
@@ -433,16 +433,17 @@ class FirmwareUpdateError(Exception):
 class DeviceProtocol(BusConfig, LabelsConfig):
 
     __device_bus = None
-    # Package = namedtuple('Package', 'time_marker package_data stop')
     @dataclass(order=True)
     class PriorityPackage:
+        """Пакет передачи информации в очереди с приоритетом."""
         time_marker: float
         data: typing.Optional[dict]=field(compare=False)
 
     def __init__(self, connection):
         self.__device_bus = connection
         self.disconnect_event = threading.Event()
-        self.__queue = queue.PriorityQueue()
+        self.firmware_event = threading.Event()
+        self.__answer_queue = queue.PriorityQueue()
         self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
         self.__counter = collections.Counter(
             dict.fromkeys(self._COUNTER_LABELS.keys(), 0)
@@ -533,7 +534,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
                 if self.disconnect_event.is_set():
                     exit_marker = True
-                    self.__queue.put(
+                    self.__answer_queue.put(
                         DeviceProtocol.PriorityPackage(time.time(), None)
                     )
                 else:
@@ -573,7 +574,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     )
                     self.__counter['bad'] = self.__counter['all'] - self.__counter['good']
 
-                    self.__queue.put(
+                    self.__answer_queue.put(
                         DeviceProtocol.PriorityPackage(
                             time.time(),
                             {
@@ -614,7 +615,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # return
 
         length = len(firmware)
-        time_marker = int(time.time())
+        # time_marker = int(time.time())
+        sw = StopWatch()
         for num, line in enumerate(firmware, start=1):
             message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
@@ -629,10 +631,11 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             # if not num % 50:
             #     print(num)
             # TODO поменять на format с контролем пробелов, чтобы текст не дергался
-            diff_time = int(time.time() - time_marker)
-            minutes = int(diff_time/60)
-            seconds = diff_time - minutes * 60
-            progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}% Время: {minutes} мин {seconds} сек')
+            # diff_time = int(time.time() - time_marker)
+            # minutes = int(diff_time/60)
+            # seconds = diff_time - minutes * 60
+            sw.set_elapsed()
+            progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}% Время: {sw.mins} мин {sw.secs} сек')
             progress.update()
             # progress._tk.update()
         print('Прошивка отправлена.')
@@ -682,12 +685,12 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         """Обновление меток с данными отправленных и полученных пакетов."""
         resp = None
         try:
-            package = self.__queue.get_nowait()
+            package = self.__answer_queue.get_nowait()
             resp = package.data
         except queue.Empty:
             resp = ''
         else:
-            # self.__queue.task_done()
+            # self.__answer_queue.task_done()
             if resp is not None:
             # if not stop:
                 for title, text in resp.items():
