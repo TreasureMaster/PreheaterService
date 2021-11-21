@@ -9,12 +9,12 @@ import os, time, threading, collections, queue
 from tkinter import messagebox
 import tkinter.font as tkFont
 
-from typing import List
+# from typing import List
 from dataclasses import dataclass, field
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import showwarning
-import typing
+import typing as t
 from widgets import infolabels
 from widgets.infolabels import InfoTitleLabel
 from lxml import objectify
@@ -437,13 +437,24 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     class PriorityPackage:
         """Пакет передачи информации в очереди с приоритетом."""
         time_marker: float
-        data: typing.Optional[dict]=field(compare=False)
+        data: t.Optional[dict] = field(compare=False, default=None)
+        pack: t.Optional[list] = field(compare=False, default=None)
+        is_good_answer: t.Optional[bool] = field(compare=False, default=None)
 
     def __init__(self, connection):
         self.__device_bus = connection
+        # Событие отключения
         self.disconnect_event = threading.Event()
-        self.firmware_event = threading.Event()
+        # Событие прошивки блока
+        self.fw_update_event = threading.Event()
+        # Условие начала приема ответа при прошивке блока
+        self.__fw_update_condition = threading.Condition()
+        # Очередь ответов от блока для вывода на экран
         self.__answer_queue = queue.PriorityQueue()
+        # Очередь ответов от блока для проверки прошивки
+        self.__fw_answer_queue = queue.PriorityQueue()
+        # Очередь передачи пакетов для прошивки блока
+        self.__fw_update_queue = queue.PriorityQueue()
         self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
         self.__counter = collections.Counter(
             dict.fromkeys(self._COUNTER_LABELS.keys(), 0)
@@ -487,13 +498,13 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         return self.device_bus.protocol
 
     # ------------------------------ Базовые команды ----------------------------- #
-    def send_short_command(self, cmd: List[int]) -> None:
+    def send_short_command(self, cmd: t.List[int]) -> None:
         """Отправка короткой команды отопителю."""
         if len(cmd) != 2:
             raise LINBusCommandLengthError
         return self.protocol.send_command(self.SHORT_COMMAND, cmd)
 
-    def send_long_command(self, cmd: List[int]) -> None:
+    def send_long_command(self, cmd: t.List[int]) -> None:
         """Отправка длинной команды отопителю."""
         if len(cmd) != 8:
             raise LINBusCommandLengthError
@@ -526,20 +537,35 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
         exit_marker = False
+        good_answer_marker = None
         while True:
             with threading.Lock():
-                package = PackageRegistry.instance().getPackage()
-                is_long_query = PackageRegistry.instance().getPackageType()
+                if self.fw_update_event.is_set():
+                    try:
+                        package = self.__fw_update_queue.get_nowait()
+                    except queue.Empty:
+                        package = None
+                    else:
+                        package = package.pack
+                        is_long_query = True
+                else:
+                    package = PackageRegistry.instance().getPackage()
+                    is_long_query = PackageRegistry.instance().getPackageType()
                 # disconnect_event = DeviceRegistry.instance().getDisconnectEvent()
 
                 if self.disconnect_event.is_set():
                     exit_marker = True
-                    self.__answer_queue.put(
-                        DeviceProtocol.PriorityPackage(time.time(), None)
-                    )
-                else:
+                    close_answer = DeviceProtocol.PriorityPackage(time.time(), data=None, is_good_answer=False)
+                    self.__answer_queue.put(close_answer)
+                    self.__fw_answer_queue.put(close_answer)
+                    with self.__fw_update_condition:
+                        self.__fw_update_condition.notify()
+                    self.fw_update_event.clear()
+                    print(self.fw_update_event.is_set())
+                elif package is not None:
                     # print('package:', package)
                     self.__counter['all'] += 1
+                    good_answer_marker = True
 
                     if is_long_query:
                         command = self.send_long_command(package)
@@ -551,6 +577,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # print('эхо после команды:', echo)
                     if not echo:
                         self.__counter['bad_echo'] += 1
+                        good_answer_marker = False
 
                     # microsleep.sleep(0.02)
 
@@ -563,8 +590,10 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # print('answer:', answer)
                     if echo and not answer:
                         self.__counter['bad_answer'] += 1
+                        good_answer_marker = False
                     if answer and not self.is_correct_CRC(answer):
                             self.__counter['bad_crc'] += 1
+                            good_answer_marker = False
 
                     self.__counter['good'] = (
                         self.__counter['all'] -\
@@ -574,17 +603,22 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     )
                     self.__counter['bad'] = self.__counter['all'] - self.__counter['good']
 
-                    self.__answer_queue.put(
-                        DeviceProtocol.PriorityPackage(
-                            time.time(),
-                            {
+                    
+                    answer_pack = DeviceProtocol.PriorityPackage(
+                            time_marker=time.time(),
+                            data = {
                                 'send': command,
                                 'echo': echo,
                                 'answer': answer,
                                 **self.__counter
-                            }
+                            },
+                            is_good_answer=good_answer_marker
                         )
-                    )
+                    self.__answer_queue.put(answer_pack)
+                    if self.fw_update_event.is_set():
+                        with self.__fw_update_condition:
+                            self.__fw_answer_queue.put(answer_pack)
+                            self.__fw_update_condition.notify()
 
             if exit_marker:
                 break
@@ -596,6 +630,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # TODO проверить firmware ???
         # Инициализация счетчика отправленных строк данных
         count = FirmwareUpdateCount()
+        # Установить событие прошивки
+        self.fw_update_event.set()
         # Отправить заголовок
         if not attempt:
             header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start] + [0]*6
@@ -670,11 +706,34 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             # print('16:', self.protocol.byte2hex_text(response))
         return response == package
 
-    def send_line(self, message):
-        for _ in range(self.REPEAT_REQUESTS_COUNT):
-            self.send_long_command(message)
-            if self.is_response_correct(message):
+    def is_response_correct2(self):
+        while True:
+            try:
+                package = self.__fw_answer_queue.get_nowait()
+            except queue.Empty:
+                pass
+            else:
+                response = package.is_good_answer
                 break
+        return response
+
+    def send_line(self, message: list):
+        for _ in range(self.REPEAT_REQUESTS_COUNT):
+            # self.send_long_command(message)
+            with self.__fw_update_condition:
+                self.__fw_update_queue.put(
+                            DeviceProtocol.PriorityPackage(
+                                time_marker=time.time(),
+                                pack=message
+                            )
+                        )
+                # Здесь будет проверка таймаута 2 сек (отключение блока)
+                print('ждем')
+                self.__fw_update_condition.wait(2)
+                print('подождали')
+                # if self.is_response_correct(message):
+                if self.is_response_correct2():
+                    break
         else:
             raise FirmwareUpdateError('Пакет отправлен с ошибкой')
             # showwarning(title='Предупреждение безопасности', message='Ошибка при отправке прошивки.')
@@ -688,7 +747,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             package = self.__answer_queue.get_nowait()
             resp = package.data
         except queue.Empty:
-            resp = ''
+            # маркер перезапуска обновления
+            resp = {}
         else:
             # self.__answer_queue.task_done()
             if resp is not None:

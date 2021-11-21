@@ -523,7 +523,7 @@ class PackageRegistry(Registry):
         self.set('0xB1', b1)
 
     # СВОЙСТВО: Тип пакета - короткий или расширенный (длинный)
-    def getPackageType(self):
+    def getPackageType(self) -> bool:
         """Получить тип пакета - короткий или длинный."""
         return self.get('extended')
 
