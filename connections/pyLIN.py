@@ -123,6 +123,18 @@ class LIN:
         CRC = INV (data byte 1 ⊕ data byte 2 ⊕ ... ⊕ data byte 8)"""
         return (~sum(message) & 0xFF)
 
+    def check_CRC(self, message: List[int]) -> int:
+        """Проверка контрольной суммы.
+        Контрольная сумма проверяется со сдвигом."""
+        result = ~sum(message)
+        while True:
+            high, low = divmod(result, 256)
+            if high:
+                result = high + low
+            else:
+                break
+        return result
+
     def send_command(self, PID: int, message: List[int]) -> None:
         """Команда для LIN-устройства."""
         self.send_header(PID)

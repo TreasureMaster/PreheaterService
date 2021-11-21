@@ -525,11 +525,11 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         bad_answer = False
         try:
             answer_package = tuple(map(lambda i: int(i, 16), answer.split(' ')[2:]))
-            must_crc = self.protocol.calc_CRC(answer_package[:-1])
-        except Exception:
+            must_crc = self.protocol.check_CRC(answer_package)
+        except Exception as e:
             pass
         else:
-            if must_crc == answer_package[-1]:
+            if must_crc != 0xFF:
                 bad_answer = True
         return bad_answer
 
