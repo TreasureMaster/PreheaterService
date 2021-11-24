@@ -125,7 +125,7 @@ class LIN:
 
     def check_CRC(self, message: List[int]) -> int:
         """Проверка контрольной суммы.
-        Контрольная сумма проверяется со сдвигом."""
+        Контрольная сумма пришедшего ответа проверяется со сдвигом."""
         result = ~sum(message)
         while True:
             high, low = divmod(result, 256)

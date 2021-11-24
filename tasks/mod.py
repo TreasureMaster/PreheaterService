@@ -104,7 +104,7 @@ class DirectControl(ModuleCommand):
         self.longanswer = BooleanVar()
         Checkbutton(
             direct,
-            text = 'Расширенный запрос',
+            text = 'Получение расширенного ответа',
             variable = self.longanswer,
             command = self.set_package_type
         ).pack()
@@ -124,7 +124,7 @@ class DirectControl(ModuleCommand):
 
     def set_package_type(self):
         """Установка в реестр типа пакета - короткий или расширенный."""
-        PackageRegistry.instance().setPackageType(self.longanswer.get())
+        PackageRegistry.instance().setAnswerType(self.longanswer.get())
         # print(self.longanswer.get())
 
     # NOTE Это не сюда, а в "Подключить"
@@ -547,10 +547,12 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         package = None
                     else:
                         package = package.pack
+                        is_long_answer = True
                         is_long_query = True
                 else:
                     package = PackageRegistry.instance().getPackage()
-                    is_long_query = PackageRegistry.instance().getPackageType()
+                    is_long_answer = PackageRegistry.instance().getAnswerType()
+                    is_long_query = False
                 # disconnect_event = DeviceRegistry.instance().getDisconnectEvent()
 
                 if self.disconnect_event.is_set():
@@ -563,6 +565,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     self.fw_update_event.clear()
                     print(self.fw_update_event.is_set())
                 elif package is not None:
+                    # --- Отправка команды
                     # print('package:', package)
                     self.__counter['all'] += 1
                     good_answer_marker = True
@@ -571,8 +574,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         command = self.send_long_command(package)
                     else:
                         command = self.send_short_command(package)
-
                     # microsleep.sleep(0.02)
+
+                    # --- Получение эха от преобразователя USB->Serial (CH340, FTDI)
                     echo = self.protocol.get_response(16, view_text=True)
                     # print('эхо после команды:', echo)
                     if not echo:
@@ -581,7 +585,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
                     # microsleep.sleep(0.02)
 
-                    if is_long_query:
+                    # --- Получение ответа от устройства LIN
+                    if is_long_answer:
                         # print('запрос длинного ответа:')
                         answer = self.get_long_answer(view_text=True)
                     else:

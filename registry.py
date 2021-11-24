@@ -523,13 +523,13 @@ class PackageRegistry(Registry):
         self.set('0xB1', b1)
 
     # СВОЙСТВО: Тип пакета - короткий или расширенный (длинный)
-    def getPackageType(self) -> bool:
+    def getAnswerType(self) -> bool:
         """Получить тип пакета - короткий или длинный."""
         return self.get('extended')
 
-    def setPackageType(self, package_type: str):
+    def setAnswerType(self, answer_type: str):
         """Установить тип пакета - короткий или длинный."""
-        self.set('extended', package_type)
+        self.set('extended', answer_type)
 
     # СВОЙСТВО: Пакет для отправки (собирается здесь, поэтому доступно только свойство get)
     def getPackage(self):
@@ -538,8 +538,10 @@ class PackageRegistry(Registry):
             self.get('0xB0'),
             self.get('0xB1')
         ]
-        if self.get('extended'):
-            package += [0x00]*6
+        # FIXME Возможно нужно будет изменить
+        # (сейчас длинные команды отправляет только прошивка и она формирует их сама)
+        # if self.get('extended'):
+        #     package += [0x00]*6
 
         return package
 
@@ -547,7 +549,7 @@ class PackageRegistry(Registry):
 if __name__ == '__main__':
     package = PackageRegistry.instance()
     print(package.getPackage())
-    package.setPackageType(True)
+    package.setAnswerType(True)
     print(package.getPackage())
 # ---------------------------------------------------------------------------- #
     # print('Создать объект напрямую невозможно:')
