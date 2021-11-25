@@ -734,7 +734,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         )
                 # Здесь будет проверка таймаута 2 сек (отключение блока)
                 print('ждем')
-                self.__fw_update_condition.wait(2)
+                conclusion = self.__fw_update_condition.wait(2)
+                if not conclusion:
+                    raise FirmwareUpdateError('Превышение времени ожидания ответа')
                 print('подождали')
                 # if self.is_response_correct(message):
                 if self.is_response_correct2():
