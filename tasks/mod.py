@@ -152,38 +152,59 @@ class FirmwareUpdate(ModuleCommand):
         # scroll.bind_widgets(info.getScrollWidgets())
 
         cmdbutton_frame = Frame(self.firmware_frame)
-        cmdbutton_frame.pack(fill=X)
+        cmdbutton_frame.pack(fill=X, padx=10)
         Button(
             cmdbutton_frame,
-            text='Загрузить прошивку из XML',
-            command=self.load_module_data
-        ).pack(side=LEFT)
+            text='Загрузить прошивку из XML файла',
+            command=self.load_xml_data
+        ).grid(row=0, column=0, sticky='ew', padx=2, pady=2)
         Button(
             cmdbutton_frame,
             text='Обновить прошивку',
             command=self.do_firmware_update
-        ).pack(side=LEFT)
+        ).grid(row=0, column=1, sticky='ew', padx=2, pady=2)
+        Button(
+            cmdbutton_frame,
+            text='Загрузить прошивку из FNP файла',
+            command=self.load_fnp_data
+        ).grid(row=1, column=0, sticky='ew', padx=2, pady=2)
+        Button(
+            cmdbutton_frame,
+            text='Прервать прошивку',
+            # command=self.do_firmware_update
+            command=lambda: None
+        ).grid(row=1, column=1, sticky='ew', padx=2, pady=2)
 
-    def load_module_data(self):
+    def load_xml_data(self):
+        """Подготовка данных прошивки из XML файла."""
         data_filename = askopenfilename(initialdir=os.getcwd(), filetypes=(('xml files', '*.xml'),))
         if data_filename:
             with open(data_filename, encoding='utf-8') as f:
                 device = objectify.XML(f.read())
-            # print(type(device.firmware))
-            # for line in str(device.firmware).split('\n'):
-            #     print(line.strip())
-            # firmware = [[int(line.strip()[i:i+2], 16) for i in range(0, len(line.strip()), 2)]
             self.firmware = [LINE_DIVIDER.join([line.strip()[i:i+2] for i in range(0, len(line.strip()), 2)])
                         for line in str(device.firmware).strip().split('\n') if line]
-            # firmware = [line for line in str(device.firmware).strip().split('\n')]
-            # print(len(firmware))
-            # print(f"'{firmware[0]}'", f"'{firmware[-1]}'")
-            # firmware = [line for line in firmware if line]
-            # print(len(self.firmware))
             print(self.firmware[:5])
         # else:
         #     # self.logger.error('Не выбрана папка или модуль для работы.')
         #     showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+        self.create_firmware_grid()
+
+    def load_fnp_data(self):
+        """Подготовка данных прошивки из FNP файла."""
+        data_filename = askopenfilename(initialdir=os.getcwd(), filetypes=(('fnp files', '*.fnp'),))
+        if data_filename:
+            self.firmware = []
+            for line in open(data_filename, encoding='utf-8'):
+                self.firmware.append(LINE_DIVIDER.join([line.strip()[i:i+2] for i in range(0, len(line.strip()), 2)]))
+            print(self.firmware[:5])
+        # else:
+        #     # self.logger.error('Не выбрана папка или модуль для работы.')
+        #     showerror('Выбор папки', 'Вы должны выбрать папку или модуль для работы.')
+        self.create_firmware_grid()
+
+    # Заполнить сетку прошивки данными
+    def create_firmware_grid(self):
+        """Строит сетку с данными прошивки."""
         grid_frame = ScrolledListboxFrame(self.firmware_frame)
         grid_frame.pack(padx=10, pady=10)
         self.scroll.bind_widgets((grid_frame,))
