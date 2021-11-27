@@ -117,15 +117,18 @@ class LIN:
         self.__portInstance.write(tmpBuffer)
         return self._view_package(PID, tmpBuffer)
 
+    # def calc_CRC(self, message: List[int]) -> int:
+    #     """Расчет контрольной суммы.
+    #     Контрольная сумма рассчитывается согласно следующей формуле:
+    #     CRC = INV (data byte 1 ⊕ data byte 2 ⊕ ... ⊕ data byte 8)"""
+    #     return (~sum(message) & 0xFF)
+
     def calc_CRC(self, message: List[int]) -> int:
         """Расчет контрольной суммы.
-        Контрольная сумма рассчитывается согласно следующей формуле:
-        CRC = INV (data byte 1 ⊕ data byte 2 ⊕ ... ⊕ data byte 8)"""
-        return (~sum(message) & 0xFF)
 
-    def check_CRC(self, message: List[int]) -> int:
-        """Проверка контрольной суммы.
-        Контрольная сумма пришедшего ответа проверяется со сдвигом."""
+        Контрольная сумма рассчитывается согласно следующей формуле:
+        CRC = INV (data byte 1 ⊕ data byte 2 ⊕ ... ⊕ data byte 8)
+        Контрольная сумма рассчитывается со сдвигом."""
         result = ~sum(message)
         while True:
             high, low = divmod(result, 256)
@@ -134,6 +137,9 @@ class LIN:
             else:
                 break
         return result
+
+    # def check_CRC(self, message):
+    #     return self.calc_CRC(message)
 
     def send_command(self, PID: int, message: List[int]) -> None:
         """Команда для LIN-устройства."""

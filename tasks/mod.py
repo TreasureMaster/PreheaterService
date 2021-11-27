@@ -554,7 +554,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         bad_answer = False
         try:
             answer_package = tuple(map(lambda i: int(i, 16), answer.split(' ')[2:]))
-            must_crc = self.protocol.check_CRC(answer_package)
+            must_crc = self.protocol.calc_CRC(answer_package)
         except Exception as e:
             pass
         else:
