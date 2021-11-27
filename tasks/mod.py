@@ -153,8 +153,16 @@ class FirmwareUpdate(ModuleCommand):
 
         cmdbutton_frame = Frame(self.firmware_frame)
         cmdbutton_frame.pack(fill=X)
-        Button(cmdbutton_frame, text='Загрузить прошивку', command=self.load_module_data).pack(side=LEFT)
-        Button(cmdbutton_frame, text='Обновить прошивку', command=self.do_firmware_update).pack(side=LEFT)
+        Button(
+            cmdbutton_frame,
+            text='Загрузить прошивку из XML',
+            command=self.load_module_data
+        ).pack(side=LEFT)
+        Button(
+            cmdbutton_frame,
+            text='Обновить прошивку',
+            command=self.do_firmware_update
+        ).pack(side=LEFT)
 
     def load_module_data(self):
         data_filename = askopenfilename(initialdir=os.getcwd(), filetypes=(('xml files', '*.xml'),))
@@ -619,7 +627,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                             },
                             is_good_answer=good_answer_marker
                         )
+                    # Отправить инфу меткам менеджера
                     self.__answer_queue.put(answer_pack)
+                    # Отправить инфу методу прошивки
                     if self.fw_update_event.is_set():
                         with self.__fw_update_condition:
                             self.__fw_answer_queue.put(answer_pack)
@@ -661,7 +671,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         for num, line in enumerate(firmware, start=1):
             message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
-            print(f'Посылка {num}:', message)
+            # print(f'Посылка {num}:', message)
             try:
                 self.send_line(message)
             except FirmwareUpdateError:
@@ -688,13 +698,18 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             self.send_line(firmware_end)
         except FirmwareUpdateError:
             raise
-        print('Прошивка окончена, но не проверено отключение.')
+        # print('Прошивка окончена, но не проверено отключение.')
+        print('Прошивка окончена.')
 
         # Отключить, проверить отключение.
         # NOTE вроде команду "выключить" не надо отсылать. Режим "выключено" должен устанавливаться по команде "окончание прошивки"
         # self.send_short_command(self.TURN_OFF_BLOCK)
-        print(self.get_long_answer(view_text=True))
-        print(self.get_short_answer(view_text=True))
+        # print(self.get_long_answer(view_text=True))
+        # print(self.get_short_answer(view_text=True))
+
+        # Сбросить флаг прошивки
+        self.fw_update_event.clear()
+        print('Флаг прошивки очищен.')
 
     # -------------------------- Вспомогательные функции ------------------------- #
     def is_response_correct(self, message, cmd_type='long'):
@@ -723,6 +738,15 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         return response
 
     def send_line(self, message: list):
+        """
+        Схема отправка пакета при прошивке блока.
+        
+        Строка кода прошивки из 6 чисел плюс 2 управляющих числа (длинная команда)
+        отправляется в блок несколько раз (сейчас 3) до тех пор, пока не будет
+        получен корректный ответ. Правильность ответа проверяется в direct_request().
+        Здесь обрабатывается только флаг - "хороший/плохой ответ" вне зависимости от
+        причины ошибки.
+        """
         for _ in range(self.REPEAT_REQUESTS_COUNT):
             # self.send_long_command(message)
             with self.__fw_update_condition:
@@ -733,11 +757,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                             )
                         )
                 # Здесь будет проверка таймаута 2 сек (отключение блока)
-                print('ждем')
                 conclusion = self.__fw_update_condition.wait(2)
                 if not conclusion:
                     raise FirmwareUpdateError('Превышение времени ожидания ответа')
-                print('подождали')
                 # if self.is_response_correct(message):
                 if self.is_response_correct2():
                     break
