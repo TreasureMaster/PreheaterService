@@ -129,17 +129,23 @@ class LIN:
         Контрольная сумма рассчитывается согласно следующей формуле:
         CRC = INV (data byte 1 ⊕ data byte 2 ⊕ ... ⊕ data byte 8)
         Контрольная сумма рассчитывается со сдвигом."""
-        result = ~sum(message)
-        while True:
-            high, low = divmod(result, 256)
-            if high:
-                result = high + low
-            else:
-                break
-        return result
+        res = 0
+        for pack in message:
+            res += pack
+            if res > 0xFF:
+                res -= 0xFF
+        return res ^ 0xFF
+        # result = ~sum(message)
+        # while True:
+        #     high, low = divmod(result, 256)
+        #     if high:
+        #         result = high + low
+        #     else:
+        #         break
+        # return result
 
-    # def check_CRC(self, message):
-    #     return self.calc_CRC(message)
+    def check_CRC(self, message):
+        return self.calc_CRC(message)
 
     def send_command(self, PID: int, message: List[int]) -> None:
         """Команда для LIN-устройства."""

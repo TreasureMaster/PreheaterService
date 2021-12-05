@@ -63,7 +63,7 @@ class DeviceConnect(Command):
             self.packages_thread.join()
             del self.connection.device_bus
             self.connection = None
-        print(self.connection)
+        # print(self.connection)
         DeviceRegistry.instance().setDeviceProtocol(self.connection)
 
 
