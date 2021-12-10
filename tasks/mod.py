@@ -501,7 +501,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         import logging
         self.logger = logging.getLogger('direct_request')
         self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler(filename='tmplog/firmware_update.log', encoding='UTF-8')
+        handler = logging.FileHandler(filename='tmplog/firmware_update2.log', mode='w', encoding='UTF-8')
         formatter = logging.Formatter(
             '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s  time: %(nano)d => %(created)f\n'
         )
@@ -615,66 +615,69 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                 # self._lock.acquire()
                 if self.fw_update_event.is_set():
                     self.logger.debug('===== Поток отправки захвачен', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
-                    self.logger.debug(
-                        'Длина очереди после захвата',
-                        extra={'package': self.__fw_update_queue.qsize(), 'nano': time.perf_counter_ns() - self.start}
-                    )
+                    # self.logger.debug(
+                    #     'Длина очереди после захвата',
+                    #     extra={'package': self.__fw_update_queue.qsize(), 'nano': time.perf_counter_ns() - self.start}
+                    # )
                 if self.fw_update_event.is_set():
-                    try:
-                        package = self.__fw_update_queue.get_nowait()
-                    except queue.Empty:
-                        package = None
-                        number_package = None
-                    else:
-                        number_package = package.number_package
-                        package = package.pack
-                        is_long_answer = True
-                        is_long_query = True
+                    package = None
+                    # try:
+                    #     package = self.__fw_update_queue.get_nowait()
+                    # except queue.Empty:
+                    #     package = None
+                    #     number_package = None
+                    # else:
+                    #     number_package = package.number_package
+                    #     package = package.pack
+                    #     is_long_answer = True
+                    #     is_long_query = True
                 else:
                     package = PackageRegistry.instance().getPackage()
                     is_long_answer = PackageRegistry.instance().getAnswerType()
                     is_long_query = False
-                    number_package = False
+                    # number_package = False
                 # disconnect_event = DeviceRegistry.instance().getDisconnectEvent()
 
-                if self.fw_update_event.is_set():
-                    self.logger.debug('Контроль пакета для отправки:', extra={'package': package, 'nano': time.perf_counter_ns() - self.start})
+                # if self.fw_update_event.is_set():
+                #     self.logger.debug('Контроль пакета для отправки:', extra={'package': package, 'nano': time.perf_counter_ns() - self.start})
 
                 if self.disconnect_event.is_set():
                     exit_marker = True
                     close_answer = DeviceProtocol.PriorityPackage(time.time(), data=None, is_good_answer=False)
                     self.__answer_queue.put(close_answer)
-                    self.__fw_answer_queue.put(close_answer)
-                    with self.__fw_update_condition:
-                        self.__fw_update_condition.notify()
+                    # self.__fw_answer_queue.put(close_answer)
+                    # with self.__fw_update_condition:
+                    #     self.__fw_update_condition.notify()
                     self.fw_update_event.clear()
                     # print(self.fw_update_event.is_set())
                 # elif self.fw_update_event.is_set() and len(package) != 8:
                 #     package = None
                 elif package is not None:
-                    if self.fw_update_event.is_set():
-                        self.logger.debug('Номер пакета:', extra={'package': number_package, 'nano': time.perf_counter_ns() - self.start})
-                    answer = ''
+                    # if self.fw_update_event.is_set():
+                    #     self.logger.debug('Номер пакета:', extra={'package': number_package, 'nano': time.perf_counter_ns() - self.start})
+                    # answer = ''
                     # if self.fw_update_event.is_set():
                     #     print('Длина пакета:', len(package))
                     # --- Отправка команды
                     # print('package:', package)
                     self.__counter['all'] += 1
                     good_answer_marker = True
+                    print('Пакет:', package)
 
                     if is_long_query:
                         command = self.send_long_command(package)
                     else:
                         command = self.send_short_command(package)
-                    command_v = list(map(lambda n: hex(int(n, 16)), command.split()))
-                    if self.fw_update_event.is_set():
-                        self.logger.debug('Сейчас отправлен:', extra={'package': command_v[2:-1], 'nano': time.perf_counter_ns() - self.start})
+                    print('Команда:', command)
+                    # command_v = list(map(lambda n: hex(int(n, 16)), command.split()))
+                    # if self.fw_update_event.is_set():
+                    #     self.logger.debug('Сейчас отправлен:', extra={'package': command_v[2:-1], 'nano': time.perf_counter_ns() - self.start})
                     # self.logger.debug('Отправлена команда:', extra={'package': command_v})
                     # microsleep.sleep(0.02)
 
                     # --- Получение эха от преобразователя USB->Serial (CH340, FTDI)
                     echo = self.protocol.get_response(16, view_text=True)
-                    # print('эхо после команды:', echo)
+                    print('эхо после команды:', echo)
                     if not echo:
                         self.__counter['bad_echo'] += 1
                         good_answer_marker = False
@@ -682,8 +685,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # microsleep.sleep(0.02)
                     # Нет эха, нет смысла запрашивать ответ ?
                     else:
-                        if self.fw_update_event.is_set():
-                            self.logger.debug('Что за эхо?', extra={'package': echo, 'nano': time.perf_counter_ns() - self.start})
+                        # if self.fw_update_event.is_set():
+                        #     self.logger.debug('Что за эхо?', extra={'package': echo, 'nano': time.perf_counter_ns() - self.start})
                         # --- Получение ответа от устройства LIN
                         if is_long_answer:
                             # print('запрос длинного ответа:')
@@ -691,13 +694,13 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         else:
                             # print('запрос короткого ответа:')
                             answer = self.get_short_answer(view_text=True)
-                        if self.fw_update_event.is_set():
-                            get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
-                            self.logger.debug('Получено сейчас:', extra={'package': list(map(hex, get)), 'nano': time.perf_counter_ns() - self.start})
-                            microsleep.sleep(0.025)
+                        # if self.fw_update_event.is_set():
+                        #     get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
+                        #     self.logger.debug('Получено сейчас:', extra={'package': list(map(hex, get)), 'nano': time.perf_counter_ns() - self.start})
+                        #     microsleep.sleep(0.025)
                             # ans2 = self.protocol.get_response(16, view_text=True)
                             # self.logger.debug('Проверить еще раз:', extra={'package': ans2, 'nano': time.perf_counter_ns() - self.start})
-                        # print('answer:', answer)
+                        print('answer:', answer)
                         # print('Длина ответа:', len(answer.split()))
                         # FIXME сделать контроль ответа для прошивки
                         if not answer:
@@ -707,22 +710,14 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                             if not self.is_correct_CRC(answer):
                                 self.__counter['bad_crc'] += 1
                                 good_answer_marker = False
-                            elif self.fw_update_event.is_set():
-                                if len(package) != 8:
-                                    # print('Длина пакета внутри:', len(package))
-                                    self.__counter['bad_answer'] += 1
-                                    good_answer_marker = False
-                                else:
-                                    # print(answer)
-                                    # ans = list(map(lambda n: hex(int(n, 16)), command.split()[2:-1]))
-
-                                    # get = (list(map(lambda n: (int(n, 16)), answer.split())))
-
-                                    if package != get:
-                                        # print('package:', package)
-                                        # print('get:', get)
-                                        self.__counter['bad_answer'] += 1
-                                        good_answer_marker = False
+                            # elif self.fw_update_event.is_set():
+                            #     if len(package) != 8:
+                            #         self.__counter['bad_answer'] += 1
+                            #         good_answer_marker = False
+                            #     else:
+                            #         if package != get:
+                            #             self.__counter['bad_answer'] += 1
+                            #             good_answer_marker = False
 
                     self.__counter['good'] = (
                         self.__counter['all'] -\
@@ -746,28 +741,28 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # Отправить инфу меткам менеджера
                     self.__answer_queue.put(answer_pack)
                     # Отправить инфу методу прошивки
-                    if self.fw_update_event.is_set():
-                        with self.__fw_update_condition:
-                            self.logger.debug(
-                                'Кладем ответ в очередь и уведомляем (condition)',
-                                extra={'package': package, 'nano': time.perf_counter_ns() - self.start}
-                            )
-                            self.__fw_answer_queue.put(answer_pack)
-                            self.__fw_update_condition.notify()
+                    # if self.fw_update_event.is_set():
+                    #     with self.__fw_update_condition:
+                    #         self.logger.debug(
+                    #             'Кладем ответ в очередь и уведомляем (condition)',
+                    #             extra={'package': package, 'nano': time.perf_counter_ns() - self.start}
+                    #         )
+                    #         self.__fw_answer_queue.put(answer_pack)
+                    #         self.__fw_update_condition.notify()
 
-                    package = None
+                    # package = None
 
-                else:
-                    if self.fw_update_event.is_set():
-                        self.logger.debug('Пакета не было', extra={'package': package, 'nano': time.perf_counter_ns() - self.start})
+                # else:
+                #     if self.fw_update_event.is_set():
+                #         self.logger.debug('Пакета не было', extra={'package': package, 'nano': time.perf_counter_ns() - self.start})
 
                 # microsleep.sleep(.02)
 
                 if self.fw_update_event.is_set():
-                    self.logger.debug(
-                        'Длина очереди перед отпуском',
-                        extra={'package': self.__fw_update_queue.qsize(), 'nano': time.perf_counter_ns() - self.start}
-                    )
+                #     self.logger.debug(
+                #         'Длина очереди перед отпуском',
+                #         extra={'package': self.__fw_update_queue.qsize(), 'nano': time.perf_counter_ns() - self.start}
+                #     )
                     self.logger.debug('===== Поток отправки отпущен', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
 
                 # self._lock.release()
