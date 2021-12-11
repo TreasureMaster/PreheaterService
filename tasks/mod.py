@@ -905,28 +905,28 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                 self.logger.debug('Счетчик попыток отправки:', extra={'package': str(_+1), 'nano': time.perf_counter_ns() - self.start})
                 self.logger.debug('Кладем пакет в очередь:', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 # with threading.Lock():
-                self.__fw_update_queue.put(
-                            DeviceProtocol.PriorityPackage(
-                                time_marker=time.time(),
-                                pack=message,
-                                number_package=number_package
-                            )
-                        )
+                # self.__fw_update_queue.put(
+                #             DeviceProtocol.PriorityPackage(
+                #                 time_marker=time.time(),
+                #                 pack=message,
+                #                 number_package=number_package
+                #             )
+                #         )
                 self.logger.debug('Пакет уже в очереди (ждем condition):', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 # Здесь будет проверка таймаута 2 сек (отключение блока)
-                conclusion = self.__fw_update_condition.wait(2)
-                if not conclusion:
-                    self.logger.error(
-                        'Превышение времени ожидания ответа',
-                        extra={'package': f'conclusion: {conclusion}', 'nano': time.perf_counter_ns() - self.start}
-                    )
-                    raise FirmwareUpdateError('Превышение времени ожидания ответа')
+                # conclusion = self.__fw_update_condition.wait(2)
+                # if not conclusion:
+                #     self.logger.error(
+                #         'Превышение времени ожидания ответа',
+                #         extra={'package': f'conclusion: {conclusion}', 'nano': time.perf_counter_ns() - self.start}
+                #     )
+                #     raise FirmwareUpdateError('Превышение времени ожидания ответа')
                 # if self.is_response_correct(message):
-                if resp := self.is_response_correct2():
+                if resp := self.is_response_correct():
                     self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
                     break
-                else:
-                    self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
+                # else:
+                #     self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
         else:
             self.logger.error('Превышение лимита повторов отправки', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
             raise FirmwareUpdateError('Пакет отправлен с ошибкой')
