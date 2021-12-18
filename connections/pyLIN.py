@@ -149,6 +149,8 @@ class LIN:
 
     def send_command(self, PID: int, message: List[int]) -> None:
         """Команда для LIN-устройства."""
+        self.__portInstance.reset_input_buffer()
+        self.__portInstance.reset_output_buffer()
         self.send_header(PID)
         return self.byte2hex_text(self.send_data(message, PID))
         # self.__updateTimeMarker()

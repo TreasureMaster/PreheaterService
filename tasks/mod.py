@@ -413,7 +413,7 @@ class BusConfig:
 
     # Количество раз, которое менеджер пытается отправить отопителю пакет,
     # прежде чем сообщить об ошибке.
-    REPEAT_REQUESTS_COUNT = 3
+    REPEAT_REQUESTS_COUNT = 14
 
     # Пауза (в sec), после которой следует "разбудить" шину LIN
     # LIN_WAKEUP_TIME = 0.145
@@ -501,7 +501,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         import logging
         self.logger = logging.getLogger('direct_request')
         self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler(filename='tmplog/firmware_update2.log', mode='w', encoding='UTF-8')
+        handler = logging.FileHandler(filename='tmplog/firmware_update_new.log', mode='w', encoding='UTF-8')
         formatter = logging.Formatter(
             '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s  time: %(nano)d => %(created)f\n'
         )
@@ -559,8 +559,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         """Отправка длинной команды отопителю."""
         if len(cmd) != 8:
             raise LINBusCommandLengthError
-        if self.fw_update_event.is_set():
-            self.logger.debug('В длинной команде:', extra={'package': str(cmd), 'nano': time.perf_counter_ns() - self.start})
+        # if self.fw_update_event.is_set():
+        #     self.logger.debug('В длинной команде:', extra={'package': str(cmd), 'nano': time.perf_counter_ns() - self.start})
         return self.protocol.send_command(self.LONG_COMMAND, cmd)
 
     def get_short_answer(self, view_text: bool=False) -> str:
@@ -570,8 +570,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
     def get_long_answer(self, view_text: bool=False) -> str:
         """Запрос ответа на длинную команду отопителю."""
-        if self.fw_update_event.is_set():
-            self.logger.debug('В длинном ответе:', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
+        # if self.fw_update_event.is_set():
+        #     self.logger.debug('В длинном ответе:', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
         self.protocol.get_answer(self.LONG_ANSWER)
         return self.protocol.get_response(self.LONG_ANS_LENGTH, view_text)
 
@@ -681,7 +681,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     if not echo:
                         self.__counter['bad_echo'] += 1
                         good_answer_marker = False
-
+                        answer = '------'
                     # microsleep.sleep(0.02)
                     # Нет эха, нет смысла запрашивать ответ ?
                     else:
@@ -770,10 +770,13 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             if exit_marker:
                 break
 
+            time.sleep(.5)
+
             # microsleep.sleep(0.02)
 
     def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""
+        self.logger.debug('===== Firmaware update ======', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
         # TODO проверить firmware ???
         # Инициализация счетчика отправленных строк данных
         count = FirmwareUpdateCount()
@@ -788,7 +791,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         #     header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start] + [0]*6
         header = self.get_header(attempt, count, is_first=True)
         first = header + [0]*6
-        # first = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
+        second = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
         try:
             # with threading.RLock():
             self.logger.info('Включаем событие прошивки (event):', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
@@ -798,6 +801,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             # print('Событие прошивки включено')
             self.logger.info('Отправляем первый пакет:', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             self.send_line(first, number_package=0)
+            microsleep.sleep(2.5)
+            self.send_line(second, number_package=0)
+
         except FirmwareUpdateError:
             self.logger.error('Ошибка отправки заголовка', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             raise
@@ -814,7 +820,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         length = len(firmware)
         # time_marker = int(time.time())
         sw = StopWatch()
-        for num, line in enumerate(firmware, start=1):
+        for num, line in enumerate(firmware[1:], start=1):
         # for num, line in enumerate(firmware[1:], start=1):
             # message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message = self.get_header(attempt, count)
@@ -866,17 +872,40 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     # -------------------------- Вспомогательные функции ------------------------- #
     def is_response_correct(self, message, cmd_type='long'):
         """Проверяет совпадение отправленного менеджером и принятого отопителем пакета."""
+        mess_check = self.protocol.byte2hex_text(message)
+        self.logger.debug('Входящее сообщение для проверки', extra={'package': str(mess_check), 'nano': time.perf_counter_ns() - self.start})
         crc = self.protocol.calc_CRC(message)
-        package = [0x55, self.LONG_COMMAND if cmd_type == 'long' else self.SHORT_COMMAND] + message + [crc]
+        # package = [0x55, self.LONG_COMMAND if cmd_type == 'long' else self.SHORT_COMMAND] + message + [crc]
+        package = [0x55, self.LONG_COMMAND] + message
+        pack_check = self.protocol.byte2hex_text(package)
+        self.logger.debug('Собранный пакет для проверки', extra={'package': str(pack_check), 'nano': time.perf_counter_ns() - self.start})
         # NOTE вероятно нужно отсылать get_long_answer, а не get_response
-        response = self.protocol.get_response(16)
-        response = response[response.index(0x55):] if response else response
-        if response != package or (package[3] & 240) == self.FIRMWARE_UPDATE_END_CMD:
-            print(package)
-            print(response)
-        # print('Ответ:', self.get_long_answer(view_text=True))
-            # print('16:', self.protocol.byte2hex_text(response))
-        return response == package
+        echo = self.protocol.get_response(16)
+        echo = echo[echo.index(0x55):][:-1] if echo else echo
+        echo_check = self.protocol.byte2hex_text(echo)
+        self.logger.debug('Эхо блока для проверки', extra={'package': str(echo_check), 'nano': time.perf_counter_ns() - self.start})
+        if echo != package:
+            return False
+        microsleep.sleep(0.02)
+        answer = self.get_long_answer(view_text=True)
+        if not answer:
+            return False
+        # response = answer.split()[:-1]
+        crc_answer = int(answer.split()[-1], 16)
+        check_answer = [0x55, self.LONG_ANSWER] + message
+        
+        if check_answer != list(map(lambda n: int(n, 16), answer.split()[:-1])):
+            self.logger.debug('Плохой ответ', extra={'package': answer, 'nano': time.perf_counter_ns() - self.start})
+            return False
+        self.logger.debug('Ответ блока для проверки', extra={'package': answer, 'nano': time.perf_counter_ns() - self.start})
+        if crc != crc_answer:
+            self.logger.debug('CRC:', extra={'package': f'{crc} :: {crc_answer}', 'nano': time.perf_counter_ns() - self.start})
+            return False
+        # if response != package or (package[3] & 240) == self.FIRMWARE_UPDATE_END_CMD:
+        #     print(package)
+        #     print(response)
+        self.logger.debug('Конец проверки', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
+        return echo == package
 
     def is_response_correct2(self):
         while True:
@@ -889,7 +918,18 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                 break
         return response
 
-    def send_line(self, message: list, number_package):
+    def send_line(self, message, number_package):
+        for _ in range(self.REPEAT_REQUESTS_COUNT):
+            self.send_long_command(message)
+            if self.is_response_correct(message):
+                break
+        else:
+            raise FirmwareUpdateError('Пакет отправлен с ошибкой')
+            # showwarning(title='Предупреждение безопасности', message='Ошибка при отправке прошивки.')
+            # return
+        # return True
+
+    def send_line2(self, message: list, number_package):
         """
         Схема отправка пакета при прошивке блока.
         
@@ -937,10 +977,10 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def get_header(self, attempt, count, is_first=False):
         """Формирование заголовка пакета 0xB0 и 0xB1 при прошивке."""
         if is_first:
-            if not attempt:
-                header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start]
-            else:
-                header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start]
+            # if not attempt:
+            header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start]
+            # else:
+            #     header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start]
         else:
             header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
         return header
