@@ -413,7 +413,7 @@ class BusConfig:
 
     # Количество раз, которое менеджер пытается отправить отопителю пакет,
     # прежде чем сообщить об ошибке.
-    REPEAT_REQUESTS_COUNT = 3
+    REPEAT_REQUESTS_COUNT = 14
 
     # Пауза (в sec), после которой следует "разбудить" шину LIN
     # LIN_WAKEUP_TIME = 0.145
@@ -694,7 +694,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         if self.fw_update_event.is_set():
                             get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
                             self.logger.debug('Получено сейчас:', extra={'package': list(map(hex, get)), 'nano': time.perf_counter_ns() - self.start})
-                            microsleep.sleep(0.025)
+                            # microsleep.sleep(0.025)
                             # ans2 = self.protocol.get_response(16, view_text=True)
                             # self.logger.debug('Проверить еще раз:', extra={'package': ans2, 'nano': time.perf_counter_ns() - self.start})
                         # print('answer:', answer)
@@ -793,7 +793,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         #     header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start] + [0]*6
         header = self.get_header(attempt, count, is_first=True)
         first = header + [0]*6
-        # first = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
+        second = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
         try:
             # with threading.RLock():
             self.logger.info('Включаем событие прошивки (event):', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
@@ -803,6 +803,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             # print('Событие прошивки включено')
             self.logger.info('Отправляем первый пакет:', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             self.send_line(first, number_package=0)
+            time.sleep(2.5)
+            self.send_line(second, number_package=1)
         except FirmwareUpdateError:
             self.logger.error('Ошибка отправки заголовка', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             raise
@@ -819,8 +821,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         length = len(firmware)
         # time_marker = int(time.time())
         sw = StopWatch()
-        for num, line in enumerate(firmware, start=1):
-        # for num, line in enumerate(firmware[1:], start=1):
+        # for num, line in enumerate(firmware, start=1):
+        for num, line in enumerate(firmware[1:], start=2):
             # message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message = self.get_header(attempt, count)
             # print(message)
@@ -919,7 +921,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         )
                 self.logger.debug('Пакет уже в очереди (ждем condition):', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 # Здесь будет проверка таймаута 2 сек (отключение блока)
-                conclusion = self.__fw_update_condition.wait(2)
+                # Включение прошивки после старта через 2 сек, поэтому нужно ждать больше времени
+                conclusion = self.__fw_update_condition.wait(3)
                 if not conclusion:
                     self.logger.error(
                         'Превышение времени ожидания ответа',
@@ -942,10 +945,10 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def get_header(self, attempt, count, is_first=False):
         """Формирование заголовка пакета 0xB0 и 0xB1 при прошивке."""
         if is_first:
-            if not attempt:
-                header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start]
-            else:
-                header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start]
+            # if not attempt:
+            header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start]
+            # else:
+            #     header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start]
         else:
             header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
         return header
