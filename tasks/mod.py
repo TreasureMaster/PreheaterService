@@ -501,7 +501,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         import logging
         self.logger = logging.getLogger('direct_request')
         self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler(filename='tmplog/firmware_update.log', encoding='UTF-8')
+        handler = logging.FileHandler(filename='tmplog/firmware_update3.log', mode='w', encoding='UTF-8')
         formatter = logging.Formatter(
             '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s  time: %(nano)d => %(created)f\n'
         )
