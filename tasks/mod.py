@@ -796,56 +796,44 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         second = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
         try:
             # with threading.RLock():
-            self.logger.info('Включаем событие прошивки (event):', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
+            # self.logger.info('Включаем событие прошивки (event):', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
             if not self.fw_update_event.is_set():
-                print('Включаем событие прошивки')
+                # print('Включаем событие прошивки')
                 self.fw_update_event.set()
             # print('Событие прошивки включено')
-            self.logger.info('Отправляем первый пакет:', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
+            # self.logger.info('Отправляем первый пакет:', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             self.send_line(first, number_package=0)
             time.sleep(2.5)
             self.send_line(second, number_package=1)
         except FirmwareUpdateError:
-            self.logger.error('Ошибка отправки заголовка', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
+            # self.logger.error('Ошибка отправки заголовка', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             raise
 
         # if not self.send_line(header):
         #     showwarning(title='Предупреждение безопасности', message='Ошибка при отправке заголовка прошивки.')
         #     return
-        self.logger.info('Заголовок отправлен и принят правильно.', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
+        # self.logger.info('Заголовок отправлен и принят правильно.', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
         # print(progress._root)
         # print(progress._tk)
         # print(progress.get())
         # return
 
         length = len(firmware)
-        # time_marker = int(time.time())
         sw = StopWatch()
         # for num, line in enumerate(firmware, start=1):
         for num, line in enumerate(firmware[1:], start=2):
             # message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
             message = self.get_header(attempt, count)
-            # print(message)
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
-            # print(f'Посылка {num}:', message)
             try:
                 self.send_line(message, number_package=num)
             except FirmwareUpdateError as e:
                 self.logger.exception(e, extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 raise
-            # if not self.send_line(message):
-            #     showwarning(title='Предупреждение безопасности', message='Ошибка при отправке заголовка прошивки.')
-            #     return
-            # if not num % 50:
-            #     print(num)
             # TODO поменять на format с контролем пробелов, чтобы текст не дергался
-            # diff_time = int(time.time() - time_marker)
-            # minutes = int(diff_time/60)
-            # seconds = diff_time - minutes * 60
             sw.set_elapsed()
             progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}% Время: {sw.mins} мин {sw.secs} сек')
             progress.update()
-            # progress._tk.update()
         # print('Прошивка отправлена.')
 
         # TODO что происходит, если при данной отправке ошибка? Действия те же, что и при всех остальных?
@@ -909,8 +897,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         for _ in range(self.REPEAT_REQUESTS_COUNT):
             # self.send_long_command(message)
             with self.__fw_update_condition:
-                self.logger.debug('Счетчик попыток отправки:', extra={'package': str(_+1), 'nano': time.perf_counter_ns() - self.start})
-                self.logger.debug('Кладем пакет в очередь:', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
+                # self.logger.debug('Счетчик попыток отправки:', extra={'package': str(_+1), 'nano': time.perf_counter_ns() - self.start})
+                # self.logger.debug('Кладем пакет в очередь:', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 # with threading.Lock():
                 self.__fw_update_queue.put(
                             DeviceProtocol.PriorityPackage(
@@ -919,24 +907,24 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                                 number_package=number_package
                             )
                         )
-                self.logger.debug('Пакет уже в очереди (ждем condition):', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
+                # self.logger.debug('Пакет уже в очереди (ждем condition):', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 # Здесь будет проверка таймаута 2 сек (отключение блока)
                 # Включение прошивки после старта через 2 сек, поэтому нужно ждать больше времени
                 conclusion = self.__fw_update_condition.wait(3)
                 if not conclusion:
-                    self.logger.error(
-                        'Превышение времени ожидания ответа',
-                        extra={'package': f'conclusion: {conclusion}', 'nano': time.perf_counter_ns() - self.start}
-                    )
+                    # self.logger.error(
+                    #     'Превышение времени ожидания ответа',
+                    #     extra={'package': f'conclusion: {conclusion}', 'nano': time.perf_counter_ns() - self.start}
+                    # )
                     raise FirmwareUpdateError('Превышение времени ожидания ответа')
                 # if self.is_response_correct(message):
                 if resp := self.is_response_correct2():
-                    self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
+                    # self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
                     break
-                else:
-                    self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
+                # else:
+                #     self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
         else:
-            self.logger.error('Превышение лимита повторов отправки', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
+            # self.logger.error('Превышение лимита повторов отправки', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
             raise FirmwareUpdateError('Пакет отправлен с ошибкой')
             # showwarning(title='Предупреждение безопасности', message='Ошибка при отправке прошивки.')
             # return
@@ -945,10 +933,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def get_header(self, attempt, count, is_first=False):
         """Формирование заголовка пакета 0xB0 и 0xB1 при прошивке."""
         if is_first:
-            # if not attempt:
             header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start]
-            # else:
-            #     header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start]
         else:
             header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
         return header
