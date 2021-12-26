@@ -475,7 +475,6 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         data: t.Optional[dict] = field(compare=False, default=None)
         pack: t.Optional[list] = field(compare=False, default=None)
         is_good_answer: t.Optional[bool] = field(compare=False, default=None)
-        number_package: t.Optional[int] = field(compare=False, default=None)
 
     def __init__(self, connection):
         self.__device_bus = connection
@@ -498,22 +497,17 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
         self._lock = threading.Lock()
 
-        import logging
-        self.logger = logging.getLogger('direct_request')
-        self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler(filename='tmplog/firmware_update3.log', mode='w', encoding='UTF-8')
-        formatter = logging.Formatter(
-            '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s  time: %(nano)d => %(created)f\n'
-        )
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.start = time.perf_counter_ns()
-        self.logger.debug('Старт логера:', extra={'package': None, 'nano': 0})
-
-        # self.logger = AppLogger.instance()
-        # self.logger.thread('------ Включение ------')
-        # self.logger.thread(f"Инициализация DeviceProtocol. Event: {self.__disconnect_event.is_set()}")
-        # self.__device_bus = DeviceRegistry.instance().getCurrentConnection()
+        # import logging
+        # self.logger = logging.getLogger('direct_request')
+        # self.logger.setLevel(logging.DEBUG)
+        # handler = logging.FileHandler(filename='tmplog/firmware_update3.log', mode='w', encoding='UTF-8')
+        # formatter = logging.Formatter(
+        #     '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s  time: %(nano)d => %(created)f\n'
+        # )
+        # handler.setFormatter(formatter)
+        # self.logger.addHandler(handler)
+        # self.start = time.perf_counter_ns()
+        # self.logger.debug('Старт логера:', extra={'package': None, 'nano': 0})
 
     @property
     def device_bus(self):
@@ -559,8 +553,6 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         """Отправка длинной команды отопителю."""
         if len(cmd) != 8:
             raise LINBusCommandLengthError
-        if self.fw_update_event.is_set():
-            self.logger.debug('В длинной команде:', extra={'package': str(cmd), 'nano': time.perf_counter_ns() - self.start})
         return self.protocol.send_command(self.LONG_COMMAND, cmd)
 
     def get_short_answer(self, view_text: bool=False) -> str:
@@ -570,8 +562,6 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
     def get_long_answer(self, view_text: bool=False) -> str:
         """Запрос ответа на длинную команду отопителю."""
-        if self.fw_update_event.is_set():
-            self.logger.debug('В длинном ответе:', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
         self.protocol.get_answer(self.LONG_ANSWER)
         return self.protocol.get_response(self.LONG_ANS_LENGTH, view_text)
 
@@ -591,42 +581,17 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     # ----------------------------- Составные команды ---------------------------- #
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
-        # import logging
-        # logger = logging.getLogger('direct_request')
-        # logger.setLevel(logging.DEBUG)
-        # handler = logging.FileHandler(filename='tmplog/direct_request.log', encoding='UTF-8')
-        # formatter = logging.Formatter(
-        #     '%(asctime)s [%(name)s]: %(message)s\n---> %(package)s'
-        # )
-        # handler.setFormatter(formatter)
-        # logger.addHandler(handler)
-        # if self.fw_update_event.is_set():
-        self.logger.debug(
-            '========== Start Direct Request ===========',
-            extra={'package': 'package not set yet', 'nano': time.perf_counter_ns() - self.start}
-        )
 
         exit_marker = False
         good_answer_marker = None
         while True:
-            # with threading.Lock():
             with self._lock:
-            # if True:
-                # self._lock.acquire()
-                if self.fw_update_event.is_set():
-                    self.logger.debug('===== Поток отправки захвачен', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
-                    self.logger.debug(
-                        'Длина очереди после захвата',
-                        extra={'package': self.__fw_update_queue.qsize(), 'nano': time.perf_counter_ns() - self.start}
-                    )
                 if self.fw_update_event.is_set():
                     try:
                         package = self.__fw_update_queue.get_nowait()
                     except queue.Empty:
                         package = None
-                        number_package = None
                     else:
-                        number_package = package.number_package
                         package = package.pack
                         is_long_answer = True
                         is_long_query = True
@@ -634,11 +599,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     package = PackageRegistry.instance().getPackage()
                     is_long_answer = PackageRegistry.instance().getAnswerType()
                     is_long_query = False
-                    number_package = False
                 # disconnect_event = DeviceRegistry.instance().getDisconnectEvent()
-
-                if self.fw_update_event.is_set():
-                    self.logger.debug('Контроль пакета для отправки:', extra={'package': package, 'nano': time.perf_counter_ns() - self.start})
 
                 if self.disconnect_event.is_set():
                     exit_marker = True
@@ -648,17 +609,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     with self.__fw_update_condition:
                         self.__fw_update_condition.notify()
                     self.fw_update_event.clear()
-                    # print(self.fw_update_event.is_set())
-                # elif self.fw_update_event.is_set() and len(package) != 8:
-                #     package = None
                 elif package is not None:
-                    if self.fw_update_event.is_set():
-                        self.logger.debug('Номер пакета:', extra={'package': number_package, 'nano': time.perf_counter_ns() - self.start})
                     answer = ''
-                    # if self.fw_update_event.is_set():
-                    #     print('Длина пакета:', len(package))
-                    # --- Отправка команды
-                    # print('package:', package)
                     self.__counter['all'] += 1
                     good_answer_marker = True
 
@@ -666,39 +618,22 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         command = self.send_long_command(package)
                     else:
                         command = self.send_short_command(package)
-                    command_v = list(map(lambda n: hex(int(n, 16)), command.split()))
-                    if self.fw_update_event.is_set():
-                        self.logger.debug('Сейчас отправлен:', extra={'package': command_v[2:-1], 'nano': time.perf_counter_ns() - self.start})
-                    # self.logger.debug('Отправлена команда:', extra={'package': command_v})
-                    # microsleep.sleep(0.02)
 
                     # --- Получение эха от преобразователя USB->Serial (CH340, FTDI)
                     echo = self.protocol.get_response(16, view_text=True)
-                    # print('эхо после команды:', echo)
                     if not echo:
                         self.__counter['bad_echo'] += 1
                         good_answer_marker = False
 
-                    # microsleep.sleep(0.02)
                     # Нет эха, нет смысла запрашивать ответ ?
                     else:
-                        if self.fw_update_event.is_set():
-                            self.logger.debug('Что за эхо?', extra={'package': echo, 'nano': time.perf_counter_ns() - self.start})
                         # --- Получение ответа от устройства LIN
                         if is_long_answer:
-                            # print('запрос длинного ответа:')
                             answer = self.get_long_answer(view_text=True)
                         else:
-                            # print('запрос короткого ответа:')
                             answer = self.get_short_answer(view_text=True)
                         if self.fw_update_event.is_set():
                             get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
-                            self.logger.debug('Получено сейчас:', extra={'package': list(map(hex, get)), 'nano': time.perf_counter_ns() - self.start})
-                            # microsleep.sleep(0.025)
-                            # ans2 = self.protocol.get_response(16, view_text=True)
-                            # self.logger.debug('Проверить еще раз:', extra={'package': ans2, 'nano': time.perf_counter_ns() - self.start})
-                        # print('answer:', answer)
-                        # print('Длина ответа:', len(answer.split()))
                         # FIXME сделать контроль ответа для прошивки
                         if not answer:
                             self.__counter['bad_answer'] += 1
@@ -713,14 +648,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                                     self.__counter['bad_answer'] += 1
                                     good_answer_marker = False
                                 else:
-                                    # print(answer)
-                                    # ans = list(map(lambda n: hex(int(n, 16)), command.split()[2:-1]))
-
-                                    # get = (list(map(lambda n: (int(n, 16)), answer.split())))
-
                                     if package != get:
-                                        # print('package:', package)
-                                        # print('get:', get)
                                         self.__counter['bad_answer'] += 1
                                         good_answer_marker = False
 
@@ -748,102 +676,63 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # Отправить инфу методу прошивки
                     if self.fw_update_event.is_set():
                         with self.__fw_update_condition:
-                            self.logger.debug(
-                                'Кладем ответ в очередь и уведомляем (condition)',
-                                extra={'package': package, 'nano': time.perf_counter_ns() - self.start}
-                            )
                             self.__fw_answer_queue.put(answer_pack)
                             self.__fw_update_condition.notify()
 
                     package = None
 
-                else:
-                    if self.fw_update_event.is_set():
-                        self.logger.debug('Пакета не было', extra={'package': package, 'nano': time.perf_counter_ns() - self.start})
-
-                # microsleep.sleep(.02)
-
-                if self.fw_update_event.is_set():
-                    self.logger.debug(
-                        'Длина очереди перед отпуском',
-                        extra={'package': self.__fw_update_queue.qsize(), 'nano': time.perf_counter_ns() - self.start}
-                    )
-                    self.logger.debug('===== Поток отправки отпущен', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
-
-                # self._lock.release()
+            if self.fw_update_event.is_set():
+                # Необходима прерываемая потоком пауза для того, чтобы
+                # основной поток успел отработать с очередями
+                # Скорее всего можно сделать меньше, но Win не поддерживает меньше 10..15 мсек
+                # microsleep использовать нельзя, т.к. нужно гарантированное переключение между потоками
+                time.sleep(0.01)
 
             if exit_marker:
                 break
-
-            # microsleep.sleep(0.02)
 
     def firmware_update(self, firmware, progress, attempt):
         """Прошивка микроконтроллера."""
         # TODO проверить firmware ???
         # Инициализация счетчика отправленных строк данных
         count = FirmwareUpdateCount()
-        # print('Включаем событие прошивки')
-        # # Установить событие прошивки
-        # self.fw_update_event.set()
-        # print('Событие прошивки включено')
-        # Отправить заголовок
-        # if not attempt:
-        #     header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start] + [0]*6
-        # else:
-        #     header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_BEGIN_CMD + count.start] + [0]*6
-        header = self.get_header(attempt, count, is_first=True)
+        header = self.get_header(count, is_first=True)
         first = header + [0]*6
         second = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
         try:
-            # with threading.RLock():
-            # self.logger.info('Включаем событие прошивки (event):', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
             if not self.fw_update_event.is_set():
-                # print('Включаем событие прошивки')
                 self.fw_update_event.set()
-            # print('Событие прошивки включено')
-            # self.logger.info('Отправляем первый пакет:', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
-            self.send_line(first, number_package=0)
+            # Первая пустая команда прошивки для перезагрузки блока
+            self.send_line(first)
+            # Ожидание не менее 2 сек перезагрузки
             time.sleep(2.5)
-            self.send_line(second, number_package=1)
+            # Теперь можно стартовать прошивку
+            self.send_line(second)
         except FirmwareUpdateError:
-            # self.logger.error('Ошибка отправки заголовка', extra={'package': first, 'nano': time.perf_counter_ns() - self.start})
             raise
-
-        # if not self.send_line(header):
-        #     showwarning(title='Предупреждение безопасности', message='Ошибка при отправке заголовка прошивки.')
-        #     return
-        # self.logger.info('Заголовок отправлен и принят правильно.', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
-        # print(progress._root)
-        # print(progress._tk)
-        # print(progress.get())
-        # return
 
         length = len(firmware)
         sw = StopWatch()
         # for num, line in enumerate(firmware, start=1):
         for num, line in enumerate(firmware[1:], start=2):
             # message = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
-            message = self.get_header(attempt, count)
+            message = self.get_header(count)
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
             try:
-                self.send_line(message, number_package=num)
+                self.send_line(message)
             except FirmwareUpdateError as e:
-                self.logger.exception(e, extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 raise
             # TODO поменять на format с контролем пробелов, чтобы текст не дергался
             sw.set_elapsed()
             progress.config(text=f'Отправлено: {int(100 * round(num/length, 2))}% Время: {sw.mins} мин {sw.secs} сек')
             progress.update()
-        # print('Прошивка отправлена.')
 
         # TODO что происходит, если при данной отправке ошибка? Действия те же, что и при всех остальных?
         firmware_end = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_END_CMD + count.start] + [0]*6
         try:
-            # print('Окончание:', firmware_end)
-            self.send_line(firmware_end, number_package=9999)
+            self.send_line(firmware_end)
         except FirmwareUpdateError:
             raise
-        # print('Прошивка окончена, но не проверено отключение.')
         print('Прошивка окончена.')
 
         # Отключить, проверить отключение.
@@ -852,7 +741,6 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # print(self.get_long_answer(view_text=True))
         # print(self.get_short_answer(view_text=True))
 
-        # microsleep.sleep(0.1)
         time.sleep(0.2)
         # Сбросить флаг прошивки
         self.fw_update_event.clear()
@@ -884,7 +772,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                 break
         return response
 
-    def send_line(self, message: list, number_package):
+    def send_line(self, message: list):
         """
         Схема отправка пакета при прошивке блока.
         
@@ -897,46 +785,28 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         for _ in range(self.REPEAT_REQUESTS_COUNT):
             # self.send_long_command(message)
             with self.__fw_update_condition:
-                # self.logger.debug('Счетчик попыток отправки:', extra={'package': str(_+1), 'nano': time.perf_counter_ns() - self.start})
-                # self.logger.debug('Кладем пакет в очередь:', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
-                # with threading.Lock():
                 self.__fw_update_queue.put(
                             DeviceProtocol.PriorityPackage(
                                 time_marker=time.time(),
                                 pack=message,
-                                number_package=number_package
                             )
                         )
-                # self.logger.debug('Пакет уже в очереди (ждем condition):', extra={'package': message, 'nano': time.perf_counter_ns() - self.start})
                 # Здесь будет проверка таймаута 2 сек (отключение блока)
                 # Включение прошивки после старта через 2 сек, поэтому нужно ждать больше времени
                 conclusion = self.__fw_update_condition.wait(3)
                 if not conclusion:
-                    # self.logger.error(
-                    #     'Превышение времени ожидания ответа',
-                    #     extra={'package': f'conclusion: {conclusion}', 'nano': time.perf_counter_ns() - self.start}
-                    # )
                     raise FirmwareUpdateError('Превышение времени ожидания ответа')
                 # if self.is_response_correct(message):
-                if resp := self.is_response_correct2():
-                    # self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
+                if self.is_response_correct2():
                     break
-                # else:
-                #     self.logger.error('Хороший ответ ?', extra={'package': resp, 'nano': time.perf_counter_ns() - self.start})
         else:
-            # self.logger.error('Превышение лимита повторов отправки', extra={'package': None, 'nano': time.perf_counter_ns() - self.start})
             raise FirmwareUpdateError('Пакет отправлен с ошибкой')
-            # showwarning(title='Предупреждение безопасности', message='Ошибка при отправке прошивки.')
-            # return
-        # return True
 
-    def get_header(self, attempt, count, is_first=False):
+    def get_header(self, count, is_first=False):
         """Формирование заголовка пакета 0xB0 и 0xB1 при прошивке."""
-        if is_first:
-            header = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_BEGIN_CMD + count.start]
-        else:
-            header = [self.FIRMWARE_UPDATE, self.DATA_UPDATE_CMD + count.next]
-        return header
+        cmd = ((self.FIRMWARE_UPDATE_BEGIN_CMD + count.start)\
+            if is_first else (self.DATA_UPDATE_CMD + count.next))
+        return [self.FIRMWARE_UPDATE, cmd]
 
     def update_labels(self):
         """Обновление меток с данными отправленных и полученных пакетов."""
