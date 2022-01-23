@@ -649,8 +649,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                             answer = self.get_long_answer(view_text=True)
                         else:
                             answer = self.get_short_answer(view_text=True)
-                        if self.fw_update_event.is_set():
-                            get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
+                        # if self.fw_update_event.is_set():
+                        #     get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
                         # FIXME сделать контроль ответа для прошивки
                         if not answer:
                             self.__counter['bad_answer'] += 1
@@ -665,6 +665,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                                     self.__counter['bad_answer'] += 1
                                     good_answer_marker = False
                                 else:
+                                    get = (list(map(lambda n: (int(n, 16)), answer.split())))[2:-1]
                                     if package != get:
                                         self.__counter['bad_answer'] += 1
                                         good_answer_marker = False
