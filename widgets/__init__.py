@@ -6,6 +6,7 @@ from .connectimages import ModuleImage, OnceByHeightResizedImage, OnceByHeightMa
 from .scrolledwindow import ScrolledWindow
 from .mainmenu import MainMenu
 from .modulemenu import ModuleMenu
+from .monitoringtable import MonitoringFrame
 from .connectionframe import ConnectionFrame
 from .scrolledlistbox import ScrolledListboxFrame
 from .sendingframe import SendingFrame
@@ -27,5 +28,6 @@ __all__ = [
     'OnceResizedImage',
     'HeightResizedImage',
     'ScrolledListboxFrame',
-    'SendingFrame'
+    'SendingFrame',
+    'MonitoringFrame'
 ]

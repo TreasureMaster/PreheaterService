@@ -22,7 +22,7 @@ from lxml import objectify
 
 from appmeta import AbstractSingletonMeta
 from registry import DeviceRegistry, PackageRegistry, WidgetsRegistry
-from widgets import ScrolledListboxFrame, GUIWidgetConfiguration
+from widgets import ScrolledListboxFrame, GUIWidgetConfiguration, MonitoringFrame
 from views import InfoModuleFrame
 from config import LabelsConfig
 from connections import microsleep
@@ -257,6 +257,19 @@ class FirmwareUpdate(ModuleCommand):
             return
 
 
+class Monitoring(ModuleCommand):
+
+    def execute(self, parent, scroll):
+        # Необходимо очистить фрейм от дочерних элементов
+        for child in parent.winfo_children():
+            if not isinstance(child, InfoTitleLabel):
+                child.destroy()
+        # Основное информационное окно
+        monitoring_frame = MonitoringFrame(parent)
+        monitoring_frame.pack()
+        scroll.bind_widgets(monitoring_frame.getScrollWidgets())
+        # WidgetsRegistry.instance().pushWorkInfoFrame(info)
+
 
 # ------------------------------- Фрейм модуля ------------------------------- #
 # class WorkModuleFrame(ttk.Notebook):
@@ -266,6 +279,7 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
         'Общее описание',
         'Прямое управление',
         'Обновление ПО',
+        'Мониторинг',
         'Журнал неисправностей',
         'Состояние узлов блока',
         'Коррекция параметров',
@@ -276,7 +290,8 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
     __commands_list = [
         ViewInfo(),
         DirectControl(),
-        FirmwareUpdate()
+        FirmwareUpdate(),
+        Monitoring()
     ]
 
     def __init__(self, master=None, root=None, **kwargs):
@@ -355,7 +370,9 @@ class WorkModuleFrame(Frame, GUIWidgetConfiguration):
         # print(current)
         print(event.widget.get(current))
 
-        if current in range(3):
+        if current in range(len(WorkModuleFrame.__commands_list)):
+            print(current)
+            print(WorkModuleFrame.__commands_list[current])
             WorkModuleFrame.__commands_list[current](self.work_frame, self.root.scrollwindow)
         # elif current == 1:
         #     WorkModuleFrame.__commands_list[1](self.work_frame)
