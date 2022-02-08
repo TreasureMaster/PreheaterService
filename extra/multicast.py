@@ -158,6 +158,8 @@ class MulticastQueue:
         *queues: t.Union[queue.Queue, QueueWrapper],
         # по умолчанию следующие очереди контролируются
         is_controlled: bool = True,
+        # по умолчанию время ожидания для всех очередей
+        all_timeouts: t.Optional[t.Union[int, float]] = None,
         # контролируемые очереди (можно запретить наполнение отдельно от получения)
         **controlled_queues: t.Union[queue.Queue, QueueWrapper]
     ):
@@ -166,7 +168,7 @@ class MulticastQueue:
         # Очереди, куда будет отправлена вошедшая посылка
         for name, adding_queue in controlled_queues.items():
             # Для ключевых параметров очередь контролируется
-            self.append(adding_queue, name, is_controlled=is_controlled)
+            self.append(adding_queue, name, is_controlled=is_controlled, timeout=all_timeouts)
         for adding_queue in queues:
             self.append(adding_queue)
         self.is_forbidden = False
@@ -198,13 +200,14 @@ class MulticastQueue:
         self,
         adding_queue: t.Union[queue.Queue, QueueWrapper],
         name: t.Optional[str] = None,
-        is_controlled: bool = False
+        is_controlled: bool = False,
+        timeout: t.Optional[t.Union[int, float]] = None
     ):
         """Добавляет обернутую очередь в список отправки."""
         # Если это очередь, создаем обертку
         if not isinstance(adding_queue, QueueWrapper):
             name = name or self.__get_queue_name()
-            adding_queue = QueueWrapper(name, adding_queue, is_controlled)
+            adding_queue = QueueWrapper(name, adding_queue, is_controlled, timeout=timeout)
         # elif name != adding_queue.name:
         #     raise KeyError('Ключевые имена одного объекта должны совпадать')
         # Добавляем обернутую очередь
@@ -337,14 +340,32 @@ class MulticastQueue:
 
 if __name__ == '__main__':
     # cond = th.Condition()
+    MAPPER = {
+        'not_controlled_queues': [queue.Queue(), queue.Queue()],
+        # удалить и перенести в config
+        'is_controlled': True,
+        'controlled_queues': {
+            'firmware': queue.Queue(),
+            'monitoring': queue.Queue(),
+            'testing': QueueWrapper('event_testing', queue.Queue(), _events=[th.Event()])
+        },
+        # удалить и перенести в config
+        'all_timeouts': 3
+    }
     multicast = MulticastQueue(
-        queue.Queue(),
-        queue.Queue(),
-        monitoring=queue.Queue(),
-        firmware=queue.Queue(),
-        testing=QueueWrapper('event_testing', queue.Queue(), _events=[th.Event()]),
-        # cond=QueueWrapper('conditions', queue.Queue(), _events=[th.Event()], _conditions=[cond])
+        *MAPPER['not_controlled_queues'],
+        is_controlled=MAPPER['is_controlled'] if 'is_controlled' in MAPPER else True,
+        all_timeouts=MAPPER['all_timeouts'] if 'all_timeouts' in MAPPER else None,
+        **MAPPER['controlled_queues'],
     )
+    # multicast = MulticastQueue(
+    #     queue.Queue(),
+    #     queue.Queue(),
+    #     monitoring=queue.Queue(),
+    #     firmware=queue.Queue(),
+    #     testing=QueueWrapper('event_testing', queue.Queue(), _events=[th.Event()]),
+    #     # cond=QueueWrapper('conditions', queue.Queue(), _events=[th.Event()], _conditions=[cond])
+    # )
     # print('init', list(q.is_permitted() for q in multicast._output_queues.values() if q.is_controlled))
     print(multicast._output_queues)
     print('-'*30)
