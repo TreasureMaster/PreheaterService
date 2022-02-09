@@ -271,13 +271,13 @@ class MulticastQueue:
         self.__events.on_start()
 
     # общий старт (просто разрешение для всех, запускаются только неконтролируемые очереди)
-    def hard_start(self):
+    def all_start(self):
         self.__events.on_permit()
         self.is_forbidden = False
 
     # общая жесткая остановка всех очередей с полной их очисткой
     # Очистка очереди - выбирать из нее нечего
-    def hard_stop(self):
+    def all_stop(self):
         self.__events.on_break()
         self.is_forbidden = True
 
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     print(multicast.get_instantly('firmware'))
     print(multicast.get_instantly('monitoring'))
     print('забрали 2 в hard', multicast.lengths())
-    multicast.hard_stop()
+    multicast.all_stop()
     print('hard-stop, чистим очереди')
     print(multicast.get_instantly('firmware'))
     print(multicast.get_instantly('monitoring'))

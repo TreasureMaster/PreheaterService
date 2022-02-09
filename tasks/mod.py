@@ -15,7 +15,7 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import showwarning
 import typing as t
-import extra
+import extras
 from widgets import infolabels
 from widgets.infolabels import InfoTitleLabel
 from lxml import objectify
@@ -27,7 +27,7 @@ from views import InfoModuleFrame
 from config import LabelsConfig
 from connections import microsleep
 from applogger import AppLogger
-from extra import StopWatch
+from extras import StopWatch
 
 # ------------------------------ Команды модуля ------------------------------ #
 from commands import Command, maincommands
@@ -492,6 +492,19 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         data: t.Optional[dict] = field(compare=False, default=None)
         pack: t.Optional[list] = field(compare=False, default=None)
         is_good_answer: t.Optional[bool] = field(compare=False, default=None)
+
+    MAPPER = {
+        # 'not_controlled_queues': [queue.Queue(), queue.Queue()],
+        # удалить и перенести в config
+        'is_controlled': True,
+        # удалить и перенести в config
+        'all_timeouts': 3,
+        'controlled_queues': {
+            'firmware': queue.Queue(),
+            'monitoring': queue.Queue(),
+            'testing': QueueWrapper('event_testing', queue.Queue(), _events=[th.Event()])
+        },
+    }
 
     def __init__(self, connection):
         self.__device_bus = connection
