@@ -2,7 +2,7 @@ from tkinter import *
 
 # from widgets import GUIWidgetConfiguration
 from config import LabelsConfig
-from extra import islice_dict
+from extras import islice_dict
 
 
 class SendingFrame(Frame, LabelsConfig):

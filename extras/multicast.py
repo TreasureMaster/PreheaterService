@@ -34,6 +34,9 @@ class QueueWrapper:
     is_controlled: bool = dc.field(default=False)
     _events: t.List[th.Event] = dc.field(default_factory=list, repr=False, compare=False)
     timeout: t.Optional[t.Union[int, float]] = dc.field(default=None)
+    # Стартует ли по умолчанию очередь?
+    all_starting: bool = dc.field(default=False)
+    put_starting: bool = dc.field(default=False)
     # Я думаю, что условие теперь не нужно, т.к. очереди контролируются (просто добавить get с timeout)
     # _conditions: t.List[th.Condition] = dc.field(default_factory=list, repr=False, compare=False)
 
@@ -44,6 +47,9 @@ class QueueWrapper:
         # Второе событие проверяет допустимость отправки, если это контролируется
         # WARN нельзя просто умножить список; события 0 и 1 будут одинаковы !!!
         self._events = [th.Event() for _ in range(control_count)] + self._events
+        # Старт, если разрешено
+        self.hard_start() if self.all_starting else self.hard_stop()
+        self.start() if self.put_starting else self.stop()
 
     def __len__(self):
         return self.__queue.qsize()
@@ -225,11 +231,11 @@ class MulticastQueue:
         """Регистрация базовых событий"""
         self.__events.on_permit += adding_queue.hard_start
         self.__events.on_break += adding_queue.hard_stop
-        adding_queue.hard_start()
+        # adding_queue.hard_start()
         if adding_queue.is_controlled:
             self.__events.on_start += adding_queue.start
             self.__events.on_stop += adding_queue.stop
-            adding_queue.start()
+            # adding_queue.start()
 
 
     def __get_queue_name(self):

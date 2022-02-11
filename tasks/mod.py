@@ -5,7 +5,11 @@
 # 2) GUI модуля
 # 3) TODO: скрипт связи (команды) для отопителей
 
-import os, time, threading, collections, queue
+import collections
+import os
+import queue
+import time
+import threading as th
 from tkinter import messagebox
 import tkinter.font as tkFont
 
@@ -15,7 +19,7 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import showwarning
 import typing as t
-import extras
+# import extras
 from widgets import infolabels
 from widgets.infolabels import InfoTitleLabel
 from lxml import objectify
@@ -27,7 +31,7 @@ from views import InfoModuleFrame
 from config import LabelsConfig
 from connections import microsleep
 from applogger import AppLogger
-from extras import StopWatch
+from extras import StopWatch, QueueWrapper, MulticastQueue
 
 # ------------------------------ Команды модуля ------------------------------ #
 from commands import Command, maincommands
@@ -36,7 +40,7 @@ LINE_DIVIDER = '  |  '
 # WARNING Определяется в 2 местах! Нужно подобрать одно место!
 REPEAT_REQUESTS_COUNT = 3
 
-_LOCK = threading.Lock()
+# _LOCK = th.Lock()
 
 class ModuleCommand(Command):
 
@@ -500,32 +504,39 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # удалить и перенести в config
         'all_timeouts': 3,
         'controlled_queues': {
-            'firmware': queue.Queue(),
-            'monitoring': queue.Queue(),
-            'testing': QueueWrapper('event_testing', queue.Queue(), _events=[th.Event()])
+            'firmware_answer': QueueWrapper('firmware_answer', queue.PriorityQueue()),
+            'monitoring': QueueWrapper('monitoring', queue.PriorityQueue()),
+            'tracing': QueueWrapper('tracing', queue.PriorityQueue())
         },
     }
 
     def __init__(self, connection):
+        # Получили соединение, значит подключились и можно работать
         self.__device_bus = connection
         # Событие отключения
-        self.disconnect_event = threading.Event()
+        self.disconnect_event = th.Event()
         # Событие прошивки блока
-        self.fw_update_event = threading.Event()
+        self.fw_update_event = th.Event()
         # Условие начала приема ответа при прошивке блока
-        self.__fw_update_condition = threading.Condition()
+        self.__fw_update_condition = th.Condition()
         # Очередь ответов от блока для вывода на экран
-        self.__answer_queue = queue.PriorityQueue()
+        # self.__answer_queue = queue.PriorityQueue()
         # Очередь ответов от блока для проверки прошивки
         self.__fw_answer_queue = queue.PriorityQueue()
         # Очередь передачи пакетов для прошивки блока
         self.__fw_update_queue = queue.PriorityQueue()
+        # Пробуем создать многоадресную рассылку
+        self.multicast = MulticastQueue(
+            is_controlled=self.MAPPER['is_controlled'] if 'is_controlled' in self.MAPPER else True,
+            all_timeouts=self.MAPPER['all_timeouts'] if 'all_timeouts' in self.MAPPER else None,
+            **self.MAPPER['controlled_queues'],
+        )
         self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
         self.__counter = collections.Counter(
             dict.fromkeys(self._COUNTER_LABELS.keys(), 0)
         )
 
-        self._lock = threading.Lock()
+        self._lock = th.Lock()
 
         # import logging
         # self.logger = logging.getLogger('direct_request')
@@ -562,7 +573,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def device_bus(self):
         """Закрывает и удаляет соединение."""
         self.__counter.clear()
-        with threading.Lock():
+        with th.Lock():
             if self.__device_bus is not None:
                 self.__device_bus.protocol.close()
                 self.__device_bus = None
@@ -612,8 +623,15 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
 
+        self.multicast.all_start()
+        # выбрать из реестра (пока не реализовано) подтверждение отправки на панель (фрейм) вывода
+        # пока забито жестко для проверки работы
+        is_tracing = True
+        self.multicast.start('tracing') if is_tracing else self.multicast.stop('tracing')
+
         exit_marker = False
         good_answer_marker = None
+
         while True:
             with self._lock:
                 if self.fw_update_event.is_set():
@@ -633,8 +651,12 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
                 if self.disconnect_event.is_set():
                     exit_marker = True
-                    close_answer = DeviceProtocol.PriorityPackage(time.time(), data=None, is_good_answer=False)
-                    self.__answer_queue.put(close_answer)
+                    print('Отключаемся...')
+                    close_answer = DeviceProtocol.PriorityPackage(time.time()+.0001, data=None, is_good_answer=False)
+                    # self.__answer_queue.put(close_answer)
+                    self.multicast.put(close_answer)
+                    self.multicast.put_stop()
+
                     self.__fw_answer_queue.put(close_answer)
                     with self.__fw_update_condition:
                         self.__fw_update_condition.notify()
@@ -703,7 +725,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                             is_good_answer=good_answer_marker
                         )
                     # Отправить инфу меткам менеджера
-                    self.__answer_queue.put(answer_pack)
+                    # self.__answer_queue.put(answer_pack)
+                    self.multicast.put(answer_pack)
                     # Отправить инфу методу прошивки
                     if self.fw_update_event.is_set():
                         with self.__fw_update_condition:
@@ -841,24 +864,43 @@ class DeviceProtocol(BusConfig, LabelsConfig):
 
     def update_labels(self):
         """Обновление меток с данными отправленных и полученных пакетов."""
-        resp = None
-        try:
-            package = self.__answer_queue.get_nowait()
-            resp = package.data
-        except queue.Empty:
-            # маркер перезапуска обновления
-            resp = {}
-        else:
-            # self.__answer_queue.task_done()
-            if resp is not None:
-            # if not stop:
-                for title, text in resp.items():
+        # TODO изменить режим работы отправки данных во фрейм
+        # FIXME сейчас не работает, изменить логику
+        package = self.multicast.get_instantly('tracing')
+        if package is not None:
+            print(package)
+            if package.data is not None:
+                for title, text in package.data.items():
                     self.__sending_frame.labels[title]['label'].configure(
                         text=text
                     )
-        if resp is not None:
+            else:
+                # пока стоп такой же - package.data == None
+                return
+        else:
+            print('Ничего нет в пакете...')
+        # --- old code
+        # resp = None
+        # try:
+        #     package = self.__answer_queue.get_nowait()
+        #     resp = package.data
+        # except queue.Empty:
+        #     # маркер перезапуска обновления
+        #     resp = {}
+        # else:
+        #     # self.__answer_queue.task_done()
+        #     if resp is not None:
+        #     # if not stop:
+        #         for title, text in resp.items():
+        #             self.__sending_frame.labels[title]['label'].configure(
+        #                 text=text
+        #             )
+        # if resp is not None:
         # if not stop:
-            WidgetsRegistry.instance().getCurrentModuleWindow().after(32, self.update_labels)
+        # При 64 на 3..5 хороших приходится 1 пустой; после отключения могут прийти 1 или 2; на старте 15 или 16 пустых
+        # При 48 на 2 хороших приходится 1 пустой; после отключения могут прийти 1 или 2; на старте 17 или 18 пустых
+        # При 32 на 1 хороший приходиться 1 или 2 пустых; после отключения приходит 1; на старте 23..24 пустых
+        WidgetsRegistry.instance().getCurrentModuleWindow().after(48, self.update_labels)
 
     # ------------------------ Пробные (тестовые) команды ------------------------ #
     def scheduleDiagMsg2(self, msg):
