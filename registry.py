@@ -186,8 +186,7 @@ class WidgetsRegistry(Registry):
     # 5) log_frame - фрейм отображения логов
     # 6) edit_info_frame - информационный фрейм окна редактирования с параметрами модуля (правый)
     # 7) listbox - отображение списка модулей
-    # 8) send_frame - фрейм окна модуля с данными пакетов отправки
-    # 9) current_module_window - текущее рабочее окно модуля
+    # 8) current_module_window - текущее рабочее окно модуля
     __values = {
         'work_info_frame': None,
         'save_work_info_frame': None,
@@ -196,7 +195,6 @@ class WidgetsRegistry(Registry):
         'list_modules': None,
         'log_frame': None,
         'listbox': None,
-        'send_frame': None,
         'current_module_window': None
     }
     __instance = None
@@ -301,13 +299,6 @@ class WidgetsRegistry(Registry):
 
     def setModulesListbox(self, listbox):
         self.set('listbox', listbox)
-
-    # СВОЙСТВО: фрейм с информацией об отправке пакетов (окно модуля)
-    def getSendingFrame(self):
-        return self.get('send_frame')
-
-    def setSendingFrame(self, send_frame):
-        self.set('send_frame', send_frame)
 
     # СВОЙСТВО: Текущее рабочее окно модуля
     def getCurrentModuleWindow(self):
@@ -544,6 +535,62 @@ class PackageRegistry(Registry):
         #     package += [0x00]*6
 
         return package
+
+
+# -------------------------- Управление окном модуля ------------------------- #
+
+class ModuleRegistry(Registry):
+    """Реестр окна модуля."""
+    # статические приватные свойства
+    # 1) tracing_view - включение/выключение окна просмотра отправленных/полученных пакетов, контроль ошибок
+    # 2) send_frame - фрейм окна модуля с данными пакетов отправки
+    __values = {
+        # по умолчанию отключено
+        'tracing_view': False,
+        'send_frame': None,
+        # '0xB1': 0x00,
+        # 'extended': False,
+    }
+    __instance = None
+    __lock = Lock()
+
+    # создать объект напрямую невозможно
+    @private
+    def __init__(self):
+        pass
+
+    # только так можно получить объект реестра
+    @staticmethod
+    def instance():
+        with ModuleRegistry.__lock:
+            if not ModuleRegistry.__instance:
+                ModuleRegistry.__instance = ModuleRegistry()
+        return ModuleRegistry.__instance
+
+    # нельзя напрямую изменять свойства
+    @protected
+    def get(self, key):
+        return self.__values[key]
+
+    @protected
+    def set(self, key, value):
+        self.__values[key] = value
+
+    # СВОЙСТВО: окно просмотра отправленных/полученных пакетов, подсчет ошибок
+    def getTracingView(self):
+        """Окно просмотра включено ?"""
+        return self.get('tracing_view')
+
+    def setTracingView(self, is_view: bool):
+        """Изменить видимость окна просмотра"""
+        self.set('tracing_view', is_view)
+
+    # СВОЙСТВО: фрейм с информацией об отправке пакетов (окно модуля)
+    def getSendingFrame(self):
+        return self.get('send_frame')
+
+    def setSendingFrame(self, send_frame):
+        self.set('send_frame', send_frame)
 
 
 if __name__ == '__main__':

@@ -58,11 +58,20 @@ class QueueWrapper:
     def events(self):
         return self._events
 
+    # не нравится это, как исправить?
+    # def set_controlled(self, is_controlled):
+    #     """Установка флага is_controlled после инициализации"""
+    #     if not self.is_controlled and is_controlled:
+    #         self._events.insert(self.CONTROL, th.Event())
+    #     elif self.is_controlled and not is_controlled:
+    #         self._events.pop(self.CONTROL)
+
     # ------------------------------ Методы очереди ------------------------------ #
 
-    def put(self, item, block=True, timeout=None):
+    def put(self, item, block=True, timeout=None, stop_signal=False):
         """Кладет посылку в очередь."""
-        if self.is_allowed:
+        # Сигнал стоп кладем в любом случае
+        if stop_signal or self.is_allowed:
             self.__queue.put(item, block, timeout)
             # теперь надо уведомить всех потребителей о том, что появились данные
             # for cv in self._conditions:
@@ -161,25 +170,28 @@ class MulticastQueue:
     def __init__(
         self,
         # неконтролируемые очереди (работают всегда, кроме явной блокировки)
-        *queues: t.Union[queue.Queue, QueueWrapper],
-        # по умолчанию следующие очереди контролируются
+        *queues: queue.Queue,
+        # по умолчанию очереди, подключенные во время инициализации, контролируются
         is_controlled: bool = True,
         # по умолчанию время ожидания для всех очередей
         all_timeouts: t.Optional[t.Union[int, float]] = None,
         # контролируемые очереди (можно запретить наполнение отдельно от получения)
-        **controlled_queues: t.Union[queue.Queue, QueueWrapper]
+        **controlled_queues: queue.Queue
     ):
         self._output_queues = {}
         self.__events = evs.Events()
+        # Флаги работы
+        self.__is_get_allowed = False
+        self.__is_put_allowed = False
         # Очереди, куда будет отправлена вошедшая посылка
         for name, adding_queue in controlled_queues.items():
             # Для ключевых параметров очередь контролируется
             self.append(adding_queue, name, is_controlled=is_controlled, timeout=all_timeouts)
         for adding_queue in queues:
             self.append(adding_queue)
-        self.is_forbidden = False
-        # При создании сразу стартуем
-        # self.hard_start()
+        # self.is_forbidden = False
+        # При создании сразу разрешаем извлечение
+        self.hard_start()
         # self.put_start()
         # Поток распределения входящего сообщения по исходящим очередям
         # self._thread = threading.Thread(
@@ -204,19 +216,23 @@ class MulticastQueue:
 
     def append(
         self,
-        adding_queue: t.Union[queue.Queue, QueueWrapper],
+        adding_queue: queue.Queue,
         name: t.Optional[str] = None,
         is_controlled: bool = False,
         timeout: t.Optional[t.Union[int, float]] = None
     ):
         """Добавляет обернутую очередь в список отправки."""
         # Если это очередь, создаем обертку
-        if not isinstance(adding_queue, QueueWrapper):
-            name = name or self.__get_queue_name()
-            adding_queue = QueueWrapper(name, adding_queue, is_controlled, timeout=timeout)
+        # if not isinstance(adding_queue, QueueWrapper):
+        name = name or self.__get_queue_name()
+        adding_queue = QueueWrapper(name, adding_queue, is_controlled=is_controlled, timeout=timeout)
         # elif name != adding_queue.name:
         #     raise KeyError('Ключевые имена одного объекта должны совпадать')
         # Добавляем обернутую очередь
+        # print(adding_queue.name, '-->', adding_queue._events)
+        # if is_controlled is not None:
+        #     adding_queue.set_controlled(is_controlled)
+        print(adding_queue.name, '-->', adding_queue._events)
         self._output_queues[adding_queue.name] = adding_queue
         self.__base_events_register(adding_queue)
             # self.__base_events_register(adding_queue)
@@ -231,10 +247,12 @@ class MulticastQueue:
         """Регистрация базовых событий"""
         self.__events.on_permit += adding_queue.hard_start
         self.__events.on_break += adding_queue.hard_stop
-        # adding_queue.hard_start()
+        # Эти 2 аналогичные строки нужны для того, чтобы дублировать существующие события для новых добавляемых очередей
+        adding_queue.hard_start() if self.__is_put_allowed else adding_queue.hard_stop()
         if adding_queue.is_controlled:
             self.__events.on_start += adding_queue.start
             self.__events.on_stop += adding_queue.stop
+            adding_queue.start() if self.__is_get_allowed else adding_queue.stop()
             # adding_queue.start()
 
 
@@ -271,29 +289,32 @@ class MulticastQueue:
     # Выборка из очереди разрешена
     def put_stop(self):
         self.__events.on_stop()
+        self.__is_put_allowed = False
 
     # мягкий старт (только контролируемых пакетов)
     def put_start(self):
         self.__events.on_start()
+        self.__is_put_allowed = True
 
     # общий старт (просто разрешение для всех, запускаются только неконтролируемые очереди)
-    def all_start(self):
+    def hard_start(self):
         self.__events.on_permit()
-        self.is_forbidden = False
+        self.__is_get_allowed = True
 
     # общая жесткая остановка всех очередей с полной их очисткой
     # Очистка очереди - выбирать из нее нечего
-    def all_stop(self):
+    def hard_stop(self):
         self.__events.on_break()
-        self.is_forbidden = True
+        self.__is_get_allowed = False
 
     # отправка посылки
-    def put(self, item, block=True, timeout=None):
+    def put(self, item, block=True, timeout=None, stop_signal=False):
         """Положить в очередь"""
-        if self.is_forbidden:
-            raise MulticastSendStop('sending stopped')
+        # TODO оно не нужно, контролируется событиями обертки очереди ?
+        # if not self.__is_put_allowed:
+        #     raise MulticastSendStop('sending stopped')
         for queue_item in self._output_queues.values():
-            queue_item.put(item, block, timeout)
+            queue_item.put(item, block, timeout, stop_signal)
 
     def get(self, queue_name: str, block=True, timeout=None):
         """Получить посылку из определенной очереди"""
@@ -346,6 +367,7 @@ class MulticastQueue:
 
 if __name__ == '__main__':
     # cond = th.Condition()
+    # TODO пока делаем ввод только очередей Queue (если нужны events, подумаем потом)
     MAPPER = {
         'not_controlled_queues': [queue.Queue(), queue.Queue()],
         # удалить и перенести в config
@@ -353,7 +375,8 @@ if __name__ == '__main__':
         'controlled_queues': {
             'firmware': queue.Queue(),
             'monitoring': queue.Queue(),
-            'testing': QueueWrapper('event_testing', queue.Queue(), _events=[th.Event()])
+            'testing': queue.Queue(),
+            'tracing': queue.PriorityQueue()
         },
         # удалить и перенести в config
         'all_timeouts': 3
@@ -373,9 +396,12 @@ if __name__ == '__main__':
     #     # cond=QueueWrapper('conditions', queue.Queue(), _events=[th.Event()], _conditions=[cond])
     # )
     # print('init', list(q.is_permitted() for q in multicast._output_queues.values() if q.is_controlled))
+    multicast.hard_start()
+    multicast.put_start()
     print(multicast._output_queues)
     print('-'*30)
     multicast.append(queue.Queue())
+    multicast.append(queue.Queue(), name='included', is_controlled=True)
     print(multicast._output_queues)
 
     print('-'*60)
@@ -404,7 +430,7 @@ if __name__ == '__main__':
     print(multicast.get_instantly('firmware'))
     print('забрали еще 2', multicast.lengths())
     try:
-        print(multicast.get_nowait('event_testing'))
+        print(multicast.get_nowait('testing'))
     except queue.Empty:
         print('event_testing: в очереди ничего нет')
 
@@ -418,7 +444,7 @@ if __name__ == '__main__':
     print(multicast.get_instantly('firmware'))
     print(multicast.get_instantly('monitoring'))
     print('забрали 2 в hard', multicast.lengths())
-    multicast.all_stop()
+    multicast.hard_stop()
     print('hard-stop, чистим очереди')
     print(multicast.get_instantly('firmware'))
     print(multicast.get_instantly('monitoring'))
@@ -432,10 +458,11 @@ if __name__ == '__main__':
         print(handler.__name__)
         print(handler)
         print(handler.targets)
-    print(handler.targets[0].__self__)
+    if handler.targets:
+        print(handler.targets[0].__self__)
     # проверка удаления событий:
     print('DELETE' + '-'*60)
-    multicast.delete('event_testing')
+    multicast.delete('testing')
     for handler in multicast.get_events():
         print('-'*30)
         print(handler.__name__)
@@ -450,3 +477,19 @@ if __name__ == '__main__':
     #         print('Посылка с условием:', multicast.get_instantly('conditions'))
     #     else:
     #         print('Ничего нет')
+
+    print('-'*60)
+    print('Опять заново инициализируем:')
+    multicast = MulticastQueue(
+        *MAPPER['not_controlled_queues'],
+        is_controlled=MAPPER['is_controlled'] if 'is_controlled' in MAPPER else True,
+        all_timeouts=MAPPER['all_timeouts'] if 'all_timeouts' in MAPPER else None,
+        **MAPPER['controlled_queues'],
+    )
+    print('is_allowed', multicast._output_queues['tracing'].is_allowed)
+    print('is_controlled', multicast._output_queues['tracing'].is_controlled)
+    print([ev.is_set() for ev in multicast._output_queues['tracing']._events])
+    multicast.hard_start()
+    print([ev.is_set() for ev in multicast._output_queues['tracing']._events])
+    multicast.put_start()
+    print([ev.is_set() for ev in multicast._output_queues['tracing']._events])

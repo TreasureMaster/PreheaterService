@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from tkinter import *
 from tkinter import ttk
 
-from registry import WidgetsRegistry, ConfigRegistry, DeviceRegistry
+from registry import WidgetsRegistry, ConfigRegistry, DeviceRegistry, ModuleRegistry
 from applogger import AppLogger
 
 # from views.infomodule import InfoModuleFrame
@@ -220,10 +220,12 @@ class ModuleWindow(AppWindow, GUIWidgetConfiguration):
         self.connection = ConnectionFrame(self.mainframe)
         self.connection.grid(row=1, columnspan=2, sticky='ew')
         self.add_underline(self.mainframe, width=2, color='gray').grid(row=2, columnspan=2, sticky='ew')
-        sending_info = SendingFrame(self.mainframe)
-        sending_info.grid(row=3, columnspan=2, sticky='ew')
-        WidgetsRegistry.instance().setSendingFrame(sending_info)
+        self.tracing_info = SendingFrame(self.mainframe)
+        self.tracing_info.grid(row=3, columnspan=2, sticky='ew')
+        ModuleRegistry.instance().setSendingFrame(self.tracing_info)
         self.add_underline(self.mainframe, width=2, color='gray').grid(row=4, columnspan=2, sticky='ew')
+        # Скрыть или показать трассировку ?
+        self.tracing_info.grid() if ModuleRegistry.instance().getTracingView() else self.tracing_info.grid_remove()
 
     def _quit(self):
         """Собственная обработка выхода."""

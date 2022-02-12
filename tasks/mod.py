@@ -25,13 +25,13 @@ from widgets.infolabels import InfoTitleLabel
 from lxml import objectify
 
 from appmeta import AbstractSingletonMeta
-from registry import DeviceRegistry, PackageRegistry, WidgetsRegistry
+from registry import DeviceRegistry, PackageRegistry, WidgetsRegistry, ModuleRegistry
 from widgets import ScrolledListboxFrame, GUIWidgetConfiguration, MonitoringFrame
 from views import InfoModuleFrame
 from config import LabelsConfig
 from connections import microsleep
 from applogger import AppLogger
-from extras import StopWatch, QueueWrapper, MulticastQueue
+from extras import StopWatch, MulticastQueue
 
 # ------------------------------ Команды модуля ------------------------------ #
 from commands import Command, maincommands
@@ -115,7 +115,21 @@ class DirectControl(ModuleCommand):
             variable = self.longanswer,
             command = self.set_package_type
         ).pack()
+
+        self.tracing = BooleanVar()
+        self.tracing.set(
+            ModuleRegistry.instance().getTracingView()
+        )
+        Checkbutton(
+            direct,
+            text = 'Просмотр отправленных/полученных ответов',
+            variable = self.tracing,
+            command = self.setup_tracing_view
+        ).pack()
+
+
         direct.pack()
+        self.setup_tracing_view()
         # scroll.bind_widgets(info.getScrollWidgets())
         # WidgetsRegistry.instance().pushWorkInfoFrame(info)
         # Button(direct, text='Отправить', command=self.do_command).pack()
@@ -132,6 +146,16 @@ class DirectControl(ModuleCommand):
     def set_package_type(self):
         """Установка в реестр типа пакета - короткий или расширенный."""
         PackageRegistry.instance().setAnswerType(self.longanswer.get())
+        # print(self.longanswer.get())
+
+    def setup_tracing_view(self):
+        """Установка в реестр вида окна - с просмотром отправленных/полученных ответов или без."""
+        is_visible = self.tracing.get()
+        ModuleRegistry.instance().setTracingView(is_visible)
+        sending_view = ModuleRegistry.instance().getSendingFrame()
+        # FIXME изменение ширины окна
+        # положение сохраняется, если использовать метод grid_remove()
+        sending_view.grid() if is_visible else sending_view.grid_remove()
         # print(self.longanswer.get())
 
     # NOTE Это не сюда, а в "Подключить"
@@ -504,9 +528,9 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # удалить и перенести в config
         'all_timeouts': 3,
         'controlled_queues': {
-            'firmware_answer': QueueWrapper('firmware_answer', queue.PriorityQueue()),
-            'monitoring': QueueWrapper('monitoring', queue.PriorityQueue()),
-            'tracing': QueueWrapper('tracing', queue.PriorityQueue())
+            'firmware_answer': queue.PriorityQueue(),
+            'monitoring': queue.PriorityQueue(),
+            'tracing': queue.PriorityQueue()
         },
     }
 
@@ -531,7 +555,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             all_timeouts=self.MAPPER['all_timeouts'] if 'all_timeouts' in self.MAPPER else None,
             **self.MAPPER['controlled_queues'],
         )
-        self.__sending_frame = WidgetsRegistry.instance().getSendingFrame()
+        # FIXME если будет None
+        self.__sending_frame = ModuleRegistry.instance().getSendingFrame()
         self.__counter = collections.Counter(
             dict.fromkeys(self._COUNTER_LABELS.keys(), 0)
         )
@@ -623,17 +648,24 @@ class DeviceProtocol(BusConfig, LabelsConfig):
     def direct_request(self):
         """Отправка прямого запроса (выбор команды и ее сборка из прямого соединения)"""
 
-        self.multicast.all_start()
+        self.multicast.hard_start()
         # выбрать из реестра (пока не реализовано) подтверждение отправки на панель (фрейм) вывода
         # пока забито жестко для проверки работы
-        is_tracing = True
-        self.multicast.start('tracing') if is_tracing else self.multicast.stop('tracing')
+        # is_tracing = True
+        # self.multicast.start('tracing') if is_tracing else self.multicast.stop('tracing')
 
         exit_marker = False
         good_answer_marker = None
 
         while True:
             with self._lock:
+                # в начале проверяем, нужно ли слать в окно информации о пакетах
+                (
+                    self.multicast.start('tracing')
+                    if ModuleRegistry.instance().getTracingView()
+                    else self.multicast.stop('tracing')
+                )
+
                 if self.fw_update_event.is_set():
                     try:
                         package = self.__fw_update_queue.get_nowait()
@@ -654,7 +686,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     print('Отключаемся...')
                     close_answer = DeviceProtocol.PriorityPackage(time.time()+.0001, data=None, is_good_answer=False)
                     # self.__answer_queue.put(close_answer)
-                    self.multicast.put(close_answer)
+                    self.multicast.put(close_answer, stop_signal=True)
                     self.multicast.put_stop()
 
                     self.__fw_answer_queue.put(close_answer)
