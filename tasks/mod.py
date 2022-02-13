@@ -270,6 +270,9 @@ class FirmwareUpdate(ModuleCommand):
                 try:
                     print('Запуск firmware update')
                     protocol.firmware_update(self.firmware, self.progress_exec, firmware_update_attempt)
+                except FirmwareUpdateStop:
+                    showwarning(title='Предупреждение безопасности', message='Прошивка остановлена!')
+                    return
                 except FirmwareUpdateError:
                     pass
                     # TODO Надо определить первая прошивка или повторная, чтобы отправить 0xB0 = 0001 0000 (начало записи данных)
@@ -277,7 +280,8 @@ class FirmwareUpdate(ModuleCommand):
                 else:
                     break
             else:
-                protocol.fw_update_event.clear()
+                # protocol.fw_update_event.clear()
+                protocol.firmware_update_stop()
                 showwarning(title='Предупреждение безопасности', message='Ошибка прошивки!')
                 return
         else:
@@ -506,6 +510,11 @@ class LINConnectionLookupError(Exception):
 class FirmwareUpdateError(Exception):
     pass
 
+
+# Остановка прошивки
+class FirmwareUpdateStop(Exception):
+    pass
+
 # ---------------------------------------------------------------------------- #
 
 
@@ -528,7 +537,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # удалить и перенести в config
         'all_timeouts': 3,
         'controlled_queues': {
-            'firmware_answer': queue.PriorityQueue(),
+            'firmware': queue.PriorityQueue(),
             'monitoring': queue.PriorityQueue(),
             'tracing': queue.PriorityQueue()
         },
@@ -540,13 +549,13 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # Событие отключения
         self.disconnect_event = th.Event()
         # Событие прошивки блока
-        self.fw_update_event = th.Event()
+        # self.fw_update_event = th.Event()
         # Условие начала приема ответа при прошивке блока
         self.__fw_update_condition = th.Condition()
         # Очередь ответов от блока для вывода на экран
         # self.__answer_queue = queue.PriorityQueue()
         # Очередь ответов от блока для проверки прошивки
-        self.__fw_answer_queue = queue.PriorityQueue()
+        # self.__fw_answer_queue = queue.PriorityQueue()
         # Очередь передачи пакетов для прошивки блока
         self.__fw_update_queue = queue.PriorityQueue()
         # Пробуем создать многоадресную рассылку
@@ -566,14 +575,18 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # import logging
         # self.logger = logging.getLogger('direct_request')
         # self.logger.setLevel(logging.DEBUG)
-        # handler = logging.FileHandler(filename='tmplog/firmware_update3.log', mode='w', encoding='UTF-8')
+        # handler = logging.FileHandler(filename='tmplog/fw_multiupdate1.log', mode='w', encoding='UTF-8')
         # formatter = logging.Formatter(
         #     '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s  time: %(nano)d => %(created)f\n'
+        # )
+        # formatter = logging.Formatter(
+        #     '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s\n---> %(package)s'
         # )
         # handler.setFormatter(formatter)
         # self.logger.addHandler(handler)
         # self.start = time.perf_counter_ns()
         # self.logger.debug('Старт логера:', extra={'package': None, 'nano': 0})
+        # self.logger.debug('Старт логера', extra={'package': None})
 
     @property
     def device_bus(self):
@@ -666,7 +679,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     else self.multicast.stop('tracing')
                 )
 
-                if self.fw_update_event.is_set():
+                # if self.fw_update_event.is_set():
+                if self.multicast.is_started('firmware'):
                     try:
                         package = self.__fw_update_queue.get_nowait()
                     except queue.Empty:
@@ -675,6 +689,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                         package = package.pack
                         is_long_answer = True
                         is_long_query = True
+                    # self.logger.debug('Прием пакета для прошивки', extra={'package': package})
                 else:
                     package = PackageRegistry.instance().getPackage()
                     is_long_answer = PackageRegistry.instance().getAnswerType()
@@ -684,15 +699,17 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                 if self.disconnect_event.is_set():
                     exit_marker = True
                     print('Отключаемся...')
+                    self.multicast.all_clear()
                     close_answer = DeviceProtocol.PriorityPackage(time.time()+.0001, data=None, is_good_answer=False)
                     # self.__answer_queue.put(close_answer)
                     self.multicast.put(close_answer, stop_signal=True)
                     self.multicast.put_stop()
 
-                    self.__fw_answer_queue.put(close_answer)
+                    # self.__fw_answer_queue.put(close_answer)
                     with self.__fw_update_condition:
                         self.__fw_update_condition.notify()
-                    self.fw_update_event.clear()
+                    # self.fw_update_event.clear()
+                    self.multicast.stop('firmware')
                 elif package is not None:
                     answer = ''
                     self.__counter['all'] += 1
@@ -726,7 +743,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                             if not self.is_correct_CRC(answer):
                                 self.__counter['bad_crc'] += 1
                                 good_answer_marker = False
-                            elif self.fw_update_event.is_set():
+                            # elif self.fw_update_event.is_set():
+                            elif self.multicast.is_started('firmware'):
                                 if len(package) != 8:
                                     # print('Длина пакета внутри:', len(package))
                                     self.__counter['bad_answer'] += 1
@@ -760,14 +778,15 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                     # self.__answer_queue.put(answer_pack)
                     self.multicast.put(answer_pack)
                     # Отправить инфу методу прошивки
-                    if self.fw_update_event.is_set():
+                    if self.multicast.is_started('firmware'):
                         with self.__fw_update_condition:
-                            self.__fw_answer_queue.put(answer_pack)
+                            # self.__fw_answer_queue.put(answer_pack)
                             self.__fw_update_condition.notify()
 
                     package = None
 
-            if self.fw_update_event.is_set():
+            # if self.fw_update_event.is_set():
+            if self.multicast.is_started('firmware'):
                 # Необходима прерываемая потоком пауза для того, чтобы
                 # основной поток успел отработать с очередями
                 # Скорее всего можно сделать меньше, но Win не поддерживает меньше 10..15 мсек
@@ -786,15 +805,23 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         first = header + [0]*6
         second = header + [int(digit.strip(), 16) for digit in firmware[0].strip().split(LINE_DIVIDER)]
         try:
-            if not self.fw_update_event.is_set():
-                self.fw_update_event.set()
+            self.firmware_update_start()
+            # time.sleep(0.2)
+            # self.logger.debug('Старт прошивки', extra={'package': self.multicast.is_started('firmware')})
+            # if not self.fw_update_event.is_set():
+            #     self.fw_update_event.set()
+            # self.multicast.start('firmware')
             # Первая пустая команда прошивки для перезагрузки блока
             self.send_line(first)
-            # Ожидание не менее 2 сек перезагрузки
+            # Блокирующее ожидание не менее 2 сек перезагрузки
             time.sleep(2.5)
             # Теперь можно стартовать прошивку
             self.send_line(second)
-        except FirmwareUpdateError:
+        except (FirmwareUpdateError, FirmwareUpdateStop) as e:
+            # self.fw_update_event.clear()
+            # self.multicast.stop('firmware')
+            # self.logger.debug('Ошибка старта прошивки', extra={'package': None})
+            self.firmware_update_stop()
             raise
 
         length = len(firmware)
@@ -806,7 +833,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             message.extend([int(digit.strip(), 16) for digit in line.strip().split(LINE_DIVIDER)])
             try:
                 self.send_line(message)
-            except FirmwareUpdateError as e:
+            except (FirmwareUpdateError, FirmwareUpdateStop):
+                self.firmware_update_stop()
                 raise
             # TODO поменять на format с контролем пробелов, чтобы текст не дергался
             sw.set_elapsed()
@@ -817,7 +845,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         firmware_end = [self.FIRMWARE_UPDATE, self.FIRMWARE_UPDATE_END_CMD + count.start] + [0]*6
         try:
             self.send_line(firmware_end)
-        except FirmwareUpdateError:
+        except (FirmwareUpdateError, FirmwareUpdateStop):
+            self.firmware_update_stop()
             raise
         print('Прошивка окончена.')
 
@@ -828,9 +857,25 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # print(self.get_short_answer(view_text=True))
 
         time.sleep(0.2)
-        # Сбросить флаг прошивки
-        self.fw_update_event.clear()
+        # Сбросить флаг прошивки и очистить очередь, если там еще что-то осталось
+        # self.fw_update_event.clear()
+        self.firmware_update_stop()
         print('Флаг прошивки очищен.')
+
+    # ---------------------------------- События --------------------------------- #
+    def firmware_update_start(self):
+        """Все команды старта прошивки"""
+        # self.fw_update_event.set()
+        self.multicast.start('firmware')
+        # Очистить все очереди от мусора перед стартом прошивки
+        self.multicast.all_clear()
+    
+    def firmware_update_stop(self):
+        """Все команды остановки прошивки"""
+        # self.fw_update_event.clear()
+        self.multicast.stop('firmware')
+        # Если остановились, то надо очистить очередь
+        self.multicast.clear('firmware')
 
     # -------------------------- Вспомогательные функции ------------------------- #
     def is_response_correct(self, message, cmd_type='long'):
@@ -847,14 +892,19 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             # print('16:', self.protocol.byte2hex_text(response))
         return response == package
 
+    # FIXME при отключении надо изменить схему работы (выдавать исключение FirmwareUpdateStop, чтобы не брать больше в работу)
     def is_response_correct2(self):
         while True:
             try:
-                package = self.__fw_answer_queue.get_nowait()
+                # Пока аналогично, потом надо что-то поменять
+                # package = self.__fw_answer_queue.get_nowait()
+                package = self.multicast.get_nowait('firmware')
             except queue.Empty:
                 pass
             else:
-                response = package.is_good_answer
+                # if package.data is None:
+                response = None if package.data is None else package.is_good_answer
+                # response = package.is_good_answer
                 break
         return response
 
@@ -869,6 +919,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         причины ошибки.
         """
         for _ in range(self.REPEAT_REQUESTS_COUNT):
+            # self.logger.debug('Кладем пакет в очередь', extra={'package': message})
             # self.send_long_command(message)
             with self.__fw_update_condition:
                 self.__fw_update_queue.put(
@@ -877,13 +928,17 @@ class DeviceProtocol(BusConfig, LabelsConfig):
                                 pack=message,
                             )
                         )
-                # Здесь будет проверка таймаута 2 сек (отключение блока)
+                # Здесь будет проверка таймаута 3 сек
                 # Включение прошивки после старта через 2 сек, поэтому нужно ждать больше времени
                 conclusion = self.__fw_update_condition.wait(3)
                 if not conclusion:
+                    # self.logger.debug('Истекло время ожидания ответа из блока', extra={'package': conclusion})
                     raise FirmwareUpdateError('Превышение времени ожидания ответа')
                 # if self.is_response_correct(message):
-                if self.is_response_correct2():
+                response = self.is_response_correct2()
+                if response is None:
+                    raise FirmwareUpdateStop('Прошивка остановлена')
+                elif response:
                     break
         else:
             raise FirmwareUpdateError('Пакет отправлен с ошибкой')
@@ -900,7 +955,7 @@ class DeviceProtocol(BusConfig, LabelsConfig):
         # FIXME сейчас не работает, изменить логику
         package = self.multicast.get_instantly('tracing')
         if package is not None:
-            print(package)
+            # print(package)
             if package.data is not None:
                 for title, text in package.data.items():
                     self.__sending_frame.labels[title]['label'].configure(
@@ -909,8 +964,8 @@ class DeviceProtocol(BusConfig, LabelsConfig):
             else:
                 # пока стоп такой же - package.data == None
                 return
-        else:
-            print('Ничего нет в пакете...')
+        # else:
+        #     print('Ничего нет в пакете...')
         # --- old code
         # resp = None
         # try:

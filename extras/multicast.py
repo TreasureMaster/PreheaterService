@@ -247,6 +247,7 @@ class MulticastQueue:
         """Регистрация базовых событий"""
         self.__events.on_permit += adding_queue.hard_start
         self.__events.on_break += adding_queue.hard_stop
+        self.__events.on_clear += adding_queue.clear
         # Эти 2 аналогичные строки нужны для того, чтобы дублировать существующие события для новых добавляемых очередей
         adding_queue.hard_start() if self.__is_put_allowed else adding_queue.hard_stop()
         if adding_queue.is_controlled:
@@ -307,6 +308,10 @@ class MulticastQueue:
         self.__events.on_break()
         self.__is_get_allowed = False
 
+    def all_clear(self):
+        """Очистить все очереди; обычно перед прошивкой"""
+        self.__events.on_clear()
+
     # отправка посылки
     def put(self, item, block=True, timeout=None, stop_signal=False):
         """Положить в очередь"""
@@ -342,7 +347,11 @@ class MulticastQueue:
         self._output_queues[queue_name].stop()
 
     def is_started(self, queue_name):
-        self._output_queues[queue_name].is_started()
+        return self._output_queues[queue_name].is_started()
+
+    def clear(self, queue_name):
+        """Очистка очереди"""
+        self._output_queues[queue_name].clear()
 
     def length(self, queue_name):
         """Приблизительная длина конкретной очереди"""
